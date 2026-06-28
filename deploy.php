@@ -5,7 +5,7 @@ require 'recipe/laravel.php';
 
 // Config
 
-set('repository', 'git@github.com:janakkapadia/jackman.git');
+set('repository', 'git@github.com:janakkapadia/instaw-request-ce.git');
 
 add('shared_files', ['.env', 'database/database.sqlite']);
 add('shared_dirs', [
@@ -16,9 +16,9 @@ add('writable_dirs', []);
 
 // Hosts
 host('prod')
-    ->set('hostname', '65.20.68.173')
+    ->set('hostname', env('PROD_HOST'))
     ->set('remote_user', 'deployer')
-    ->set('deploy_path', '~/jackman')
+    ->set('deploy_path', '~/insta-request-ce')
     ->set('branch', 'main')
     ->set('keep_releases', 1);
 
