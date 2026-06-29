@@ -11,6 +11,17 @@ Postman has become bloated, slow, and increasingly forces mandatory cloud syncin
 
 InstaRequest Community Edition offers everything you need to build, test, and document your APIs, wrapped in a beautiful UI powered by Vue 3 and Tailwind CSS, backed by a robust Laravel 13 engine.
 
+## 📸 Preview
+
+### Request Builder & Collections
+![Request Builder](./public/screenshots/request-builder.png)
+
+### Dashboard Overview
+![Dashboard](./public/screenshots/dashboard.png)
+
+### Command Palette & Quick Navigation
+![Command Palette](./public/screenshots/command-palette.png)
+
 ## ✨ Features
 
 - **⚡ Fast Request Builder:** Intuitive interface for constructing complex API requests with custom headers, query parameters, path variables, and body payloads.
