@@ -13,7 +13,6 @@ import {
     MoreVertical,
     Pencil,
     BookOpen,
-    Github,
     LayoutDashboard,
     FolderPlus,
     FilePlus,
@@ -391,10 +390,6 @@ const getCollectionColor = (name: string) => {
                     <BookOpen class="h-4 w-4 mb-1" />
                     <span class="text-[9px] font-medium leading-none truncate w-full text-center">Docs</span>
                 </Link>
-                <a href="https://github.com/janakkapadia/insta-request-ce" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center justify-center p-1.5 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-muted-foreground flex-1 min-w-0" title="GitHub Repository">
-                    <Github class="h-4 w-4 mb-1" />
-                    <span class="text-[9px] font-medium leading-none truncate w-full text-center">GitHub</span>
-                </a>
             </div>
         </SidebarHeader>
 
@@ -696,19 +691,6 @@ const getCollectionColor = (name: string) => {
                             <Link :href="documentationUrl" @click="handleNavAway">
                                 <BookOpen class="h-4 w-4" />
                             </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-
-                    <!-- GitHub Icon -->
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            as-child
-                            tooltip="GitHub Repository"
-                            class="justify-center p-0!"
-                        >
-                            <a href="https://github.com/janakkapadia/insta-request-ce" target="_blank" rel="noopener noreferrer">
-                                <Github class="h-4 w-4" />
-                            </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

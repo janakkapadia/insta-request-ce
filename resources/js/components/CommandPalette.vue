@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { Search, Database, Terminal, Clock, Settings, FilePlus, Play, X, SlidersHorizontal, LayoutGrid, Sparkles } from 'lucide-vue-next';
+import { Search, Database, Terminal, Clock, Settings, FilePlus, Play, X, SlidersHorizontal, LayoutGrid, Sparkles, Github } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -37,7 +37,8 @@ const filteredItems = computed(() => {
         { id: 'nav-collections', label: 'Go to Collections', icon: Database, category: 'Navigation', action: () => navigateTo('collections') },
         { id: 'nav-environments', label: 'Go to Environments', icon: SlidersHorizontal, category: 'Navigation', action: () => navigateTo('environments') },
         { id: 'nav-history', label: 'Go to History Logs', icon: Clock, category: 'Navigation', action: () => navigateTo('history') },
-    ].filter(a => term === '' || a.label.toLowerCase().includes(term));
+        { id: 'nav-github', label: 'GitHub Repository', subLabel: 'View source code on GitHub', icon: Github, category: 'Navigation', action: () => navigateTo('github') },
+    ].filter(a => term === '' || a.label.toLowerCase().includes(term) || (a.id === 'nav-github' && 'github repo repository source star'.includes(term)));
 
     return [...quickActions, ...searchResults.value];
 });
@@ -51,6 +52,8 @@ const navigateTo = (routeKey: string) => {
         router.visit('/environments');
     } else if (routeKey === 'history') {
         router.visit('/history');
+    } else if (routeKey === 'github') {
+        window.open('https://github.com/janakkapadia/insta-request-ce', '_blank', 'noopener,noreferrer');
     }
 };
 
