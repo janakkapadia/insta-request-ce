@@ -28,6 +28,42 @@ InstaRequest is built on modern, developer-friendly technologies:
 - **Styling:** Tailwind CSS v4 + Reka UI
 - **Testing:** Pest
 
+## ⚙️ Installation
+
+Follow these steps to set up InstaRequest Community Edition locally:
+
+### 1. Prerequisites
+
+Ensure you have the following installed on your system:
+- **PHP** >= 8.3 (with extensions such as `sqlite3`, `mbstring`, `xml`, `curl`)
+- **Composer** (PHP package manager)
+- **Node.js** >= 20.x & **npm**
+
+### 2. Clone the Repository
+
+```bash
+git clone https://github.com/janakkapadia/insta-request-ce.git
+cd insta-request-ce
+```
+
+### 3. Quick Setup
+
+InstaRequest includes a built-in setup script that automates package installation, environment setup, application key generation, database migrations (using a local SQLite database by default), and asset compilation:
+
+```bash
+composer run setup
+```
+
+### 4. Run the Development Server
+
+Start both the Laravel backend server and the Vite frontend compiler concurrently using:
+
+```bash
+npm run dev
+```
+
+Once started, open `http://127.0.0.1:8000` in your browser.
+
 ## ⌨️ Keyboard Shortcuts
 
 InstaRequest comes with built-in shortcuts to speed up your workflow:
