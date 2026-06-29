@@ -144,3 +144,22 @@ test('team members cannot be removed by members', function () {
 
     $response->assertForbidden();
 });
+
+test('team member roles cannot be updated by members', function () {
+    $owner = User::factory()->create();
+    $member1 = User::factory()->create();
+    $member2 = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member1, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($member2, ['role' => TeamRole::Member->value]);
+
+    $response = $this
+        ->actingAs($member1)
+        ->patch(route('teams.members.update', [$team, $member2]), [
+            'role' => TeamRole::Admin->value,
+        ]);
+
+    $response->assertForbidden();
+});
