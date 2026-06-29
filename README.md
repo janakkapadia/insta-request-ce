@@ -55,3 +55,7 @@ Contributions are welcome! Please submit a pull request or open an issue to disc
 
 ## 📄 License
 The InstaRequest Community Edition source code is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+---
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/janak.kapadia)
