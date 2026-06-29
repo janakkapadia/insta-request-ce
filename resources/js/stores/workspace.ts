@@ -737,7 +737,7 @@ break;
     };
 
     const cleanupChannels = () => {
-        activeUsers.value = [];
+        // No channels or activeUsers in CE
     };
 
     const updateRequestInTree = (updatedReq: RequestItem) => {
