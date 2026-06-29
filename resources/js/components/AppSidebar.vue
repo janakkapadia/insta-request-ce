@@ -357,7 +357,8 @@ const getCollectionColor = (name: string) => {
         <SidebarHeader class="relative">
             <!-- Top area: Logo/App name + User dropdown -->
             <div class="flex items-center gap-2 py-2">
-                <img src="/logo.svg" class="h-11 w-auto ml-2 pointer-events-none" alt="InstaRequest" />
+                <img src="/logo.svg" class="hidden h-11 w-auto ml-2 pointer-events-none dark:block" alt="InstaRequest" />
+                <img src="/logo-light.svg" class="block h-11 w-auto ml-2 pointer-events-none dark:hidden" alt="InstaRequest" />
             </div>
             <SidebarMenu>
                 <SidebarMenuItem>
