@@ -75,10 +75,6 @@ function generateBreadcrumbs(name: string, props: any) {
             breadcrumbs.push({ title: 'Settings', href: '/settings/profile' });
             breadcrumbs.push({ title: 'Appearance', href: '/settings/appearance' });
             break;
-        case 'settings/Desktop':
-            breadcrumbs.push({ title: 'Settings', href: '/settings/profile' });
-            breadcrumbs.push({ title: 'Desktop App', href: '/settings/desktop' });
-            break;
         case 'settings/Security':
             breadcrumbs.push({ title: 'Settings', href: '/settings/profile' });
             breadcrumbs.push({ title: 'Security', href: '/settings/security' });

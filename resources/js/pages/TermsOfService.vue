@@ -4,7 +4,7 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
 </script>
 
 <template>
-    <Head title="Terms of Service | Jackman" />
+    <Head title="Terms of Service | InstaRequest" />
     <MarketingLayout>
         <div class="max-w-4xl mx-auto px-6 py-24 md:py-32">
             <div class="space-y-4 mb-16 text-center">
@@ -17,13 +17,13 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
             </div>
 
             <div class="prose prose-slate dark:prose-invert max-w-none text-muted-foreground">
-                <p>Welcome to Jackman. These Terms of Service ("Terms") govern your use of the Jackman collaborative API platform, website, desktop application, and associated services (collectively, the "Service").</p>
+                <p>Welcome to InstaRequest. These Terms of Service ("Terms") govern your use of the InstaRequest collaborative API platform, website, and associated services (collectively, the "Service").</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">1. Acceptance of Terms</h2>
                 <p>By accessing or using our Service, you agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, do not use the Service.</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">2. Use of the Service</h2>
-                <p>You must provide accurate information when creating an account. You are responsible for maintaining the security of your account and your API keys, credentials, and tokens used within Jackman.</p>
+                <p>You must provide accurate information when creating an account. You are responsible for maintaining the security of your account and your API keys, credentials, and tokens used within InstaRequest.</p>
                 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">3. Acceptable Use</h2>
                 <p>You agree not to use the Service to:</p>
@@ -35,19 +35,19 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
                 </ul>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">4. Intellectual Property</h2>
-                <p>The Service and its original content, features, and functionality are owned by Jackman and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.</p>
+                <p>The Service and its original content, features, and functionality are owned by InstaRequest and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">5. Termination</h2>
                 <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">6. Limitation of Liability</h2>
-                <p>In no event shall Jackman, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>
+                <p>In no event shall InstaRequest, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">7. Changes</h2>
                 <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will provide notice of any significant changes.</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">8. Contact Us</h2>
-                <p>If you have any questions about these Terms, please contact us at support@jackman.dev.</p>
+                <p>If you have any questions about these Terms, please contact us at support@instarequest.com.</p>
             </div>
         </div>
     </MarketingLayout>

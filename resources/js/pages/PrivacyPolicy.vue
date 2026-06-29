@@ -4,7 +4,7 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
 </script>
 
 <template>
-    <Head title="Privacy Policy | Jackman" />
+    <Head title="Privacy Policy | InstaRequest" />
     <MarketingLayout>
         <div class="max-w-4xl mx-auto px-6 py-24 md:py-32">
             <div class="space-y-4 mb-16 text-center">
@@ -17,7 +17,7 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
             </div>
 
             <div class="prose prose-slate dark:prose-invert max-w-none text-muted-foreground">
-                <p>At Jackman, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website, use our desktop application, or use our collaborative API platform.</p>
+                <p>At InstaRequest, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our collaborative API platform.</p>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">1. Information We Collect</h2>
                 <p>We collect information that you provide directly to us when you register for an account, create teams, or communicate with us. This may include:</p>
@@ -25,7 +25,6 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
                     <li>Personal information (name, email address, avatar)</li>
                     <li>Authentication credentials</li>
                     <li>API workspace data (collections, environments, requests)</li>
-                    <li>Usage data, telemetry, and diagnostics to improve our desktop application</li>
                 </ul>
 
                 <h2 class="text-xl font-bold text-foreground mt-8 mb-4">2. How We Use Your Information</h2>
