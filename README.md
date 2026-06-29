@@ -38,18 +38,6 @@ InstaRequest comes with built-in shortcuts to speed up your workflow:
 | **Open Request in New Tab** | `Cmd + Click` (or Middle Click) | `Ctrl + Click` (or Middle Click) |
 | **Close Current Tab** | `Cmd + W` or `Option + W` | `Ctrl + W` or `Alt + W` |
 
-## 🚀 Deployment
-
-InstaRequest uses [Deployer](https://deployer.org/) for zero-downtime deployments. 
-
-If you have deploy access, you can push the latest code to production with a single command:
-
-```bash
-./vendor/bin/dep deploy prod
-```
-
-This command automatically pulls the latest `main` branch, installs NPM dependencies, compiles assets, runs database migrations, and safely restarts the queue workers.
-
 ## 🤝 Contributing
 Contributions are welcome! Please submit a pull request or open an issue to discuss proposed changes.
 
