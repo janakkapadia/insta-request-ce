@@ -100,10 +100,8 @@ return '#';
                 <!-- Logo -->
                 <div class="flex items-center gap-8">
                     <Link href="/" class="flex items-center gap-2.5 group">
-                        <img src="/logo-icon.svg" class="h-9 w-auto" alt="InstaRequest" />
-                        <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-[#1b1b18] via-[#484844] to-[#1b1b18] dark:from-[#ffffff] dark:via-[#cccccc] dark:to-[#ffffff] bg-clip-text text-transparent group-hover:text-green-500 transition-colors duration-300">
-                            InstaRequest
-                        </span>
+                        <img src="/logo.svg" class="hidden h-9 w-auto dark:block" alt="InstaRequest" />
+                        <img src="/logo-light.svg" class="block h-9 w-auto dark:hidden" alt="InstaRequest" />
                         <span class="text-[9px] font-mono border border-green-500/30 text-green-500 px-1.5 py-0.5 rounded uppercase tracking-widest bg-green-500/5">Beta</span>
                     </Link>
 
@@ -177,10 +175,8 @@ return '#';
                     <!-- Column 1: Core positioning -->
                     <div class="md:col-span-6 flex flex-col gap-4">
                         <Link href="/" class="flex items-center gap-2 group self-start">
-                            <img src="/logo-icon.svg" class="h-8 w-auto" alt="InstaRequest" />
-                            <span class="font-bold text-base tracking-tight text-[#1b1b18] dark:text-[#ffffff]">
-                                InstaRequest
-                            </span>
+                            <img src="/logo.svg" class="hidden h-8 w-auto dark:block" alt="InstaRequest" />
+                            <img src="/logo-light.svg" class="block h-8 w-auto dark:hidden" alt="InstaRequest" />
                         </Link>
                         <p class="text-xs text-muted-foreground leading-relaxed">
                             A premium developer-first collaborative API platform and modern alternative to Postman built for realtime teamwork, API monitoring, and high-performance workflows.
