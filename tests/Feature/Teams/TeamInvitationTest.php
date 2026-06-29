@@ -1,8 +1,8 @@
 <?php
 
-use App\Enums\TeamRole;
-use App\Domains\Teams\Models\Team;
 use App\Domains\Teams\Models\Invitation as TeamInvitation;
+use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 
@@ -93,7 +93,7 @@ test('duplicate invitations cannot be created', function () {
     $response->assertSessionHasErrors('email');
 });
 
-test('team invitations cannot be created by members', function () {
+test('team invitations can be created by members', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $team = Team::factory()->create();
@@ -108,7 +108,7 @@ test('team invitations cannot be created by members', function () {
             'role' => TeamRole::Member->value,
         ]);
 
-    $response->assertForbidden();
+    $response->assertRedirect(route('teams.edit', $team));
 });
 
 test('team invitations can be cancelled by owners', function () {
@@ -199,4 +199,56 @@ test('expired invitations cannot be accepted', function () {
     $response->assertSessionHasErrors('invitation');
 
     expect($invitedUser->fresh()->belongsToTeam($team))->toBeFalse();
+});
+
+test('accepting invitation replaces personal team and limits user to 1 team in CE', function () {
+    $owner = User::factory()->create();
+    $invitedUser = User::factory()->create(['email' => 'invited@example.com']);
+    $personalTeam = $invitedUser->personalTeam();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'role' => TeamRole::Member,
+        'invited_by' => $owner->id,
+    ]);
+
+    $response = $this
+        ->actingAs($invitedUser)
+        ->get(route('invitations.accept', $invitation));
+
+    $response->assertRedirect(route('dashboard'));
+
+    expect($invitedUser->fresh()->teams()->count())->toBe(1);
+    expect($invitedUser->fresh()->currentTeam->id)->toBe($team->id);
+    expect(Team::find($personalTeam->id))->toBeNull();
+});
+
+test('accepting invitation removes user from existing teams to enforce 1 team rule in CE', function () {
+    $owner1 = User::factory()->create();
+    $owner2 = User::factory()->create();
+    $user = User::factory()->create(['email' => 'user@example.com']);
+
+    $team1 = Team::factory()->create();
+    $team1->members()->attach($owner1, ['role' => TeamRole::Owner->value]);
+    $team1->members()->attach($user, ['role' => TeamRole::Member->value]);
+
+    $team2 = Team::factory()->create();
+    $team2->members()->attach($owner2, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team2->id,
+        'email' => 'user@example.com',
+        'role' => TeamRole::Member,
+        'invited_by' => $owner2->id,
+    ]);
+
+    $this->actingAs($user)->get(route('invitations.accept', $invitation));
+
+    expect($user->fresh()->teams()->count())->toBe(1);
+    expect($user->fresh()->currentTeam->id)->toBe($team2->id);
+    expect($user->fresh()->belongsToTeam($team1))->toBeFalse();
 });

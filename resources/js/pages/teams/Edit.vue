@@ -29,7 +29,6 @@ import {
 import { useInitials } from '@/composables/useInitials';
 import { edit, index, update } from '@/routes/teams';
 import { update as updateMember } from '@/routes/teams/members';
-import { update as updatePermissions } from '@/routes/teams/permissions';
 import type {
     RoleOption,
     Team,
@@ -38,19 +37,12 @@ import type {
     TeamPermissions,
 } from '@/types';
 
-type PermissionCase = {
-    value: string;
-    name: string;
-};
-
 type Props = {
     team: Team;
     members: TeamMember[];
     invitations: TeamInvitation[];
     permissions: TeamPermissions;
     availableRoles: RoleOption[];
-    role_permissions: Record<string, string[]>;
-    availablePermissions: PermissionCase[];
 };
 
 const props = defineProps<Props>();
@@ -102,60 +94,6 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
     cancelInvitationDialogOpen.value = true;
 };
 
-const defaultAdminPerms = ['member:add', 'member:update', 'member:remove', 'invitation:create', 'invitation:cancel', 'collection:delete', 'folder:delete', 'request:delete', 'environment:delete', 'request:execute', 'environment:manage_variables'];
-const defaultMemberPerms = ['request:execute'];
-
-const permissionsForm = useForm({
-    role_permissions: {
-        admin: props.role_permissions?.admin || defaultAdminPerms,
-        member: props.role_permissions?.member || defaultMemberPerms,
-    },
-});
-
-const togglePermission = (role: 'admin' | 'member', permissionValue: string, checked: boolean) => {
-    const perms = [...permissionsForm.role_permissions[role]];
-
-    if (checked) {
-        if (!perms.includes(permissionValue)) {
-            perms.push(permissionValue);
-        }
-    } else {
-        const index = perms.indexOf(permissionValue);
-
-        if (index > -1) {
-            perms.splice(index, 1);
-        }
-    }
-    
-    // Explicitly reassign the object to trigger useForm reactivity
-    permissionsForm.role_permissions = {
-        ...permissionsForm.role_permissions,
-        [role]: perms
-    };
-};
-
-const savePermissions = () => {
-    permissionsForm.put(updatePermissions(props.team.slug).url, {
-        preserveScroll: true,
-    });
-};
-
-const categorizedPermissions = computed(() => {
-    const groups: Record<string, { value: string, name: string }[]> = {};
-
-    for (const permission of props.availablePermissions) {
-        const [category] = permission.value.split(':');
-        const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
-
-        if (!groups[categoryName]) {
-            groups[categoryName] = [];
-        }
-
-        groups[categoryName].push(permission);
-    }
-
-    return groups;
-});
 </script>
 
 <template>
@@ -368,86 +306,6 @@ const categorizedPermissions = computed(() => {
                     </TooltipProvider>
                 </div>
             </div>
-        </div>
-
-        <!-- Role Permissions (ACL) Section -->
-        <div class="space-y-6">
-            <Heading
-                variant="small"
-                title="Role Permissions (ACL)"
-                description="Customize what Admins and Members are allowed to do. Owners always have full access."
-            />
-
-            <form @submit.prevent="savePermissions" class="space-y-6">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Admin Column -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-medium">Admin</h3>
-                        <div class="space-y-6 bg-muted/30 p-4 rounded-md border border-border">
-                            <div v-for="(permissions, category) in categorizedPermissions" :key="'admin-cat-' + category" class="space-y-3">
-                                <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{{ category }}</h4>
-                                <div class="grid gap-3 pl-2 border-l-2 border-muted">
-                                    <div v-for="permission in permissions" :key="'admin-' + permission.value" class="flex items-start space-x-3">
-                                        <Checkbox 
-                                            :id="'admin-' + permission.value.replace(':', '-')" 
-                                            :model-value="permissionsForm.role_permissions.admin.includes(permission.value)"
-                                            :disabled="!team.is_owner"
-                                            @update:model-value="(checked: boolean) => togglePermission('admin', permission.value, checked)"
-                                        />
-                                        <div class="grid gap-1.5 leading-none">
-                                            <Label
-                                                :for="'admin-' + permission.value.replace(':', '-')"
-                                                class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                {{ permission.name }}
-                                            </Label>
-                                            <p class="text-xs text-muted-foreground font-mono">
-                                                {{ permission.value }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Member Column -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-medium">Member</h3>
-                        <div class="space-y-6 bg-muted/30 p-4 rounded-md border border-border">
-                            <div v-for="(permissions, category) in categorizedPermissions" :key="'member-cat-' + category" class="space-y-3">
-                                <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{{ category }}</h4>
-                                <div class="grid gap-3 pl-2 border-l-2 border-muted">
-                                    <div v-for="permission in permissions" :key="'member-' + permission.value" class="flex items-start space-x-3">
-                                        <Checkbox 
-                                            :id="'member-' + permission.value.replace(':', '-')" 
-                                            :model-value="permissionsForm.role_permissions.member.includes(permission.value)"
-                                            :disabled="!team.is_owner"
-                                            @update:model-value="(checked: boolean) => togglePermission('member', permission.value, checked)"
-                                        />
-                                        <div class="grid gap-1.5 leading-none">
-                                            <Label
-                                                :for="'member-' + permission.value.replace(':', '-')"
-                                                class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                {{ permission.name }}
-                                            </Label>
-                                            <p class="text-xs text-muted-foreground font-mono">
-                                                {{ permission.value }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-if="team.is_owner" class="flex items-center gap-4">
-                    <Button type="submit" :disabled="permissionsForm.processing">Save Permissions</Button>
-                </div>
-            </form>
         </div>
 
         <!-- Danger Zone -->

@@ -9,7 +9,7 @@ import {
     Sparkles,
     Terminal,
     Trash2,
-    CheckCircle2,
+
     AlertCircle,
     X,
     Loader2,
@@ -139,7 +139,7 @@ const currentUser = computed(() => page.props.auth.user);
 
 const method = ref('GET');
 const activeRequestTab = ref('params');
-const activeTestResultTab = ref('results');
+
 const requestHistoryItems = ref<any[]>([]);
 const isFetchingHistory = ref(false);
 const historyFetchedForRequestId = ref<string | null>(null);
@@ -338,10 +338,7 @@ const syncPathVariablesFromUrl = (newVal: string) => {
     });
 };
 
-const preRequestScript = ref('');
-const testScript = ref('');
-const activeScriptTab = ref<'pre' | 'post'>('pre');
-const testResults = ref<Array<{ passed: boolean; message: string }>>([]);
+
 
 const queryParams = ref<
     Array<{ key: string; value: string; enabled: boolean; description: string }>
@@ -605,8 +602,6 @@ const getCurrentPayloadStr = () => {
         pathVariables: pathVariables.value,
         headersList: cleanHeaders,
         authConfig: authConfig.value,
-        preRequestScript: preRequestScript.value,
-        testScript: testScript.value,
     });
 };
 
@@ -619,8 +614,6 @@ watch(
         pathVariables,
         headersList,
         authConfig,
-        preRequestScript,
-        testScript
     ],
     () => {
         if (!isSwitchingRequest && currentRequestId.value) {
@@ -864,9 +857,6 @@ watch(
             responseBody.value = '';
             responseHeaders.value = {};
             responseMeta.value = {};
-            testResults.value = [];
-            preRequestScript.value = newReq.pre_request_script || '';
-            testScript.value = newReq.test_script || '';
             // (Body variable parsing logic would go here if needed in the future)
 
             cleanPayloadStr.value = getCurrentPayloadStr();
@@ -899,13 +889,6 @@ headersList.value = draft.headersList;
 authConfig.value = draft.authConfig;
 }
 
-                    if (draft.preRequestScript !== undefined) {
-preRequestScript.value = draft.preRequestScript;
-}
-
-                    if (draft.testScript !== undefined) {
-testScript.value = draft.testScript;
-}
                 } catch (e) {
                     console.error('Failed to parse draft', e);
                 }
@@ -1096,8 +1079,6 @@ return;
             path_variables: pathVariables.value,
             headers: cleanHeaders,
             auth: authConfig.value,
-            pre_request_script: preRequestScript.value,
-            test_script: testScript.value,
         });
         cleanPayloadStr.value = getCurrentPayloadStr();
     } finally {
@@ -1125,51 +1106,6 @@ return;
         const cleanParams = queryParams.value.filter((p) => p.key || p.value);
         const cleanHeaders = headersList.value.filter((h) => h.key || h.value);
 
-        testResults.value = [];
-
-        // ── Pre-request Script Execution ──
-        if (preRequestScript.value) {
-            try {
-                const jm = {
-                    request: {
-                        url: targetUrl,
-                        method: method.value,
-                        headers: {} as Record<string, string>,
-                    },
-                    variables: {
-                        set: (k: string, v: any) => console.log(`jm.variables.set(${k}, ${v})`), // Mock for now
-                        get: (k: string) => null
-                    }
-                };
-                
-                cleanHeaders.forEach(h => {
-                    if (h.enabled) {
-jm.request.headers[h.key] = h.value;
-}
-                });
-
-                const fn = new Function('jm', preRequestScript.value);
-                fn(jm);
-
-                // Re-apply mutated headers
-                Object.entries(jm.request.headers).forEach(([k, v]) => {
-                    const existing = cleanHeaders.find(h => h.key === k);
-
-                    if (existing) {
-                        existing.value = v as string;
-                    } else {
-                        cleanHeaders.push({ key: k, value: v as string, enabled: true, description: '' });
-                    }
-                });
-                
-                if (jm.request.url) {
-                    targetUrl = jm.request.url;
-                }
-            } catch (e) {
-                console.error('Pre-request script error:', e);
-                testResults.value.push({ passed: false, message: `Pre-request error: ${e}` });
-            }
-        }
 
         let data;
 
@@ -1211,54 +1147,6 @@ jm.request.headers[h.key] = h.value;
                     : JSON.stringify(data.body, null, 2);
         }
 
-        // ── Post-response Test Script Execution ──
-        if (testScript.value) {
-            try {
-                const jm = {
-                    response: {
-                        status: data.status,
-                        statusText: data.status_text,
-                        time: data.time_ms,
-                        size: data.size_bytes,
-                        headers: data.headers || {},
-                        body: data.is_json && typeof data.body === 'string' ? JSON.parse(data.body) : data.body
-                    },
-                    test: (name: string, assertionFn: () => boolean) => {
-                        try {
-                            const result = assertionFn();
-                            // If it returns explicitly false, it fails. Otherwise it passes (for expect syntax which returns undefined).
-                            const passed = result !== false;
-                            testResults.value.push({ passed, message: name });
-                        } catch (e) {
-                            testResults.value.push({ passed: false, message: `${name} (Error: ${e})` });
-                        }
-                    },
-                    expect: (val: any) => ({
-                        toBe: (expected: any) => {
- if (val !== expected) {
-throw new Error(`Expected ${expected} but got ${val}`)
-} 
-},
-                        toBeDefined: () => {
- if (val === undefined) {
-throw new Error(`Expected value to be defined`)
-} 
-},
-                        toBeLessThan: (expected: number) => {
- if (val >= expected) {
-throw new Error(`Expected ${val} to be less than ${expected}`)
-} 
-}
-                    })
-                };
-
-                const fn = new Function('jm', testScript.value);
-                fn(jm);
-            } catch (e) {
-                console.error('Test script error:', e);
-                testResults.value.push({ passed: false, message: `Test execution error: ${e}` });
-            }
-        }
     } catch (error) {
         console.error('Execution failed', error);
         responseBody.value = String(error);
@@ -1410,11 +1298,7 @@ throw new Error(`Expected ${val} to be less than ${expected}`)
                                         class="py-1 text-xs"
                                         >Auth</TabsTrigger
                                     >
-                                    <TabsTrigger
-                                        value="scripts"
-                                        class="py-1 text-xs"
-                                        >Scripts</TabsTrigger
-                                    >
+
                                 </TabsList>
 
                                 <div
@@ -2370,115 +2254,7 @@ throw new Error(`Expected ${val} to be less than ${expected}`)
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent
-                                        value="scripts"
-                                        class="m-0 h-full overflow-hidden bg-background/50 p-2 flex flex-col"
-                                    >
-                                        <div class="flex items-center justify-between border-b pb-2 mb-4 shrink-0">
-                                            <div class="flex space-x-1 bg-muted/30 p-1 rounded-md">
-                                                <button 
-                                                    @click="activeScriptTab = 'pre'" 
-                                                    class="px-3 py-1 text-xs rounded-sm transition-colors"
-                                                    :class="activeScriptTab === 'pre' ? 'bg-background shadow-sm font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'"
-                                                >
-                                                    Pre-request Script
-                                                </button>
-                                                <button 
-                                                    @click="activeScriptTab = 'post'" 
-                                                    class="px-3 py-1 text-xs rounded-sm transition-colors"
-                                                    :class="activeScriptTab === 'post' ? 'bg-background shadow-sm font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'"
-                                                >
-                                                    Post-response Tests
-                                                </button>
-                                            </div>
-                                            <Dialog>
-                                                <DialogTrigger as-child>
-                                                    <Button variant="outline" size="sm" class="h-7 text-xs flex items-center gap-1.5">
-                                                        <BookOpen class="h-3.5 w-3.5" />
-                                                        Scripting Guide
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent class="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                                                    <DialogHeader>
-                                                        <DialogTitle>Scripting Guide</DialogTitle>
-                                                        <DialogDescription>
-                                                            Jackman provides a JavaScript sandbox to mutate requests and write test assertions.
-                                                        </DialogDescription>
-                                                    </DialogHeader>
-                                                    <div class="space-y-4 py-4 text-sm">
-                                                        <div class="space-y-2">
-                                                            <h4 class="font-semibold text-foreground">The <code>jm</code> Object</h4>
-                                                            <p class="text-muted-foreground">All scripts have access to the <code>jm</code> object which provides the execution context.</p>
-                                                        </div>
-                                                        <div class="space-y-2">
-                                                            <h4 class="font-semibold text-foreground">Pre-request Scripts</h4>
-                                                            <p class="text-muted-foreground">Modify the request before it is sent. You can update the URL or add/modify headers.</p>
-                                                            <div class="rounded-md bg-muted p-3">
-                                                                <pre class="text-[11px] font-mono leading-relaxed text-muted-foreground">
-// Set a custom header
-jm.request.headers['X-Custom-Auth'] = 'Bearer token123';
 
-// Modify the URL
-jm.request.url = 'https://api.example.com/v2/data';</pre>
-                                                            </div>
-                                                        </div>
-                                                        <div class="space-y-2">
-                                                            <h4 class="font-semibold text-foreground">Post-response Tests</h4>
-                                                            <p class="text-muted-foreground">Write assertions to test the response payload, status code, and headers.</p>
-                                                            <div class="rounded-md bg-muted p-3">
-                                                                <pre class="text-[11px] font-mono leading-relaxed text-muted-foreground">
-// Check status code
-jm.test("Status code is 200", () => {
-    return jm.response.status === 200;
-});
-
-// Check JSON body
-jm.test("Has valid ID", () => {
-    const data = jm.response.body;
-    return typeof data.id === 'string';
-});
-
-// Using expect style syntax
-jm.test("Status is successful", () => {
-    jm.expect(jm.response.status).toBe(200);
-});</pre>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
-                                        </div>
-
-                                        <div class="flex-1 border rounded-md overflow-hidden bg-background relative">
-                                            <div v-show="activeScriptTab === 'pre'" class="absolute inset-0 flex flex-col">
-                                                <VueMonacoEditor
-                                                    v-model:value="preRequestScript"
-                                                    :theme="monacoTheme"
-                                                    language="javascript"
-                                                    :options="{
-                                                        minimap: { enabled: false },
-                                                        automaticLayout: true,
-                                                        tabSize: 2,
-                                                        scrollBeyondLastLine: false,
-                                                    }"
-                                                />
-                                            </div>
-                                            
-                                            <div v-show="activeScriptTab === 'post'" class="absolute inset-0 flex flex-col">
-                                                <VueMonacoEditor
-                                                    v-model:value="testScript"
-                                                    :theme="monacoTheme"
-                                                    language="javascript"
-                                                    :options="{
-                                                        minimap: { enabled: false },
-                                                        automaticLayout: true,
-                                                        tabSize: 2,
-                                                        scrollBeyondLastLine: false,
-                                                    }"
-                                                />
-                                            </div>
-                                        </div>
-                                    </TabsContent>
                                 </div>
                             </Tabs>
                         </div>
@@ -2611,17 +2387,7 @@ jm.test("Status is successful", () => {
                                         class="py-1 text-xs"
                                         >Headers</TabsTrigger
                                     >
-                                    <TabsTrigger
-                                        value="testResults"
-                                        class="py-1 text-xs relative"
-                                    >
-                                        Test Results
-                                        <span v-if="testResults.length > 0" class="ml-1.5 inline-flex h-4 items-center justify-center rounded-full px-1.5 text-[10px] font-medium"
-                                              :class="testResults.every(r => r.passed) ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'"
-                                        >
-                                            {{ testResults.filter(r => r.passed).length }} / {{ testResults.length }}
-                                        </span>
-                                    </TabsTrigger>
+
                                 </TabsList>
 
                                 <div
@@ -2704,54 +2470,7 @@ jm.test("Status is successful", () => {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent
-                                        value="testResults"
-                                        class="m-0 h-full overflow-y-auto bg-background/50 p-2"
-                                    >
-                                        <div
-                                            v-if="testResults.length === 0"
-                                            class="flex h-full flex-col items-center justify-center space-y-2 py-8 text-xs text-muted-foreground"
-                                        >
-                                            <span class="font-medium"
-                                                >No test results
-                                                available</span
-                                            >
-                                            <span class="text-[10px] opacity-70"
-                                                >Execute a request with a test script to see the results.</span
-                                            >
-                                        </div>
-                                        <div v-else class="space-y-2">
-                                            <div
-                                                class="flex items-center gap-2 pb-2 border-b"
-                                            >
-                                                <div class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                    Results Overview
-                                                </div>
-                                                <div class="ml-auto text-xs font-semibold" :class="testResults.every(r => r.passed) ? 'text-emerald-500' : 'text-rose-500'">
-                                                    {{ testResults.filter(r => r.passed).length }} / {{ testResults.length }} Passed
-                                                </div>
-                                            </div>
 
-                                            <div
-                                                class="space-y-2"
-                                            >
-                                                <div
-                                                    v-for="(result, idx) in testResults"
-                                                    :key="idx"
-                                                    class="flex items-center gap-3 rounded border px-3 py-2 text-xs transition-colors"
-                                                    :class="result.passed ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'"
-                                                >
-                                                    <div class="shrink-0 flex items-center justify-center">
-                                                        <CheckCircle2 v-if="result.passed" class="h-4 w-4 text-emerald-500" />
-                                                        <XCircle v-else class="h-4 w-4 text-rose-500" />
-                                                    </div>
-                                                    <div class="flex-1 font-mono text-[11px] leading-tight" :class="result.passed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'">
-                                                        {{ result.message }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </TabsContent>
                                 </div>
                             </Tabs>
                         </div>

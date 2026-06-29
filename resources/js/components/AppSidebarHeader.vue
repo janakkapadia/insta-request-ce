@@ -4,7 +4,7 @@ import type { BreadcrumbItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { SlidersHorizontal, ChevronDown, Check, X, Pencil } from 'lucide-vue-next';
 import { ScrollAreaRoot, ScrollAreaViewport } from 'reka-ui';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuSeparator,
+    ContextMenuShortcut,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import {
@@ -52,9 +53,11 @@ const confirmDialog = ref({
     reqIdToClose: null as string | null,
 });
 
-const closeTab = (e: Event, reqId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+const closeTab = (e: Event | null, reqId: string) => {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
 
     if (store.getIsRequestDirty(reqId)) {
         confirmDialog.value = {
@@ -68,6 +71,20 @@ const closeTab = (e: Event, reqId: string) => {
     store.closeRequest(reqId);
 };
 
+const handleKeyDown = (e: KeyboardEvent) => {
+    const isW = e.code === 'KeyW' || e.key.toLowerCase() === 'w';
+    if (isW && (e.metaKey || e.ctrlKey || e.altKey)) {
+        if (confirmDialog.value.isOpen) {
+            e.preventDefault();
+            return;
+        }
+        if (store.selectedRequest?.id) {
+            e.preventDefault();
+            closeTab(null, store.selectedRequest.id);
+        }
+    }
+};
+
 const confirmCloseTab = () => {
     if (confirmDialog.value.reqIdToClose) {
         store.closeRequest(confirmDialog.value.reqIdToClose);
@@ -75,6 +92,14 @@ const confirmCloseTab = () => {
         confirmDialog.value.reqIdToClose = null;
     }
 };
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown);
+});
 
 const onTabDragStart = (e: DragEvent, index: number) => {
     if (e.dataTransfer) {
@@ -225,6 +250,7 @@ const copyUrl = async (req: any) => {
                                     <ContextMenuSeparator />
                                     <ContextMenuItem @click="closeTab($event, req.id)" class="cursor-pointer">
                                         Close
+                                        <ContextMenuShortcut>Alt+W / ⌘W</ContextMenuShortcut>
                                     </ContextMenuItem>
                                     <ContextMenuItem @click="store.closeOtherRequests(req.id)" class="cursor-pointer">
                                         Close Others

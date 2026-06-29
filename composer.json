@@ -2,11 +2,13 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "janakkapadia/insta-request-ce",
     "type": "project",
-    "description": "InstaRequest Community Edition - Open Source Web App",
+    "description": "InstaRequest Community Edition — A free, open-source API client for building, testing, and collaborating on HTTP requests.",
     "keywords": [
         "laravel",
         "insta-request",
-        "api"
+        "api-client",
+        "postman-alternative",
+        "http"
     ],
     "license": "MIT",
     "require": {

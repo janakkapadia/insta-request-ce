@@ -2,7 +2,6 @@
 import { router, usePage } from '@inertiajs/vue3';
 import { Check, ChevronsUpDown, Plus, Users } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import CreateTeamModal from '@/components/CreateTeamModal.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -154,17 +153,6 @@ onUnmounted(() => {
                     :class="checkIconClass"
                 />
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <CreateTeamModal>
-                <DropdownMenuItem
-                    data-test="team-switcher-new-team"
-                    :class="teamItemClass"
-                    @select.prevent
-                >
-                    <Plus :class="plusIconClass" />
-                    <span class="text-muted-foreground">New team</span>
-                </DropdownMenuItem>
-            </CreateTeamModal>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>

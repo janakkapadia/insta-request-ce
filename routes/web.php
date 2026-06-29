@@ -3,23 +3,20 @@
 use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::redirect('/', '/login')->name('home');
 
-// High-Value SEO Landing Pages
-Route::inertia('postman-alternative', 'PostmanAlternative')->name('postman-alternative');
-Route::inertia('api-monitoring', 'ApiMonitoring')->name('api-monitoring');
-Route::inertia('api-collaboration', 'ApiCollaboration')->name('api-collaboration');
+// Redirect front pages to login
+Route::redirect('postman-alternative', '/login')->name('postman-alternative');
+Route::redirect('api-monitoring', '/login')->name('api-monitoring');
+Route::redirect('api-collaboration', '/login')->name('api-collaboration');
 
 Route::get('email/verify/{id}/{hash}', [\App\Http\Controllers\Api\AuthController::class, 'verifyEmail'])
     ->middleware(['signed'])
     ->name('verification.verify');
 
-Route::inertia('request-builder', 'RequestBuilder')->name('request-builder');
-Route::inertia('realtime-api-workspace', 'RealtimeApiWorkspace')->name('realtime-api-workspace');
+Route::redirect('request-builder', '/login')->name('request-builder');
+Route::redirect('realtime-api-workspace', '/login')->name('realtime-api-workspace');
 
 // Legal Pages
 Route::inertia('terms-of-service', 'TermsOfService')->name('terms');

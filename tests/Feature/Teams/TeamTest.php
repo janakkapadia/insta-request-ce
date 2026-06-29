@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\TeamRole;
 use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
 use App\Models\User;
 
 test('the teams index page can be rendered', function () {
@@ -14,7 +14,7 @@ test('the teams index page can be rendered', function () {
     $response->assertOk();
 });
 
-test('teams can be created', function () {
+test('teams cannot be created', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -23,31 +23,7 @@ test('teams can be created', function () {
             'name' => 'Test Team',
         ]);
 
-    $response->assertRedirect();
-
-    $this->assertDatabaseHas('teams', [
-        'name' => 'Test Team',
-        'is_personal' => false,
-    ]);
-});
-
-test('team slug uses next available suffix', function () {
-    $user = User::factory()->create();
-
-    Team::factory()->create(['name' => 'Acme', 'slug' => 'acme']);
-    Team::factory()->create(['name' => 'Acme One', 'slug' => 'acme-1']);
-    Team::factory()->create(['name' => 'Acme Ten', 'slug' => 'acme-10']);
-
-    $this
-        ->actingAs($user)
-        ->post(route('teams.store'), [
-            'name' => 'Acme',
-        ]);
-
-    $this->assertDatabaseHas('teams', [
-        'name' => 'Acme',
-        'slug' => 'acme-11',
-    ]);
+    $response->assertForbidden();
 });
 
 test('the team edit page can be rendered', function () {
@@ -83,7 +59,7 @@ test('teams can be updated by owners', function () {
     ]);
 });
 
-test('teams cannot be updated by members', function () {
+test('teams can be updated by members', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $team = Team::factory()->create();
@@ -97,7 +73,7 @@ test('teams cannot be updated by members', function () {
             'name' => 'Updated Name',
         ]);
 
-    $response->assertForbidden();
+    $response->assertRedirect(route('teams.edit', $team->fresh()));
 });
 
 test('teams can be deleted by owners', function () {
@@ -255,7 +231,7 @@ test('personal teams cannot be deleted', function () {
     ]);
 });
 
-test('teams cannot be deleted by non owners', function () {
+test('teams cannot be deleted by members', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $team = Team::factory()->create();

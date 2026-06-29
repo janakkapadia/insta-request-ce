@@ -2,10 +2,11 @@
 
 namespace App\Concerns;
 
+use App\Actions\Teams\CreateTeam;
+use App\Domains\Teams\Models\Team;
+use App\Domains\Teams\Models\TeamUser as Membership;
 use App\Enums\TeamPermission;
 use App\Enums\TeamRole;
-use App\Domains\Teams\Models\TeamUser as Membership;
-use App\Domains\Teams\Models\Team;
 use App\Support\TeamPermissions;
 use App\Support\UserTeam;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -163,16 +164,14 @@ trait HasTeams
      */
     public function toTeamPermissions(Team $team): TeamPermissions
     {
-        $role = $this->teamRole($team);
-
         return new TeamPermissions(
-            canUpdateTeam: $role?->hasPermission(TeamPermission::UpdateTeam) ?? false,
-            canDeleteTeam: $role?->hasPermission(TeamPermission::DeleteTeam) ?? false,
-            canAddMember: $role?->hasPermission(TeamPermission::AddMember) ?? false,
-            canUpdateMember: $role?->hasPermission(TeamPermission::UpdateMember) ?? false,
-            canRemoveMember: $role?->hasPermission(TeamPermission::RemoveMember) ?? false,
-            canCreateInvitation: $role?->hasPermission(TeamPermission::CreateInvitation) ?? false,
-            canCancelInvitation: $role?->hasPermission(TeamPermission::CancelInvitation) ?? false,
+            canUpdateTeam: $this->hasTeamPermission($team, TeamPermission::UpdateTeam),
+            canDeleteTeam: $this->hasTeamPermission($team, TeamPermission::DeleteTeam),
+            canAddMember: $this->hasTeamPermission($team, TeamPermission::AddMember),
+            canUpdateMember: $this->hasTeamPermission($team, TeamPermission::UpdateMember),
+            canRemoveMember: $this->hasTeamPermission($team, TeamPermission::RemoveMember),
+            canCreateInvitation: $this->hasTeamPermission($team, TeamPermission::CreateInvitation),
+            canCancelInvitation: $this->hasTeamPermission($team, TeamPermission::CancelInvitation),
         );
     }
 
@@ -190,10 +189,26 @@ trait HasTeams
     public function hasTeamPermission(Team $team, TeamPermission $permission): bool
     {
         $role = $this->teamRole($team);
-        if (!$role) {
+
+        if (! $role) {
             return false;
         }
-        
+
         return in_array($permission, $team->getRolePermissions($role));
+    }
+
+    /**
+     * Ensure the user has a fallback team, creating a personal team if necessary.
+     */
+    public function ensureFallbackTeam(?Team $excluding = null): Team
+    {
+        $team = $this->fallbackTeam($excluding);
+        if ($team) {
+            return $team;
+        }
+
+        $name = explode(' ', $this->name, 2)[0]."'s Team";
+
+        return app(CreateTeam::class)->handle($this, $name, true);
     }
 }

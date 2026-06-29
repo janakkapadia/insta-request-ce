@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\TeamRole;
 use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
 use App\Models\User;
 
 test('team member roles can be updated by owners', function () {
@@ -23,7 +23,7 @@ test('team member roles can be updated by owners', function () {
     expect($team->members()->where('user_id', $member->id)->first()->pivot->role->value)->toEqual(TeamRole::Admin->value);
 });
 
-test('team member roles cannot be updated by non owners', function () {
+test('team member roles can be updated by non owners', function () {
     $owner = User::factory()->create();
     $admin = User::factory()->create();
     $member = User::factory()->create();
@@ -39,7 +39,7 @@ test('team member roles cannot be updated by non owners', function () {
             'role' => TeamRole::Admin->value,
         ]);
 
-    $response->assertForbidden();
+    $response->assertRedirect(route('teams.edit', $team));
 });
 
 test('team members can be removed by owners', function () {
@@ -59,7 +59,7 @@ test('team members can be removed by owners', function () {
     expect($member->fresh()->belongsToTeam($team))->toBeFalse();
 });
 
-test('team members cannot be removed by non owners', function () {
+test('team members can be removed by non owners', function () {
     $owner = User::factory()->create();
     $admin = User::factory()->create();
     $member = User::factory()->create();
@@ -73,7 +73,7 @@ test('team members cannot be removed by non owners', function () {
         ->actingAs($admin)
         ->delete(route('teams.members.destroy', [$team, $member]));
 
-    $response->assertForbidden();
+    $response->assertRedirect(route('teams.edit', $team));
 });
 
 test('team owner cannot be removed', function () {
@@ -126,4 +126,21 @@ test('removed member current team is set to personal team', function () {
         ->delete(route('teams.members.destroy', [$team, $member]));
 
     expect($member->fresh()->current_team_id)->toEqual($personalTeam->id);
+});
+
+test('team members cannot be removed by members', function () {
+    $owner = User::factory()->create();
+    $member1 = User::factory()->create();
+    $member2 = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member1, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($member2, ['role' => TeamRole::Member->value]);
+
+    $response = $this
+        ->actingAs($member1)
+        ->delete(route('teams.members.destroy', [$team, $member2]));
+
+    $response->assertForbidden();
 });

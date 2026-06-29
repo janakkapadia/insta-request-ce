@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Domains\Teams\Models\Invitation as TeamInvitation;
+use App\Domains\Teams\Models\Team;
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\AcceptTeamInvitationRequest;
 use App\Http\Requests\Teams\CreateTeamInvitationRequest;
-use App\Domains\Teams\Models\Team;
-use App\Domains\Teams\Models\Invitation as TeamInvitation;
+use App\Models\User;
 use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +65,20 @@ class TeamInvitationController extends Controller
 
         DB::transaction(function () use ($user, $invitation) {
             $team = $invitation->team;
+
+            $personalTeam = $user->personalTeam();
+            if ($personalTeam && $personalTeam->id !== $team->id) {
+                User::where('current_team_id', $personalTeam->id)
+                    ->where('id', '!=', $user->id)
+                    ->get()
+                    ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->ensureFallbackTeam($personalTeam)));
+
+                $personalTeam->invitations()->delete();
+                $personalTeam->memberships()->delete();
+                $personalTeam->delete();
+            }
+
+            $user->teamMemberships()->where('team_id', '!=', $team->id)->delete();
 
             $team->memberships()->firstOrCreate(
                 ['user_id' => $user->id],

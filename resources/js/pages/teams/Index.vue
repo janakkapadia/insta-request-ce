@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Eye, Pencil, Plus } from 'lucide-vue-next';
-import CreateTeamModal from '@/components/CreateTeamModal.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,12 +43,6 @@ defineOptions({
                 title="Teams"
                 description="Manage your teams and team memberships"
             />
-
-            <CreateTeamModal>
-                <Button data-test="teams-new-team-button">
-                    <Plus /> New team
-                </Button>
-            </CreateTeamModal>
         </div>
 
         <div class="space-y-3">

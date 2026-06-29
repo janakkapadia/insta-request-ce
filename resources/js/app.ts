@@ -33,13 +33,6 @@ createInertiaApp({
                 }
 
                 const marketingPages = [
-                    'Welcome',
-                    'PostmanAlternative',
-                    'ApiMonitoring',
-                    'ApiTesting',
-                    'ApiCollaboration',
-                    'RequestBuilder',
-                    'RealtimeApiWorkspace',
                     'Documentation/PublicViewer',
                     'PrivacyPolicy',
                     'TermsOfService'

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Teams\CreateTeam;
+use App\Domains\Teams\Models\Team;
+use App\Enums\TeamPermission;
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\DeleteTeamRequest;
 use App\Http\Requests\Teams\SaveTeamRequest;
-use App\Domains\Teams\Models\Team;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,11 +36,7 @@ class TeamController extends Controller
      */
     public function store(SaveTeamRequest $request, CreateTeam $createTeam): RedirectResponse
     {
-        $team = $createTeam->handle($request->user(), $request->validated('name'));
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team created.')]);
-
-        return to_route('teams.edit', ['team' => $team->slug]);
+        abort(403, 'Team creation is disabled in the Community Edition.');
     }
 
     /**
@@ -77,16 +74,6 @@ class TeamController extends Controller
                 ]),
             'permissions' => $user->toTeamPermissions($team),
             'availableRoles' => TeamRole::assignable(),
-            'role_permissions' => empty($team->role_permissions) ? [
-                'admin' => array_map(fn($p) => $p->value, \App\Enums\TeamRole::Admin->permissions()),
-                'member' => array_map(fn($p) => $p->value, \App\Enums\TeamRole::Member->permissions()),
-            ] : collect($team->role_permissions)->toArray(),
-            'availablePermissions' => array_map(function ($case) {
-                return [
-                    'value' => $case->value,
-                    'name' => $case->name,
-                ];
-            }, \App\Enums\TeamPermission::cases()),
         ]);
     }
 
@@ -129,13 +116,13 @@ class TeamController extends Controller
     {
         $user = $request->user();
         $fallbackTeam = $user->isCurrentTeam($team)
-            ? $user->fallbackTeam($team)
+            ? $user->ensureFallbackTeam($team)
             : null;
 
         DB::transaction(function () use ($user, $team) {
             User::where('current_team_id', $team->id)
                 ->where('id', '!=', $user->id)
-                ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->personalTeam()));
+                ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->ensureFallbackTeam($team)));
 
             $team->invitations()->delete();
             $team->memberships()->delete();

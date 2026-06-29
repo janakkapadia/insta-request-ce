@@ -36,6 +36,7 @@ InstaRequest comes with built-in shortcuts to speed up your workflow:
 | :--- | :--- | :--- |
 | **Command Palette** | `Cmd + K` | `Ctrl + K` |
 | **Open Request in New Tab** | `Cmd + Click` (or Middle Click) | `Ctrl + Click` (or Middle Click) |
+| **Close Current Tab** | `Cmd + W` or `Option + W` | `Ctrl + W` or `Alt + W` |
 
 ## 🚀 Deployment
 

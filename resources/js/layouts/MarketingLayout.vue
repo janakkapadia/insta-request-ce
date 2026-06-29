@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage, useForm } from '@inertiajs/vue3';
 import { login, register, dashboard } from '@/routes';
-import {
-    Sun, Moon, Menu, X, ArrowRight, Github,
-    Terminal, Activity, Users, Layers, ShieldCheck,
-    Loader2, CheckCircle2, Sparkles, AlertCircle
-} from 'lucide-vue-next';
+import { Sun, Moon, Menu, X } from 'lucide-vue-next';
 import { ref, onMounted, computed } from 'vue';
 
 const isMenuOpen = ref(false);
@@ -111,18 +107,6 @@ return '#';
                         <span class="text-[9px] font-mono border border-green-500/30 text-green-500 px-1.5 py-0.5 rounded uppercase tracking-widest bg-green-500/5">Beta</span>
                     </Link>
 
-                    <!-- Desktop Nav Links -->
-                    <nav class="hidden md:flex items-center gap-6">
-                        <Link href="/request-builder" class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">Request Builder</Link>
-
-                        <Link href="/api-collaboration" class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">Collaboration</Link>
-                        <Link href="/api-monitoring" class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">Monitoring</Link>
-                        <Link href="/realtime-api-workspace" class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">Workspace</Link>
-                        <Link href="/postman-alternative" class="text-sm font-semibold text-green-500 hover:text-green-600 transition-colors py-1.5 flex items-center gap-1">
-                            Postman Alternative
-                            <Sparkles class="h-3 w-3 animate-pulse" />
-                        </Link>
-                    </nav>
                 </div>
 
                 <!-- Right Side CTAs -->
@@ -162,17 +146,7 @@ return '#';
             <!-- Mobile Dropdown Menu -->
             <div v-if="isMenuOpen" class="md:hidden absolute top-16 left-0 w-full border-b border-[#19140015] dark:border-[#1f1f1e] bg-[#FDFDFC] dark:bg-[#0a0a0a] shadow-xl py-4 z-50">
                 <nav class="flex flex-col px-4 gap-3">
-                    <Link href="/request-builder" @click="isMenuOpen = false" class="text-sm font-medium py-2 border-b border-border/20 text-muted-foreground hover:text-foreground transition-colors">Request Builder</Link>
-
-                    <Link href="/api-collaboration" @click="isMenuOpen = false" class="text-sm font-medium py-2 border-b border-border/20 text-muted-foreground hover:text-foreground transition-colors">Collaboration</Link>
-                    <Link href="/api-monitoring" @click="isMenuOpen = false" class="text-sm font-medium py-2 border-b border-border/20 text-muted-foreground hover:text-foreground transition-colors">Monitoring</Link>
-                    <Link href="/realtime-api-workspace" @click="isMenuOpen = false" class="text-sm font-medium py-2 border-b border-border/20 text-muted-foreground hover:text-foreground transition-colors">Workspace</Link>
-                    <Link href="/postman-alternative" @click="isMenuOpen = false" class="text-sm font-semibold py-2 border-b border-border/20 text-green-500 hover:text-green-600 transition-colors flex items-center gap-1">
-                        Postman Alternative
-                        <Sparkles class="h-3 w-3 animate-pulse" />
-                    </Link>
-
-                    <div class="flex items-center gap-3 pt-3">
+                    <div class="flex items-center gap-3 pt-1">
                         <template v-if="user">
                             <Link :href="dashboardUrl" @click="isMenuOpen = false" class="flex-1 text-center text-xs font-semibold px-4 py-2 border border-[#19140020] dark:border-[#3E3E3A] rounded-md">
                                 Dashboard
@@ -221,25 +195,6 @@ return '#';
                             </span>
                         </div>
                     </div>
-
-                    <!-- Column 2: Product Features -->
-                    <div class="md:col-span-3 flex flex-col gap-3">
-                        <span class="text-xs font-semibold tracking-wider text-foreground uppercase">Product</span>
-                        <Link href="/request-builder" class="text-xs text-muted-foreground hover:text-foreground transition-colors">Request Builder</Link>
-
-                        <Link href="/api-collaboration" class="text-xs text-muted-foreground hover:text-foreground transition-colors">Realtime Sync</Link>
-                        <Link href="/api-monitoring" class="text-xs text-muted-foreground hover:text-foreground transition-colors">API Monitoring</Link>
-                        <Link href="/realtime-api-workspace" class="text-xs text-muted-foreground hover:text-foreground transition-colors">Team Workspaces</Link>
-                    </div>
-
-                    <!-- Column 3: Comparisons -->
-                    <div class="md:col-span-3 flex flex-col gap-3">
-                        <span class="text-xs font-semibold tracking-wider text-foreground uppercase">Comparisons</span>
-                        <Link href="/postman-alternative" class="text-xs text-muted-foreground hover:text-foreground transition-colors">Postman Alternative</Link>
-                        <Link href="/postman-alternative#compare" class="text-xs text-muted-foreground hover:text-foreground transition-colors">InstaRequest vs Postman</Link>
-                        <Link href="/postman-alternative#features" class="text-xs text-muted-foreground hover:text-foreground transition-colors">Core Engine</Link>
-                    </div>
-
 
                 </div>
 

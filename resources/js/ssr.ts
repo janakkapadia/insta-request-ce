@@ -27,14 +27,9 @@ createServer((page) =>
             return page.then((module) => {
                 if (module.default) {
                     const marketingPages = [
-                        'Welcome',
-                        'PostmanAlternative',
-                        'ApiTesting',
-                        'ApiMonitoring',
-                        'ApiCollaboration',
-                        'RequestBuilder',
-                        'RealtimeApiWorkspace',
-                        'Documentation/PublicViewer'
+                        'Documentation/PublicViewer',
+                        'PrivacyPolicy',
+                        'TermsOfService'
                     ];
 
                     if (marketingPages.includes(name)) {

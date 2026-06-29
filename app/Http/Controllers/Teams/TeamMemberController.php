@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Domains\Teams\Models\Team;
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\UpdateTeamMemberRequest;
-use App\Domains\Teams\Models\Team;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -46,7 +46,7 @@ class TeamMemberController extends Controller
             ->delete();
 
         if ($user->isCurrentTeam($team)) {
-            $user->switchTeam($user->personalTeam());
+            $user->switchTeam($user->ensureFallbackTeam($team));
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Member removed.')]);

@@ -108,23 +108,6 @@ class Team extends Model
      */
     public function getRolePermissions(TeamRole $role): array
     {
-        if ($role === TeamRole::Owner) {
-            // Owner always has all permissions
-            return \App\Enums\TeamPermission::cases();
-        }
-
-        $customPermissions = $this->role_permissions[$role->value] ?? null;
-
-        if ($customPermissions !== null && is_array($customPermissions)) {
-            // Map custom strings to Enum cases
-            return collect($customPermissions)
-                ->map(fn ($permStr) => \App\Enums\TeamPermission::tryFrom($permStr))
-                ->filter()
-                ->values()
-                ->toArray();
-        }
-
-        // Fallback to defaults
         return $role->permissions();
     }
 
