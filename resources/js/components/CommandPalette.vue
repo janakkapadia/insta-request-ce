@@ -223,7 +223,7 @@ import { useWorkspaceStore } from '@/stores/workspace';
                                     :class="[
                                         'flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors text-xs',
                                         activeIndex === item.absoluteIdx 
-                                            ? 'bg-primary/10 text-primary font-medium' 
+                                            ? 'bg-primary/10 text-primary' 
                                             : 'hover:bg-muted/50 text-foreground/80'
                                     ]"
                                 >
@@ -240,8 +240,10 @@ import { useWorkspaceStore } from '@/stores/workspace';
                                     </div>
                                     
                                     <span 
-                                        v-if="activeIndex === item.absoluteIdx" 
-                                        class="text-[10px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 animate-pulse"
+                                        :class="[
+                                            'text-[10px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 transition-opacity',
+                                            activeIndex === item.absoluteIdx ? 'opacity-100 animate-pulse' : 'opacity-0 invisible pointer-events-none'
+                                        ]"
                                     >
                                         Jump <Play class="w-2.5 h-2.5 fill-current" />
                                     </span>
