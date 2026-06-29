@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Collections\Models\CollectionFolder;
 use App\Domains\Requests\Models\Request as ApiRequest;
+use App\Enums\TeamRole;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -51,6 +52,7 @@ class CollectionsController extends Controller
 
         $collection = Collection::create([
             'team_id' => $team->id,
+            'user_id' => $request->user()?->id,
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
         ]);
@@ -97,6 +99,7 @@ class CollectionsController extends Controller
 
         $folder = CollectionFolder::create([
             'collection_id' => $collection->id,
+            'user_id' => $request->user()?->id,
             'parent_id' => $validated['parent_id'] ?? null,
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
@@ -125,6 +128,7 @@ class CollectionsController extends Controller
 
         $apiRequest = ApiRequest::create([
             'collection_id' => $collection->id,
+            'user_id' => $request->user()?->id,
             'folder_id' => $validated['folder_id'] ?? null,
             'name' => $validated['name'],
             'method' => $validated['method'],
@@ -270,6 +274,10 @@ class CollectionsController extends Controller
             abort(403);
         }
 
+        if ($request->user()->teamRole($team) === TeamRole::Member && $folder->user_id !== $request->user()->id) {
+            abort(403, 'You can only delete your own folders.');
+        }
+
         // Delete all requests in this folder
         $folder->requests()->delete();
 
@@ -290,6 +298,10 @@ class CollectionsController extends Controller
 
         if ($collection->team_id !== $team->id) {
             abort(403);
+        }
+
+        if ($request->user()->teamRole($team) === TeamRole::Member && $collection->user_id !== $request->user()->id) {
+            abort(403, 'You can only delete your own collections.');
         }
 
         // Delete all requests in this collection
@@ -317,6 +329,10 @@ class CollectionsController extends Controller
             abort(403);
         }
 
+        if ($request->user()->teamRole($team) === TeamRole::Member && $apiRequest->user_id !== $request->user()->id) {
+            abort(403, 'You can only delete your own requests.');
+        }
+
         $apiRequest->delete();
 
         if ($request->wantsJson()) {
@@ -336,6 +352,21 @@ class CollectionsController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'required|uuid|exists:requests,id',
         ]);
+
+        if ($request->user()->teamRole($team) === TeamRole::Member) {
+            $unownedCount = ApiRequest::whereIn('id', $validated['ids'])
+                ->whereHas('collection', function ($query) use ($team) {
+                    $query->where('team_id', $team->id);
+                })
+                ->where(function ($q) use ($request) {
+                    $q->whereNull('user_id')->orWhere('user_id', '!=', $request->user()->id);
+                })
+                ->count();
+
+            if ($unownedCount > 0) {
+                abort(403, 'You can only delete your own requests.');
+            }
+        }
 
         $count = ApiRequest::whereIn('id', $validated['ids'])
             ->whereHas('collection', function ($query) use ($team) {
@@ -361,6 +392,7 @@ class CollectionsController extends Controller
         }
 
         $clonedRequest = $apiRequest->replicate();
+        $clonedRequest->user_id = $request->user()?->id;
         $clonedRequest->name = $apiRequest->name . ' (Copy)';
         $clonedRequest->save();
 

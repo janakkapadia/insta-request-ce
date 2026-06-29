@@ -297,3 +297,71 @@ test('authenticated team member can update request headers, query params and aut
         'bearerToken' => 'my-secure-token'
     ]);
 });
+
+test('member can delete their own collection, folder, and request but not another member\'s', function () {
+    $owner = User::factory()->create();
+    $member1 = User::factory()->create();
+    $member2 = User::factory()->create();
+
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member1, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($member2, ['role' => TeamRole::Member->value]);
+
+    $member1->switchTeam($team);
+    $member2->switchTeam($team);
+
+    $collection1 = Collection::create([
+        'team_id' => $team->id,
+        'user_id' => $member1->id,
+        'name' => 'Member 1 Collection',
+    ]);
+
+    $folder1 = CollectionFolder::create([
+        'collection_id' => $collection1->id,
+        'user_id' => $member1->id,
+        'name' => 'Member 1 Folder',
+    ]);
+
+    $request1 = ApiRequest::create([
+        'collection_id' => $collection1->id,
+        'folder_id' => $folder1->id,
+        'user_id' => $member1->id,
+        'name' => 'Member 1 Request',
+        'method' => 'GET',
+        'url' => 'https://example.com',
+    ]);
+
+    // Member 2 cannot delete member 1's request
+    $this->actingAs($member2)
+        ->delete(route('requests.destroy', $request1->id))
+        ->assertStatus(403);
+
+    // Member 2 cannot delete member 1's folder
+    $this->actingAs($member2)
+        ->delete(route('folders.destroy', $folder1->id))
+        ->assertStatus(403);
+
+    // Member 2 cannot delete member 1's collection
+    $this->actingAs($member2)
+        ->delete(route('collections.destroy', $collection1->id))
+        ->assertStatus(403);
+
+    // Member 1 CAN delete their own request
+    $this->actingAs($member1)
+        ->delete(route('requests.destroy', $request1->id))
+        ->assertRedirect();
+    expect(ApiRequest::find($request1->id))->toBeNull();
+
+    // Member 1 CAN delete their own folder
+    $this->actingAs($member1)
+        ->delete(route('folders.destroy', $folder1->id))
+        ->assertRedirect();
+    expect(CollectionFolder::find($folder1->id))->toBeNull();
+
+    // Member 1 CAN delete their own collection
+    $this->actingAs($member1)
+        ->delete(route('collections.destroy', $collection1->id))
+        ->assertRedirect();
+    expect(Collection::find($collection1->id))->toBeNull();
+});

@@ -12,12 +12,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Models\User;
+
 class CollectionFolder extends Model
 {
     use HasFactory, HasUuids, SoftDeletes, Prunable;
 
     protected $fillable = [
         'collection_id',
+        'user_id',
         'parent_id',
         'name',
         'description',
@@ -26,6 +29,11 @@ class CollectionFolder extends Model
     public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function parent(): BelongsTo

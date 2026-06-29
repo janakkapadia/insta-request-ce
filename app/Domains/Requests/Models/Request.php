@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
+use App\Models\User;
 
 class Request extends Model
 {
@@ -22,6 +23,7 @@ class Request extends Model
     protected $fillable = [
         'collection_id',
         'folder_id',
+        'user_id',
         'name',
         'description',
         'method',
@@ -82,6 +84,11 @@ class Request extends Model
     public function folder(): BelongsTo
     {
         return $this->belongsTo(CollectionFolder::class, 'folder_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function prunable(): Builder

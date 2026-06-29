@@ -31,6 +31,10 @@ enum TeamRole: string
                 TeamPermission::CreateInvitation,
                 TeamPermission::ExecuteRequest,
                 TeamPermission::ManageVariables,
+                TeamPermission::DeleteCollection,
+                TeamPermission::DeleteFolder,
+                TeamPermission::DeleteRequest,
+                TeamPermission::DeleteRequestBatch,
             ],
         };
     }
