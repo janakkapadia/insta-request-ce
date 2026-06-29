@@ -7,7 +7,6 @@
 /public/storage
 /storage/*.key
 /storage/pail
-/storage/logs
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
@@ -33,3 +32,4 @@ yarn-error.log
 /bootstrap/cache/
 /storage/app/
 /storage/framework/
+storage/logs/laravel.log
