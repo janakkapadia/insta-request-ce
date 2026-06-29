@@ -14,13 +14,13 @@ InstaRequest Community Edition offers everything you need to build, test, and do
 ## 📸 Preview
 
 ### Request Builder & Collections
-![Request Builder](./public/screenshots/request-builder.png)
+![Request Builder](./public/screenshots/request-builder.png?v=3)
 
 ### Dashboard Overview
-![Dashboard](./public/screenshots/dashboard.png)
+![Dashboard](./public/screenshots/dashboard.png?v=3)
 
 ### Command Palette & Quick Navigation
-![Command Palette](./public/screenshots/command-palette.png)
+![Command Palette](./public/screenshots/command-palette.png?v=3)
 
 ## ✨ Features
 
