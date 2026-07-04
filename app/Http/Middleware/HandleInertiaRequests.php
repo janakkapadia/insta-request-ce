@@ -70,7 +70,7 @@ class HandleInertiaRequests extends Middleware
         }
 
         $team = $user->currentTeam;
-        $collections = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)->get();
+        $collections = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)->with('folders')->get();
 
         if ($collections->isEmpty()) {
             $defaultCollection = \App\Domains\Collections\Models\Collection::create([
@@ -119,7 +119,7 @@ class HandleInertiaRequests extends Middleware
                 'auth' => [],
             ]);
 
-            $collections = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)->get();
+            $collections = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)->with('folders')->get();
         }
 
         // Determine active collection ID
@@ -151,7 +151,6 @@ class HandleInertiaRequests extends Middleware
                 $col->has_loaded_details = true;
             } else {
                 $col->setRelation('requests', collect([]));
-                $col->setRelation('folders', collect([]));
                 $col->has_loaded_details = false;
             }
         }

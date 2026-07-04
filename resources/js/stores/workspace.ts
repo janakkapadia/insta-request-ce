@@ -320,11 +320,13 @@ return false;
                 selectedRequest.value = newActive;
 
                 if (newActive) {
-                    router.visit(`/collections/${newActive.collection_id}/requests/${newActive.id}`, {
-                        preserveState: true,
-                        preserveScroll: true,
-                        only: ['activeCollectionId', 'activeRequestId']
-                    });
+                    if (!newActive.id.startsWith('new-')) {
+                        router.visit(`/collections/${newActive.collection_id}/requests/${newActive.id}`, {
+                            preserveState: true,
+                            preserveScroll: true,
+                            only: ['activeCollectionId', 'activeRequestId']
+                        });
+                    }
                 } else if (selectedCollection.value) {
                     router.visit(`/collections/${selectedCollection.value.id}`, {
                         preserveState: true,
@@ -944,11 +946,13 @@ return;
         selectedRequest.value = newActive;
 
         if (newActive) {
-            router.visit(`/collections/${newActive.collection_id}/requests/${newActive.id}`, {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['activeCollectionId', 'activeRequestId']
-            });
+            if (!newActive.id.startsWith('new-')) {
+                router.visit(`/collections/${newActive.collection_id}/requests/${newActive.id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    only: ['activeCollectionId', 'activeRequestId']
+                });
+            }
         } else if (selectedCollection.value) {
             router.visit(`/collections/${selectedCollection.value.id}`, {
                 preserveState: true,
