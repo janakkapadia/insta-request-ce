@@ -85,6 +85,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const draggedFolderId = ref<string | null>(null);
     const openRequests = ref<RequestItem[]>([]);
     const showNewCollectionModal = ref(false);
+    const showSaveRequestModal = ref(false);
+    const pendingSaveRequestData = ref<any>(null);
     
     const activeNewFolder = ref<string | null>(null);
     const activeNewRequest = ref<string | null>(null);
@@ -340,12 +342,18 @@ return false;
         }
     };
 
-    const saveRequest = async (data: Partial<RequestItem>) => {
+    const saveRequest = async (data: Partial<RequestItem>): Promise<boolean> => {
         if (!selectedRequest.value) {
-return;
-}
+            return false;
+        }
 
         try {
+            if (selectedRequest.value.id.startsWith('new-')) {
+                showSaveRequestModal.value = true;
+                pendingSaveRequestData.value = data;
+                return true;
+            }
+
             const response = await apiFetch(`/requests/${selectedRequest.value.id}`, { method: 'PATCH', body: JSON.stringify(data) });
             
             clearRequestDraft(selectedRequest.value.id);
@@ -354,8 +362,10 @@ return;
             const updatedReq = response.data.request || response.data;
             updateRequestInTree(updatedReq);
             selectedRequest.value = { ...selectedRequest.value, ...updatedReq };
+            return false;
         } catch (e) {
             console.error('Failed to save request', e);
+            return false;
         }
     };
 
@@ -457,26 +467,73 @@ return;
     };
 
     const createRequest = async (collectionId: string, name: string, folderId: string | null = null, method = 'GET') => {
-        try {
-            const response = await apiFetch(`/collections/${collectionId}/requests`, { method: 'POST', body: JSON.stringify({
-                name,
-                folder_id: folderId,
-                method,
-                url: ''
-            }) });
-            await refreshCollections();
+        const tempId = `new-${Date.now()}`;
+        const req: RequestItem = {
+            id: tempId,
+            collection_id: collectionId,
+            folder_id: folderId,
+            name,
+            method,
+            url: '',
+            headers: [],
+            query_params: [],
+            path_variables: [],
+            body: null,
+            pre_request_script: '',
+            test_script: '',
+            auth: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        };
 
-            if (response.data && response.data.id) {
-                const req = response.data;
-                selectRequest(req);
-                router.visit(`/collections/${req.collection_id}/requests/${req.id}`, {
+        setRequestDraft(tempId, JSON.stringify(req), true);
+
+        const forceNewTab = openRequests.value.length > 0;
+        selectRequest(req, forceNewTab);
+    };
+
+    const confirmSaveNewRequest = async (collectionId: string, folderId: string | null) => {
+        if (!selectedRequest.value || !selectedRequest.value.id.startsWith('new-')) return;
+
+        const draftId = selectedRequest.value.id;
+        const data = pendingSaveRequestData.value || {};
+
+        try {
+            const response = await apiFetch(`/collections/${collectionId}/requests`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: selectedRequest.value.name,
+                    folder_id: folderId,
+                    method: selectedRequest.value.method,
+                    ...data,
+                })
+            });
+
+            await refreshCollections();
+            clearRequestDraft(draftId);
+
+            // Update the tab from new-xxx to the actual ID
+            const idx = openRequests.value.findIndex((r) => r.id === draftId);
+            if (idx !== -1) {
+                openRequests.value[idx] = response.data.request || response.data;
+            }
+
+            // Sync the active selection since we replaced the item in the array
+            selectedRequest.value = response.data.request || response.data;
+            
+            showSaveRequestModal.value = false;
+            pendingSaveRequestData.value = null;
+
+            router.visit(
+                `/collections/${selectedRequest.value.collection_id}/requests/${selectedRequest.value.id}`,
+                {
                     preserveState: true,
                     preserveScroll: true,
-                    only: ['activeCollectionId', 'activeRequestId']
-                });
-            }
-        } catch (e) {
-            console.error('Failed to create request', e);
+                    only: ['activeCollectionId', 'activeRequestId'],
+                },
+            );
+        } catch (error) {
+            console.error('Failed to save new request:', error);
         }
     };
 
@@ -980,6 +1037,8 @@ return;
         draggedFolderId,
         openRequests,
         showNewCollectionModal,
+        showSaveRequestModal,
+        pendingSaveRequestData,
         requestDrafts,
         setRequestDraft,
         getRequestDraft,
@@ -993,6 +1052,7 @@ return;
         selectRequest,
         closeRequest,
         saveRequest,
+        confirmSaveNewRequest,
         createCollection,
         updateCollection,
         fetchCollectionDetails,

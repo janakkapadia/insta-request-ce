@@ -2,9 +2,9 @@
 import { usePage } from '@inertiajs/vue3';
 import type { BreadcrumbItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { SlidersHorizontal, ChevronDown, Check, X, Pencil } from 'lucide-vue-next';
+import { SlidersHorizontal, ChevronDown, Check, X, Pencil, Plus } from 'lucide-vue-next';
 import { ScrollAreaRoot, ScrollAreaViewport } from 'reka-ui';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +30,12 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ScrollBar } from '@/components/ui/scroll-area';
 import environments from '@/routes/environments';
 
@@ -53,6 +59,9 @@ const confirmDialog = ref({
     reqIdToClose: null as string | null,
 });
 
+const isMac = typeof navigator !== 'undefined' ? navigator.userAgent.includes('Mac') : false;
+const isDesktop = typeof window !== 'undefined' && !!(window as any).__TAURI__;
+
 const closeTab = (e: Event | null, reqId: string) => {
     if (e) {
         e.preventDefault();
@@ -73,6 +82,19 @@ const closeTab = (e: Event | null, reqId: string) => {
 
 const handleKeyDown = (e: KeyboardEvent) => {
     const isW = e.code === 'KeyW' || e.key.toLowerCase() === 'w';
+    const isT = e.code === 'KeyT' || e.key.toLowerCase() === 't';
+    
+    // Command + T for Mac Desktop, Option + T for Mac Web, Alt + T for Windows
+    const isNewRequestShortcut = isMac && isDesktop 
+        ? (e.metaKey && isT)
+        : (e.altKey && isT);
+
+    if (isNewRequestShortcut) {
+        e.preventDefault();
+        handleNewRequest();
+        return;
+    }
+
     if (isW && (e.metaKey || e.ctrlKey || e.altKey)) {
         if (confirmDialog.value.isOpen) {
             e.preventDefault();
@@ -91,6 +113,48 @@ const confirmCloseTab = () => {
         confirmDialog.value.isOpen = false;
         confirmDialog.value.reqIdToClose = null;
     }
+};
+
+const handleNewRequest = async () => {
+    if (store.collections.length === 0) {
+        store.showNewCollectionModal = true;
+    } else {
+        await store.createRequest('', 'New Request');
+    }
+};
+
+const handleTabClick = (e: MouseEvent, req: any) => {
+    if (editingTabId.value === req.id) return;
+
+    if (req.id.startsWith('new-')) {
+        e.preventDefault();
+    }
+    store.selectRequest(req, false);
+};
+
+const editingTabId = ref<string | null>(null);
+const editingTabName = ref('');
+
+const startRenameTab = async (req: any, e?: Event) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    editingTabName.value = req.name;
+    editingTabId.value = req.id;
+    
+    await nextTick();
+    const input = document.getElementById(`tab-rename-input-${req.id}`) as HTMLInputElement;
+    if (input) {
+        input.focus();
+        input.select();
+    }
+};
+
+const commitRenameTab = async (req: any) => {
+    const trimmed = editingTabName.value.trim();
+    if (trimmed && trimmed !== req.name) {
+        await store.renameRequest(req.id, trimmed);
+    }
+    editingTabId.value = null;
 };
 
 onMounted(() => {
@@ -208,12 +272,14 @@ const copyUrl = async (req: any) => {
                         <div class="flex items-end space-x-1 w-max h-full">
                             <ContextMenu v-for="(req, index) in store.openRequests" :key="req.id">
                                 <ContextMenuTrigger as-child>
-                                    <Link
-                                        :href="`/collections/${req.collection_id}/requests/${req.id}`"
+                                    <component
+                                        :is="req.id.startsWith('new-') ? 'a' : Link"
+                                        :href="req.id.startsWith('new-') ? undefined : `/collections/${req.collection_id}/requests/${req.id}`"
                                         preserve-state
                                         preserve-scroll
                                         :only="['activeCollectionId', 'activeRequestId']"
                                         draggable="true"
+                                        @click="handleTabClick($event, req)"
                                         @dragstart="onTabDragStart($event, index)"
                                         @dragenter.prevent
                                         @dragover.prevent
@@ -229,7 +295,18 @@ const copyUrl = async (req: any) => {
                                         <span class="text-[10px] font-bold mr-2" :class="getMethodColor(req.method)">
                                             {{ req.method }}
                                         </span>
-                                        <span class="text-xs truncate flex-1 font-medium">{{ req.name }}</span>
+                                        <input
+                                            v-if="editingTabId === req.id"
+                                            :id="`tab-rename-input-${req.id}`"
+                                            v-model="editingTabName"
+                                            class="flex-1 min-w-0 h-5 text-xs bg-background border border-primary rounded px-1 outline-none focus:ring-1 focus:ring-primary text-foreground"
+                                            @click.stop
+                                            @mousedown.stop
+                                            @blur="commitRenameTab(req)"
+                                            @keyup.enter="commitRenameTab(req)"
+                                            @keyup.esc="editingTabId = null"
+                                        />
+                                        <span v-else @dblclick="startRenameTab(req, $event)" class="text-xs truncate flex-1 font-medium">{{ req.name }}</span>
                                         <span v-if="store.getIsRequestDirty(req.id)" class="w-1.5 h-1.5 bg-orange-500 rounded-full shrink-0 mx-1"></span>
                                         <button 
                                             @click.prevent="closeTab($event, req.id)"
@@ -238,9 +315,12 @@ const copyUrl = async (req: any) => {
                                         >
                                             <X class="h-3 w-3" />
                                         </button>
-                                    </Link>
+                                    </component>
                                 </ContextMenuTrigger>
-                                <ContextMenuContent class="w-48 text-xs font-mono">
+                                <ContextMenuContent class="w-48 text-xs font-mono" @close-auto-focus="(e: Event) => e.preventDefault()">
+                                    <ContextMenuItem @click="startRenameTab(req, $event)" class="cursor-pointer">
+                                        Rename
+                                    </ContextMenuItem>
                                     <ContextMenuItem @click="store.duplicateRequest(req)" class="cursor-pointer">
                                         Duplicate
                                     </ContextMenuItem>
@@ -250,7 +330,11 @@ const copyUrl = async (req: any) => {
                                     <ContextMenuSeparator />
                                     <ContextMenuItem @click="closeTab($event, req.id)" class="cursor-pointer">
                                         Close
-                                        <ContextMenuShortcut>Alt+W / ⌘W</ContextMenuShortcut>
+                                        <ContextMenuShortcut>
+                                            <span v-if="isMac && isDesktop"><span class="text-[14px] leading-none">⌘</span> + W</span>
+                                            <span v-else-if="isMac"><span class="text-[14px] leading-none">⌥</span> + W</span>
+                                            <span v-else>Alt + W</span>
+                                        </ContextMenuShortcut>
                                     </ContextMenuItem>
                                     <ContextMenuItem @click="store.closeOtherRequests(req.id)" class="cursor-pointer">
                                         Close Others
@@ -260,6 +344,30 @@ const copyUrl = async (req: any) => {
                                     </ContextMenuItem>
                                 </ContextMenuContent>
                             </ContextMenu>
+
+                            <TooltipProvider>
+                                <Tooltip :delay-duration="300">
+                                    <TooltipTrigger as-child>
+                                        <button
+                                            @click="handleNewRequest"
+                                            class="group flex items-center justify-center h-9 px-3 min-w-[40px] rounded-t-md border border-b-0 border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/60 transition-colors shrink-0 select-none"
+                                        >
+                                            <Plus class="h-4 w-4" />
+                                            <span v-if="store.openRequests.length === 0" class="text-xs font-medium ml-1.5">New Request</span>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" :side-offset="4" class="text-xs bg-popover text-popover-foreground border shadow-md">
+                                        <div class="flex items-center gap-2">
+                                            <span>New Request</span>
+                                            <span class="text-xs text-muted-foreground tracking-widest font-mono">
+                                                <span v-if="isMac && isDesktop"><span class="text-[14px] leading-none">⌘</span> + T</span>
+                                                <span v-else-if="isMac"><span class="text-[14px] leading-none">⌥</span> + T</span>
+                                                <span v-else>Alt + T</span>
+                                            </span>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </ScrollAreaViewport>
                     <ScrollBar orientation="horizontal" class="h-1.5 mb-0.5" />

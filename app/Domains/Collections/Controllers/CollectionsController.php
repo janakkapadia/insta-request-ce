@@ -333,10 +333,19 @@ class CollectionsController extends Controller
             abort(403, 'You can only delete your own requests.');
         }
 
+        $collectionId = $apiRequest->collection_id;
+        $requestId = $apiRequest->id;
+
         $apiRequest->delete();
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
+        }
+
+        if (str_contains(url()->previous(), "/requests/{$requestId}")) {
+            return redirect()->route('collections.show', $collectionId)->with('flash', [
+                'message' => 'Request deleted successfully',
+            ]);
         }
 
         return back()->with('flash', [
@@ -368,6 +377,8 @@ class CollectionsController extends Controller
             }
         }
 
+        $firstCollectionId = ApiRequest::whereIn('id', $validated['ids'])->value('collection_id');
+
         $count = ApiRequest::whereIn('id', $validated['ids'])
             ->whereHas('collection', function ($query) use ($team) {
                 $query->where('team_id', $team->id);
@@ -376,6 +387,15 @@ class CollectionsController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'count' => $count]);
+        }
+
+        $previousUrl = url()->previous();
+        foreach ($validated['ids'] as $id) {
+            if (str_contains($previousUrl, "/requests/{$id}")) {
+                return redirect()->route('collections.show', $firstCollectionId)->with('flash', [
+                    'message' => "{$count} requests deleted successfully",
+                ]);
+            }
         }
 
         return back()->with('flash', [

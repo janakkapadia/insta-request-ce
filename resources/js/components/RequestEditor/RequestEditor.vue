@@ -618,7 +618,7 @@ watch(
     () => {
         if (!isSwitchingRequest && currentRequestId.value) {
             const currentStr = getCurrentPayloadStr();
-            const dirty = currentStr !== cleanPayloadStr.value;
+            const dirty = currentRequestId.value.startsWith('new-') || currentStr !== cleanPayloadStr.value;
             store.setRequestDraft(currentRequestId.value, currentStr, dirty);
         }
     },
@@ -1071,7 +1071,7 @@ return;
         const cleanParams = queryParams.value.filter((p) => p.key || p.value);
         const cleanHeaders = headersList.value.filter((h) => h.key || h.value);
 
-        await store.saveRequest({
+        const modalOpened = await store.saveRequest({
             method: method.value,
             url: url.value,
             body: JSON.stringify(bodyConfig.value),
@@ -1080,6 +1080,11 @@ return;
             headers: cleanHeaders,
             auth: authConfig.value,
         });
+
+        if (modalOpened) {
+            return;
+        }
+
         cleanPayloadStr.value = getCurrentPayloadStr();
     } finally {
         isSaving.value = false;

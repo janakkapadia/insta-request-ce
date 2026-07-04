@@ -22,6 +22,8 @@ import { ref } from 'vue';
 import { computed, onMounted } from 'vue';
 import CollectionSidebarTree from '@/components/CollectionTree/CollectionSidebarTree.vue';
 import CommandPalette from '@/components/CommandPalette.vue';
+import CreateTeamModal from '@/components/CreateTeamModal.vue';
+import SaveRequestModal from '@/components/RequestEditor/SaveRequestModal.vue';
 import ExportModal from '@/components/ImportExport/ExportModal.vue';
 import ImportModal from '@/components/ImportExport/ImportModal.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -847,5 +849,5 @@ const getCollectionColor = (name: string) => {
         v-model:open="showExportModal"
         :preselected-collection-id="exportCollectionId"
     />
-
+    <SaveRequestModal />
 </template>
