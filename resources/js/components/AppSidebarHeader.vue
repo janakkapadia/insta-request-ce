@@ -356,7 +356,7 @@ const copyUrl = async (req: any) => {
                                             <span v-if="store.openRequests.length === 0" class="text-xs font-medium ml-1.5">New Request</span>
                                         </button>
                                     </TooltipTrigger>
-                                    <TooltipContent side="bottom" :side-offset="4" class="text-xs bg-popover text-popover-foreground border shadow-md">
+                                    <TooltipContent side="bottom" :side-offset="4" class="text-xs">
                                         <div class="flex items-center gap-2">
                                             <span>New Request</span>
                                             <span class="text-xs text-muted-foreground tracking-widest font-mono">
