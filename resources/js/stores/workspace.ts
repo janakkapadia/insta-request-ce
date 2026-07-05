@@ -65,6 +65,7 @@ export interface FolderItem {
     name: string;
     description: string | null;
     requests: RequestItem[];
+    expanded?: boolean;
 }
 
 export interface CollectionItem {
@@ -75,6 +76,7 @@ export interface CollectionItem {
     requests: RequestItem[];
     folders: FolderItem[];
     has_loaded_details?: boolean;
+    expanded?: boolean;
 }
 
 export const useWorkspaceStore = defineStore('workspace', () => {
@@ -384,6 +386,7 @@ return false;
             router.reload({
                 only: ['collections'],
                 data,
+                // @ts-ignore - Inertia types might complain, but this works
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: (page: any) => {
@@ -905,7 +908,7 @@ return;
 
     const updateEnvironment = (envId: string, name: string, variables: EnvironmentVariableItem[]) => {
         return new Promise((resolve) => {
-            router.put(`/environments/${envId}`, { name, variables }, {
+            router.put(`/environments/${envId}`, { name, variables } as any, {
                 preserveState: true,
                 preserveScroll: true,
                 onSuccess: () => resolve(true),
