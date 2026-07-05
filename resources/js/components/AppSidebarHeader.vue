@@ -260,14 +260,14 @@ const copyUrl = async (req: any) => {
         class="flex shrink-0 items-center justify-between border-b border-sidebar-border/70 transition-[width,height] ease-linear bg-card/10"
         :class="[
             page.url.startsWith('/collections') 
-                ? 'h-12 pt-2 pr-6 pl-1 md:pr-4 md:pl-1 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12' 
+                ? 'h-12 pr-6 pl-1 md:pr-4 md:pl-1 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12' 
                 : 'h-16 px-6 md:px-4 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12'
         ]"
     >
         <div class="flex self-stretch flex-1 min-w-0 overflow-hidden">
             
             <template v-if="page.url.startsWith('/collections')">
-                <ScrollAreaRoot class="relative overflow-hidden w-full h-full flex flex-col">
+                <ScrollAreaRoot class="relative overflow-hidden w-full h-full flex flex-col pt-[11px]">
                     <ScrollAreaViewport class="w-full h-full">
                         <div class="flex items-end space-x-1 w-max h-full">
                             <ContextMenu v-for="(req, index) in store.openRequests" :key="req.id">
