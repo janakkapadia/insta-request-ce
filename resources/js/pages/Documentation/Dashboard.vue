@@ -154,7 +154,13 @@ const handleSave = () => {
         onSuccess: () => {
             toast.success('Documentation saved successfully');
         },
-        onError: () => toast.error('Failed to save documentation'),
+        onError: (errors: any) => {
+            if (errors.public_slug) {
+                toast.error(errors.public_slug);
+            } else {
+                toast.error('Failed to save documentation');
+            }
+        },
         onFinish: () => isLoading.value = false
     });
 };
@@ -295,7 +301,7 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
 
                 <div class="mt-4 border-t pt-4 px-2" v-if="isPublic && publicSlug">
                     <a
-                        :href="`/docs/${publicSlug}`"
+                        :href="`/docs/${selectedCollectionId}/${publicSlug}`"
                         target="_blank"
                         class="inline-flex w-full items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 text-xs font-bold transition-colors"
                     >
@@ -342,9 +348,12 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                         <!-- Public Slug Customizer -->
                         <div class="space-y-2" v-if="isPublic">
                             <Label for="slug" class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Link Slug</Label>
-                            <div class="flex rounded-md shadow-xs max-w-lg">
-                                <span class="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground select-none">
-                                    /docs/
+                            <div class="flex rounded-md shadow-xs w-full">
+                                <span 
+                                    class="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground select-none whitespace-nowrap shrink-0"
+                                    :title="`/docs/${selectedCollectionId}/`"
+                                >
+                                    {{ `/docs/${selectedCollectionId}/` }}
                                 </span>
                                 <Input
                                     id="slug"

@@ -81,7 +81,7 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])
     });
 
 // Public Documentation Portal
-Route::get('docs/{slug}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'viewPublic'])->name('documentation.public');
+Route::get('docs/{collection}/{slug}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'viewPublic'])->name('documentation.public');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');

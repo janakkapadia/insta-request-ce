@@ -9,6 +9,7 @@ use App\Domains\Requests\Models\Request as ApiRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class DocumentationController extends Controller
@@ -67,6 +68,14 @@ class DocumentationController extends Controller
 
     public function saveDoc(HttpRequest $request, Collection $collection)
     {
+        $request->validate([
+            'public_slug' => [
+                'nullable',
+                'string',
+                Rule::unique('collection_documentations', 'public_slug')->ignore($collection->id, 'collection_id'),
+            ],
+        ]);
+
         $doc = CollectionDocumentation::updateOrCreate(
             ['collection_id' => $collection->id],
             [
@@ -115,9 +124,10 @@ class DocumentationController extends Controller
         return back();
     }
 
-    public function viewPublic(string $slug)
+    public function viewPublic(string $collectionId, string $slug)
     {
-        $doc = CollectionDocumentation::where('public_slug', $slug)
+        $doc = CollectionDocumentation::where('collection_id', $collectionId)
+            ->where('public_slug', $slug)
             ->where('is_public', true)
             ->firstOrFail();
 
