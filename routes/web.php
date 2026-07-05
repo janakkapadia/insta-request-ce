@@ -72,10 +72,9 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])
 
         // Documentation Dashboard & APIs (Internal)
         Route::get('documentation', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'index'])->name('documentation.index');
-        Route::get('api/documentation/collection/{collection}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'getDoc'])->name('api.documentation.show');
-        Route::post('api/documentation/collection/{collection}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'saveDoc'])->name('api.documentation.save');
-        Route::post('api/documentation/request/{apiRequest}/response-examples', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'storeExample'])->name('api.documentation.example.store');
-        Route::delete('api/documentation/response-examples/{example}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'destroyExample'])->name('api.documentation.example.destroy');
+        Route::post('documentation/collection/{collection}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'saveDoc'])->name('documentation.save');
+        Route::post('documentation/request/{apiRequest}/response-examples', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'storeExample'])->name('documentation.example.store');
+        Route::delete('documentation/response-examples/{example}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'destroyExample'])->name('documentation.example.destroy');
 
         Route::get('members', [\App\Domains\Teams\Controllers\MembersController::class, 'index'])->name('teams.members');
         Route::put('teams/{team}/permissions', [\App\Domains\Teams\Controllers\TeamPermissionsController::class, 'update'])->name('teams.permissions.update');

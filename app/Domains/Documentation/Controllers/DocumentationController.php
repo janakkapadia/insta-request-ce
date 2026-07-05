@@ -21,45 +21,49 @@ class DocumentationController extends Controller
             ->with(['folders', 'requests'])
             ->get();
 
+        $doc = null;
+        $requestsWithExamples = [];
+
+        if ($request->has('collection_id') && $request->collection_id) {
+            $collection = Collection::where('team_id', $team->id)->findOrFail($request->collection_id);
+            
+            $doc = CollectionDocumentation::firstOrCreate(
+                ['collection_id' => $collection->id],
+                [
+                    'team_id' => $collection->team_id,
+                    'is_public' => false,
+                    'public_slug' => Str::slug($collection->name) . '-' . Str::lower(Str::random(6)),
+                    'version' => '1.0.0',
+                ]
+            );
+
+            $requestsWithExamples = ApiRequest::where('collection_id', $collection->id)
+                ->get()
+                ->map(function ($req) {
+                    return [
+                        'id' => $req->id,
+                        'name' => $req->name,
+                        'description' => $req->description,
+                        'method' => $req->method,
+                        'url' => $req->url,
+                        'headers' => $req->headers,
+                        'query_params' => $req->query_params,
+                        'body' => $req->body,
+                        'auth' => $req->auth,
+                        'examples' => RequestResponseExample::where('request_id', $req->id)->get(),
+                    ];
+                });
+        }
+
         return Inertia::render('Documentation/Dashboard', [
             'collections' => $collections,
-        ]);
-    }
-
-    public function getDoc(Collection $collection)
-    {
-        $doc = CollectionDocumentation::firstOrCreate(
-            ['collection_id' => $collection->id],
-            [
-                'team_id' => $collection->team_id,
-                'is_public' => false,
-                'public_slug' => Str::slug($collection->name) . '-' . Str::lower(Str::random(6)),
-                'version' => '1.0.0',
-            ]
-        );
-
-        $requestsWithExamples = ApiRequest::where('collection_id', $collection->id)
-            ->get()
-            ->map(function ($req) {
-                return [
-                    'id' => $req->id,
-                    'name' => $req->name,
-                    'description' => $req->description,
-                    'method' => $req->method,
-                    'url' => $req->url,
-                    'headers' => $req->headers,
-                    'query_params' => $req->query_params,
-                    'body' => $req->body,
-                    'auth' => $req->auth,
-                    'examples' => RequestResponseExample::where('request_id', $req->id)->get(),
-                ];
-            });
-
-        return response()->json([
+            'selectedCollectionId' => $request->collection_id ?: '',
             'documentation' => $doc,
-            'requests' => $requestsWithExamples,
+            'requestsList' => $requestsWithExamples,
         ]);
     }
+
+
 
     public function saveDoc(HttpRequest $request, Collection $collection)
     {
@@ -83,10 +87,7 @@ class DocumentationController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true, 
-            'documentation' => $doc
-        ]);
+        return back();
     }
 
     public function storeExample(HttpRequest $request, ApiRequest $apiRequest)
@@ -105,16 +106,13 @@ class DocumentationController extends Controller
             'body' => $request->input('body'),
         ]);
 
-        return response()->json([
-            'success' => true, 
-            'example' => $example
-        ]);
+        return back();
     }
 
     public function destroyExample(RequestResponseExample $example)
     {
         $example->delete();
-        return response()->json(['success' => true]);
+        return back();
     }
 
     public function viewPublic(string $slug)

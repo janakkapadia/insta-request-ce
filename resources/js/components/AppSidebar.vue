@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage, router } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
     Database,
     SlidersHorizontal,
@@ -22,12 +22,10 @@ import { ref } from 'vue';
 import { computed, onMounted } from 'vue';
 import CollectionSidebarTree from '@/components/CollectionTree/CollectionSidebarTree.vue';
 import CommandPalette from '@/components/CommandPalette.vue';
-import CreateTeamModal from '@/components/CreateTeamModal.vue';
-import SaveRequestModal from '@/components/RequestEditor/SaveRequestModal.vue';
 import ExportModal from '@/components/ImportExport/ExportModal.vue';
 import ImportModal from '@/components/ImportExport/ImportModal.vue';
 import NavUser from '@/components/NavUser.vue';
-import TeamSwitcher from '@/components/TeamSwitcher.vue';
+import SaveRequestModal from '@/components/RequestEditor/SaveRequestModal.vue';
 import { Button } from '@/components/ui/button';
 import {
     Collapsible,
@@ -51,11 +49,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
-} from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Sidebar,
@@ -67,17 +60,10 @@ import {
     SidebarMenuItem,
     SidebarGroup,
 } from '@/components/ui/sidebar';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { dashboard } from '@/routes';
 import environments from '@/routes/environments';
 import history from '@/routes/history';
 import { useWorkspaceStore } from '@/stores/workspace';
-import type { NavItem } from '@/types';
 
 const page = usePage();
 const store = useWorkspaceStore();
@@ -96,20 +82,27 @@ onMounted(async () => {
     }
 
     // Select first collection if none is selected and we are on collections page
-    if (page.url.includes('/collections') && store.collections.length > 0 && !store.selectedCollection) {
+    if (
+        page.url.includes('/collections') &&
+        store.collections.length > 0 &&
+        !store.selectedCollection
+    ) {
         store.selectedCollection = store.collections[0];
     }
 });
 
 const handleCreateCollection = async () => {
     if (!newCollectionName.value.trim()) {
-return;
-}
+        return;
+    }
 
     isCreating.value = true;
 
     try {
-        await store.createCollection(newCollectionName.value, newCollectionDescription.value);
+        await store.createCollection(
+            newCollectionName.value,
+            newCollectionDescription.value,
+        );
         newCollectionName.value = '';
         newCollectionDescription.value = '';
         store.showNewCollectionModal = false;
@@ -130,6 +123,30 @@ const editCollectionName = ref('');
 const editCollectionDescription = ref('');
 const isUpdating = ref(false);
 
+const ensureCollectionLoadedAndExpanded = (collection: any) => {
+    collection.expanded = true;
+
+    if (!collection.has_loaded_details) {
+        store.fetchCollectionDetails(collection.id);
+    }
+};
+
+const handleAddFolder = (collection: any) => {
+    ensureCollectionLoadedAndExpanded(collection);
+    store.activeNewFolder = collection.id;
+};
+
+const handleAddRequest = (collection: any) => {
+    ensureCollectionLoadedAndExpanded(collection);
+    store.activeNewRequest = collection.id;
+};
+
+const handleSelectRequests = (collection: any) => {
+    ensureCollectionLoadedAndExpanded(collection);
+    store.selectionModeCollectionId = collection.id;
+    store.selectedRequestIds = [];
+};
+
 const handleEditCollection = (collection: any) => {
     collectionToEdit.value = { id: collection.id };
     editCollectionName.value = collection.name;
@@ -139,8 +156,8 @@ const handleEditCollection = (collection: any) => {
 
 const confirmEditCollection = async () => {
     if (!collectionToEdit.value || !editCollectionName.value.trim()) {
-return;
-}
+        return;
+    }
 
     isUpdating.value = true;
 
@@ -166,8 +183,8 @@ const handleDeleteCollection = (collection: any) => {
 
 const confirmDeleteCollection = async () => {
     if (!collectionToDelete.value) {
-return;
-}
+        return;
+    }
 
     isDeleting.value = true;
 
@@ -177,11 +194,6 @@ return;
         isDeleting.value = false;
         collectionToDelete.value = null;
     }
-};
-
-const handleExportCollection = (collectionId: string) => {
-    exportCollectionId.value = collectionId;
-    showExportModal.value = true;
 };
 
 const handleImported = async () => {
@@ -206,14 +218,21 @@ const handleDragOverCollection = (e: DragEvent) => {
     }
 };
 
-const handleDropOnCollectionHeader = async (e: DragEvent, collectionId: string) => {
+const handleDropOnCollectionHeader = async (
+    e: DragEvent,
+    collectionId: string,
+) => {
     try {
         // Check if we're dropping a folder
         if (store.draggedFolderId) {
-            const collection = store.collections.find((c: any) => c.id === collectionId);
+            const collection = store.collections.find(
+                (c: any) => c.id === collectionId,
+            );
 
             if (collection) {
-                const folder = collection.folders?.find((f: any) => f.id === store.draggedFolderId);
+                const folder = collection.folders?.find(
+                    (f: any) => f.id === store.draggedFolderId,
+                );
 
                 if (folder && folder.parent_id === null) {
                     return;
@@ -221,6 +240,7 @@ const handleDropOnCollectionHeader = async (e: DragEvent, collectionId: string) 
             }
 
             await store.moveFolder(store.draggedFolderId, collectionId, null);
+
             return;
         }
 
@@ -235,36 +255,48 @@ const handleDropOnCollectionHeader = async (e: DragEvent, collectionId: string) 
                     const parsed = JSON.parse(data);
 
                     if (parsed.type === 'jackman-request') {
-requestId = parsed.id;
-} else if (parsed.type === 'jackman-folder') {
-                        const collection = store.collections.find((c: any) => c.id === collectionId);
-                        const folder = collection?.folders?.find((f: any) => f.id === parsed.id);
+                        requestId = parsed.id;
+                    } else if (parsed.type === 'jackman-folder') {
+                        const collection = store.collections.find(
+                            (c: any) => c.id === collectionId,
+                        );
+                        const folder = collection?.folders?.find(
+                            (f: any) => f.id === parsed.id,
+                        );
 
                         if (folder && folder.parent_id !== null) {
-                            await store.moveFolder(parsed.id, null);
+                            await store.moveFolder(parsed.id, collectionId, null);
                         }
 
                         return;
                     }
-                } catch { /* ignore parse errors */ }
+                } catch {
+                    /* ignore parse errors */
+                }
             }
         }
 
         if (!requestId) {
-return;
-}
-        
-        const collection = store.collections.find((c: any) => c.id === collectionId);
+            return;
+        }
+
+        const collection = store.collections.find(
+            (c: any) => c.id === collectionId,
+        );
 
         if (collection) {
-            if (collection.requests?.some((r: any) => r.id === requestId && !r.folder_id)) {
+            if (
+                collection.requests?.some(
+                    (r: any) => r.id === requestId && !r.folder_id,
+                )
+            ) {
                 // Already in the root of this collection
                 return;
             }
         }
 
         await store.moveRequest(requestId, collectionId, null);
-    } catch (err) {
+    } catch {
         // Not valid JSON or not our drag event
     } finally {
         store.draggedRequestId = null;
@@ -279,21 +311,11 @@ const handleDropOnSidebarVoid = async (e: DragEvent) => {
     }
 };
 
-const dashboardUrl = computed(() =>
-    page.props.currentTeam ? dashboard(page.props.currentTeam.slug).url : '/dashboard',
-);
+const dashboardUrl = computed(() => dashboard().url);
 
-const environmentsUrl = computed(() =>
-    page.props.currentTeam
-        ? environments.index(page.props.currentTeam.slug).url
-        : '#',
-);
+const environmentsUrl = computed(() => environments.index().url);
 
-const historyUrl = computed(() =>
-    page.props.currentTeam
-        ? history.index(page.props.currentTeam.slug).url
-        : '#',
-);
+const historyUrl = computed(() => history.index().url);
 
 const documentationUrl = computed(() => '/documentation');
 
@@ -301,24 +323,6 @@ const handleNavAway = () => {
     store.selectedCollection = null;
     store.selectedRequest = null;
 };
-
-const mainNavItems = computed<NavItem[]>(() => [
-    {
-        title: 'Environments',
-        href: environmentsUrl.value,
-        icon: SlidersHorizontal,
-    },
-    {
-        title: 'History',
-        href: historyUrl.value,
-        icon: History,
-    },
-    {
-        title: 'API Docs',
-        href: documentationUrl.value,
-        icon: BookOpen,
-    },
-]);
 
 // ── Collection initials badge helpers ─────────────────────────────────────
 const getCollectionInitials = (name: string): string => {
@@ -355,18 +359,26 @@ const getCollectionColor = (name: string) => {
 </script>
 
 <template>
-    <Sidebar collapsible="none" variant="sidebar" class="!w-full !border-r-0 overflow-hidden" :class="{ 'pointer-events-none opacity-50': isCreating }">
+    <Sidebar
+        collapsible="none"
+        variant="sidebar"
+        class="!w-full overflow-hidden !border-r-0"
+        :class="{ 'pointer-events-none opacity-50': isCreating }"
+    >
         <SidebarHeader class="relative">
             <!-- Top area: Logo/App name + User dropdown -->
             <div class="flex items-center gap-2 py-2">
-                <img src="/logo.svg" class="hidden h-11 w-auto ml-2 pointer-events-none dark:block" alt="InstaRequest" />
-                <img src="/logo-light.svg" class="block h-11 w-auto ml-2 pointer-events-none dark:hidden" alt="InstaRequest" />
+                <img
+                    src="/logo.svg"
+                    class="pointer-events-none ml-2 hidden h-11 w-auto dark:block"
+                    alt="InstaRequest"
+                />
+                <img
+                    src="/logo-light.svg"
+                    class="pointer-events-none ml-2 block h-11 w-auto dark:hidden"
+                    alt="InstaRequest"
+                />
             </div>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <TeamSwitcher />
-                </SidebarMenuItem>
-            </SidebarMenu>
             <SidebarMenu
                 class="px-2 pt-1 pb-1 group-data-[collapsible=icon]:hidden"
             >
@@ -376,47 +388,111 @@ const getCollectionColor = (name: string) => {
             </SidebarMenu>
 
             <!-- Horizontal main navigation -->
-            <div class="px-2 pb-2 group-data-[collapsible=icon]:hidden flex items-center gap-0.5 justify-between">
-                <Link :href="dashboardUrl" class="flex flex-col items-center justify-center p-1.5 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-muted-foreground flex-1 min-w-0" @click="handleNavAway" :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': page.url.includes('/dashboard') }" title="Dashboard">
-                    <LayoutDashboard class="h-4 w-4 mb-1" />
-                    <span class="text-[9px] font-medium leading-none truncate w-full text-center">Dashboard</span>
+            <div
+                class="flex items-center justify-between gap-0.5 px-2 pb-2 group-data-[collapsible=icon]:hidden"
+            >
+                <Link
+                    :href="dashboardUrl"
+                    class="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    @click="handleNavAway"
+                    :class="{
+                        'bg-sidebar-accent text-sidebar-accent-foreground':
+                            page.url.includes('/dashboard'),
+                    }"
+                    title="Dashboard"
+                >
+                    <LayoutDashboard class="mb-1 h-4 w-4" />
+                    <span
+                        class="w-full truncate text-center text-[9px] leading-none font-medium"
+                        >Dashboard</span
+                    >
                 </Link>
-                <Link :href="environmentsUrl" class="flex flex-col items-center justify-center p-1.5 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-muted-foreground flex-1 min-w-0" @click="handleNavAway" :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': page.url.includes('/environments') }" title="Environments">
-                    <SlidersHorizontal class="h-4 w-4 mb-1" />
-                    <span class="text-[9px] font-medium leading-none truncate w-full text-center">Env</span>
+                <Link
+                    :href="environmentsUrl"
+                    class="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    @click="handleNavAway"
+                    :class="{
+                        'bg-sidebar-accent text-sidebar-accent-foreground':
+                            page.url.includes('/environments'),
+                    }"
+                    title="Environments"
+                >
+                    <SlidersHorizontal class="mb-1 h-4 w-4" />
+                    <span
+                        class="w-full truncate text-center text-[9px] leading-none font-medium"
+                        >Env</span
+                    >
                 </Link>
-                <Link :href="historyUrl" class="flex flex-col items-center justify-center p-1.5 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-muted-foreground flex-1 min-w-0" @click="handleNavAway" :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': page.url.includes('/history') }" title="History">
-                    <History class="h-4 w-4 mb-1" />
-                    <span class="text-[9px] font-medium leading-none truncate w-full text-center">History</span>
+                <Link
+                    :href="historyUrl"
+                    class="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    @click="handleNavAway"
+                    :class="{
+                        'bg-sidebar-accent text-sidebar-accent-foreground':
+                            page.url.includes('/history'),
+                    }"
+                    title="History"
+                >
+                    <History class="mb-1 h-4 w-4" />
+                    <span
+                        class="w-full truncate text-center text-[9px] leading-none font-medium"
+                        >History</span
+                    >
                 </Link>
-                <Link :href="documentationUrl" class="flex flex-col items-center justify-center p-1.5 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-muted-foreground flex-1 min-w-0" @click="handleNavAway" :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': page.url.includes('/documentation') }" title="API Docs">
-                    <BookOpen class="h-4 w-4 mb-1" />
-                    <span class="text-[9px] font-medium leading-none truncate w-full text-center">Docs</span>
+                <Link
+                    :href="documentationUrl"
+                    class="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    @click="handleNavAway"
+                    :class="{
+                        'bg-sidebar-accent text-sidebar-accent-foreground':
+                            page.url.includes('/documentation'),
+                    }"
+                    title="API Docs"
+                >
+                    <BookOpen class="mb-1 h-4 w-4" />
+                    <span
+                        class="w-full truncate text-center text-[9px] leading-none font-medium"
+                        >Docs</span
+                    >
                 </Link>
             </div>
         </SidebarHeader>
 
-        <SidebarContent class="flex h-full flex-col overflow-hidden pb-4" @dragenter.prevent @dragover.prevent>
+        <SidebarContent
+            class="flex h-full flex-col overflow-hidden pb-4"
+            @dragenter.prevent
+            @dragover.prevent
+        >
             <!-- Sidebar navigation section -->
             <SidebarGroup
                 class="mt-2 flex flex-1 flex-col overflow-hidden px-2 py-0 group-data-[collapsible=icon]:hidden"
-                @dragenter.prevent @dragover.prevent
+                @dragenter.prevent
+                @dragover.prevent
             >
-                <SidebarMenu class="flex h-full flex-col overflow-hidden gap-1.5" @dragenter.prevent @dragover.prevent>
-                            <!-- Collapsible Collections List (Expanded by Default) -->
-                            <Collapsible
-                                :default-open="true"
-                                class="group/collapsible flex flex-col overflow-hidden h-full pb-2"
-                                @dragenter.prevent @dragover.prevent
-                            >
+                <SidebarMenu
+                    class="flex h-full flex-col gap-1.5 overflow-hidden"
+                    @dragenter.prevent
+                    @dragover.prevent
+                >
+                    <!-- Collapsible Collections List (Expanded by Default) -->
+                    <Collapsible
+                        :default-open="true"
+                        class="group/collapsible flex h-full flex-col overflow-hidden pb-2"
+                        @dragenter.prevent
+                        @dragover.prevent
+                    >
                         <SidebarMenuItem
                             class="flex list-none flex-col overflow-hidden"
-                            @dragenter.prevent @dragover.prevent
+                            @dragenter.prevent
+                            @dragover.prevent
                         >
                             <div
                                 class="flex w-full shrink-0 items-center justify-between select-none"
                             >
-                                <CollapsibleTrigger as-child class="min-w-0 flex-1">
+                                <CollapsibleTrigger
+                                    as-child
+                                    class="min-w-0 flex-1"
+                                >
                                     <SidebarMenuButton
                                         class="w-full shrink-0 justify-start gap-2 py-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase hover:bg-transparent"
                                     >
@@ -427,39 +503,58 @@ const getCollectionColor = (name: string) => {
                                         />
                                     </SidebarMenuButton>
                                 </CollapsibleTrigger>
-                                <div
-                                    class="mr-1 flex shrink-0 items-center"
-                                >
+                                <div class="mr-1 flex shrink-0 items-center">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger as-child>
                                             <button
                                                 class="rounded p-1 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                                 @click.stop
                                             >
-                                                <span class="sr-only">Collection Actions</span>
-                                                <MoreVertical class="h-3.5 w-3.5" />
+                                                <span class="sr-only"
+                                                    >Collection Actions</span
+                                                >
+                                                <MoreVertical
+                                                    class="h-3.5 w-3.5"
+                                                />
                                             </button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" class="w-48">
+                                        <DropdownMenuContent
+                                            align="end"
+                                            class="w-48"
+                                        >
                                             <DropdownMenuItem
                                                 class="cursor-pointer gap-2 text-xs"
-                                                @click.stop="store.showNewCollectionModal = true"
+                                                @click.stop="
+                                                    store.showNewCollectionModal = true
+                                                "
                                             >
-                                                <Plus class="h-3.5 w-3.5 text-muted-foreground" />
-                                                <span>Create New Collection</span>
+                                                <Plus
+                                                    class="h-3.5 w-3.5 text-muted-foreground"
+                                                />
+                                                <span
+                                                    >Create New Collection</span
+                                                >
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 class="cursor-pointer gap-2 text-xs"
-                                                @click.stop="showImportModal = true"
+                                                @click.stop="
+                                                    showImportModal = true
+                                                "
                                             >
-                                                <Upload class="h-3.5 w-3.5 text-muted-foreground" />
+                                                <Upload
+                                                    class="h-3.5 w-3.5 text-muted-foreground"
+                                                />
                                                 <span>Import Collection</span>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 class="cursor-pointer gap-2 text-xs"
-                                                @click.stop="showExportModal = true"
+                                                @click.stop="
+                                                    showExportModal = true
+                                                "
                                             >
-                                                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                                                <Download
+                                                    class="h-3.5 w-3.5 text-muted-foreground"
+                                                />
                                                 <span>Export Collection</span>
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -468,16 +563,38 @@ const getCollectionColor = (name: string) => {
                             </div>
                             <CollapsibleContent
                                 class="mt-1 flex flex-1 flex-col overflow-hidden"
-                                @dragenter.prevent @dragover.prevent
+                                @dragenter.prevent
+                                @dragover.prevent
                             >
-                                <ScrollArea class="flex-1 overflow-y-auto pr-1" @dragenter.prevent @dragover.prevent @drop.prevent="handleDropOnSidebarVoid">
-                                    <div class="space-y-1" @dragenter.prevent @dragover.prevent @drop.prevent="handleDropOnSidebarVoid">
+                                <ScrollArea
+                                    class="flex-1 overflow-y-auto pr-1"
+                                    @dragenter.prevent
+                                    @dragover.prevent
+                                    @drop.prevent="handleDropOnSidebarVoid"
+                                >
+                                    <div
+                                        class="space-y-1"
+                                        @dragenter.prevent
+                                        @dragover.prevent
+                                        @drop.prevent="handleDropOnSidebarVoid"
+                                    >
                                         <!-- Collections List -->
                                         <Collapsible
                                             v-for="collection in store.collections"
                                             :key="collection.id"
                                             :open="collection.expanded"
-                                            @update:open="(val) => { collection.expanded = val; if (val && !collection.has_loaded_details) store.fetchCollectionDetails(collection.id); }"
+                                            @update:open="
+                                                (val) => {
+                                                    collection.expanded = val;
+                                                    if (
+                                                        val &&
+                                                        !collection.has_loaded_details
+                                                    )
+                                                        store.fetchCollectionDetails(
+                                                            collection.id,
+                                                        );
+                                                }
+                                            "
                                             class="group/colTree"
                                             @dragenter.prevent
                                             @dragover.prevent
@@ -486,21 +603,46 @@ const getCollectionColor = (name: string) => {
                                                 class="group/coll flex cursor-pointer items-center justify-between rounded-md px-2 py-0.5 text-xs font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                                 :class="{
                                                     'bg-sidebar-accent font-semibold text-sidebar-accent-foreground':
-                                                        page.url.includes('/collections') && store.selectedCollection?.id === collection.id,
+                                                        page.url.includes(
+                                                            '/collections',
+                                                        ) &&
+                                                        store.selectedCollection
+                                                            ?.id ===
+                                                            collection.id,
                                                 }"
                                                 @click="
-                                                    handleSelectCollection(collection)
+                                                    handleSelectCollection(
+                                                        collection,
+                                                    )
                                                 "
                                                 @dragenter.prevent
-                                                @dragover.prevent="handleDragOverCollection"
-                                                @drop.prevent.stop="handleDropOnCollectionHeader($event, collection.id)"
+                                                @dragover.prevent="
+                                                    handleDragOverCollection
+                                                "
+                                                @drop.prevent.stop="
+                                                    handleDropOnCollectionHeader(
+                                                        $event,
+                                                        collection.id,
+                                                    )
+                                                "
                                             >
                                                 <div
                                                     class="flex min-w-0 flex-1 items-center gap-2"
                                                 >
-                                                    <CollapsibleTrigger as-child>
-                                                        <button class="p-0.5 rounded hover:bg-muted/50" @click.stop="collection.expanded = !collection.expanded; if(collection.expanded && !collection.has_loaded_details) store.fetchCollectionDetails(collection.id);">
-                                                            <ChevronRight class="h-3 w-3 transition-transform" :class="{ 'rotate-90': collection.expanded }" />
+                                                    <CollapsibleTrigger
+                                                        as-child
+                                                    >
+                                                        <button
+                                                            class="rounded p-0.5 hover:bg-muted/50"
+                                                            @click.stop="handleSelectCollection(collection)"
+                                                        >
+                                                            <ChevronRight
+                                                                class="h-3 w-3 transition-transform"
+                                                                :class="{
+                                                                    'rotate-90':
+                                                                        collection.expanded,
+                                                                }"
+                                                            />
                                                         </button>
                                                     </CollapsibleTrigger>
                                                     <!-- Initials badge -->
@@ -531,69 +673,123 @@ const getCollectionColor = (name: string) => {
                                                     }}</span>
                                                 </div>
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger as-child>
+                                                    <DropdownMenuTrigger
+                                                        as-child
+                                                    >
                                                         <button
                                                             class="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity group-hover/coll:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                                             @click.stop
                                                         >
-                                                            <MoreVertical class="h-3 w-3" />
+                                                            <MoreVertical
+                                                                class="h-3 w-3"
+                                                            />
                                                         </button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" class="w-40" @close-auto-focus="(e) => e.preventDefault()">
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        class="w-40"
+                                                        @close-auto-focus="
+                                                            (e) =>
+                                                                e.preventDefault()
+                                                        "
+                                                    >
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="collection.expanded = true; if(!collection.has_loaded_details) store.fetchCollectionDetails(collection.id); store.activeNewFolder = collection.id;"
+                                                            @click.stop="handleAddFolder(collection)"
                                                         >
-                                                            <FolderPlus class="h-3.5 w-3.5 text-muted-foreground" />
-                                                            <span>Add Folder</span>
+                                                            <FolderPlus
+                                                                class="h-3.5 w-3.5 text-muted-foreground"
+                                                            />
+                                                            <span
+                                                                >Add
+                                                                Folder</span
+                                                            >
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="collection.expanded = true; if(!collection.has_loaded_details) store.fetchCollectionDetails(collection.id); store.activeNewRequest = collection.id;"
+                                                            @click.stop="handleAddRequest(collection)"
                                                         >
-                                                            <FilePlus class="h-3.5 w-3.5 text-muted-foreground" />
-                                                            <span>Add Request</span>
+                                                            <FilePlus
+                                                                class="h-3.5 w-3.5 text-muted-foreground"
+                                                            />
+                                                            <span
+                                                                >Add
+                                                                Request</span
+                                                            >
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="collection.expanded = true; if(!collection.has_loaded_details) store.fetchCollectionDetails(collection.id); store.selectionModeCollectionId = collection.id; store.selectedRequestIds = []"
+                                                            @click.stop="handleSelectRequests(collection)"
                                                         >
-                                                            <CheckSquare class="h-3.5 w-3.5 text-muted-foreground" />
-                                                            <span>Select Requests</span>
+                                                            <CheckSquare
+                                                                class="h-3.5 w-3.5 text-muted-foreground"
+                                                            />
+                                                            <span
+                                                                >Select
+                                                                Requests</span
+                                                            >
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="handleEditCollection(collection)"
+                                                            @click.stop="
+                                                                handleEditCollection(
+                                                                    collection,
+                                                                )
+                                                            "
                                                         >
-                                                            <Pencil class="h-3.5 w-3.5 text-muted-foreground" />
+                                                            <Pencil
+                                                                class="h-3.5 w-3.5 text-muted-foreground"
+                                                            />
                                                             <span>Edit</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            v-if="store.collections.length > 1"
+                                                            v-if="
+                                                                store
+                                                                    .collections
+                                                                    .length > 1
+                                                            "
                                                             class="cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
-                                                            @click.stop="handleDeleteCollection(collection)"
+                                                            @click.stop="
+                                                                handleDeleteCollection(
+                                                                    collection,
+                                                                )
+                                                            "
                                                         >
-                                                            <Trash2 class="h-3.5 w-3.5" />
+                                                            <Trash2
+                                                                class="h-3.5 w-3.5"
+                                                            />
                                                             <span>Delete</span>
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
-                                            <CollapsibleContent class="pl-4 pr-1 py-1" @dragenter.prevent @dragover.prevent @drop.prevent.stop="handleDropOnCollectionHeader($event, collection.id)">
-                                                <CollectionSidebarTree :collection="collection" />
+                                            <CollapsibleContent
+                                                class="py-1 pr-1 pl-4"
+                                                @dragenter.prevent
+                                                @dragover.prevent
+                                                @drop.prevent.stop="
+                                                    handleDropOnCollectionHeader(
+                                                        $event,
+                                                        collection.id,
+                                                    )
+                                                "
+                                            >
+                                                <CollectionSidebarTree
+                                                    :collection="collection"
+                                                />
                                             </CollapsibleContent>
                                         </Collapsible>
                                     </div>
                                 </ScrollArea>
                             </CollapsibleContent>
                         </SidebarMenuItem>
-                        </Collapsible>
-                        </SidebarMenu>
+                    </Collapsible>
+                </SidebarMenu>
             </SidebarGroup>
 
             <!-- Collapsed (icon-only) View -->
             <SidebarGroup
-                class="mt-2 hidden flex-col px-2 py-0 group-data-[collapsible=icon]:flex animate-in fade-in duration-200"
+                class="mt-2 hidden animate-in flex-col px-2 py-0 duration-200 fade-in group-data-[collapsible=icon]:flex"
             >
                 <SidebarMenu class="flex flex-col gap-1.5">
                     <!-- Dashboard Icon -->
@@ -628,7 +824,8 @@ const getCollectionColor = (name: string) => {
                         <SidebarMenuButton
                             :tooltip="collection.name"
                             :is-active="
-                                page.url.includes('/collections') && store.selectedCollection?.id === collection.id
+                                page.url.includes('/collections') &&
+                                store.selectedCollection?.id === collection.id
                             "
                             class="justify-center p-0!"
                             @click="handleSelectCollection(collection)"
@@ -653,7 +850,7 @@ const getCollectionColor = (name: string) => {
                     </SidebarMenuItem>
 
                     <!-- Thin separator in collapsed view -->
-                    <div class="h-px bg-sidebar-border/50 my-1.5"></div>
+                    <div class="my-1.5 h-px bg-sidebar-border/50"></div>
 
                     <!-- Environments Icon -->
                     <SidebarMenuItem>
@@ -663,7 +860,10 @@ const getCollectionColor = (name: string) => {
                             tooltip="Environments"
                             class="justify-center p-0!"
                         >
-                            <Link :href="environmentsUrl" @click="handleNavAway">
+                            <Link
+                                :href="environmentsUrl"
+                                @click="handleNavAway"
+                            >
                                 <SlidersHorizontal class="h-4 w-4" />
                             </Link>
                         </SidebarMenuButton>
@@ -691,7 +891,10 @@ const getCollectionColor = (name: string) => {
                             tooltip="API Docs"
                             class="justify-center p-0!"
                         >
-                            <Link :href="documentationUrl" @click="handleNavAway">
+                            <Link
+                                :href="documentationUrl"
+                                @click="handleNavAway"
+                            >
                                 <BookOpen class="h-4 w-4" />
                             </Link>
                         </SidebarMenuButton>
@@ -746,7 +949,14 @@ const getCollectionColor = (name: string) => {
     <!-- Edit Collection Modal -->
     <Dialog
         :open="showEditCollection"
-        @update:open="(val) => { if (!val) { showEditCollection = false; collectionToEdit = null; } }"
+        @update:open="
+            (val) => {
+                if (!val) {
+                    showEditCollection = false;
+                    collectionToEdit = null;
+                }
+            }
+        "
     >
         <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
@@ -757,7 +967,11 @@ const getCollectionColor = (name: string) => {
             </DialogHeader>
             <div class="flex flex-col gap-4 py-2">
                 <div class="flex flex-col gap-2">
-                    <Label for="edit-collection-name" class="text-sm font-medium">Name</Label>
+                    <Label
+                        for="edit-collection-name"
+                        class="text-sm font-medium"
+                        >Name</Label
+                    >
                     <Input
                         id="edit-collection-name"
                         v-model="editCollectionName"
@@ -768,19 +982,25 @@ const getCollectionColor = (name: string) => {
                     />
                 </div>
                 <div class="flex flex-col gap-2">
-                    <Label for="edit-collection-description" class="text-sm font-medium">Description</Label>
+                    <Label
+                        for="edit-collection-description"
+                        class="text-sm font-medium"
+                        >Description</Label
+                    >
                     <textarea
                         id="edit-collection-description"
                         v-model="editCollectionDescription"
                         placeholder="Optional description..."
                         rows="3"
-                        class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                        class="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                 </div>
             </div>
             <DialogFooter class="gap-2">
                 <DialogClose as-child>
-                    <Button variant="secondary" :disabled="isUpdating">Cancel</Button>
+                    <Button variant="secondary" :disabled="isUpdating"
+                        >Cancel</Button
+                    >
                 </DialogClose>
                 <Button
                     :disabled="!editCollectionName.trim() || isUpdating"
@@ -796,7 +1016,11 @@ const getCollectionColor = (name: string) => {
     <!-- Create Collection Modal -->
     <Dialog
         :open="store.showNewCollectionModal"
-        @update:open="(val) => { if (!val) cancelCollectionCreation(); }"
+        @update:open="
+            (val) => {
+                if (!val) cancelCollectionCreation();
+            }
+        "
     >
         <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
@@ -807,7 +1031,9 @@ const getCollectionColor = (name: string) => {
             </DialogHeader>
             <div class="flex flex-col gap-4 py-2">
                 <div class="flex flex-col gap-2">
-                    <Label for="collection-name" class="text-sm font-medium">Name</Label>
+                    <Label for="collection-name" class="text-sm font-medium"
+                        >Name</Label
+                    >
                     <Input
                         id="collection-name"
                         v-model="newCollectionName"
@@ -818,19 +1044,25 @@ const getCollectionColor = (name: string) => {
                     />
                 </div>
                 <div class="flex flex-col gap-2">
-                    <Label for="collection-description" class="text-sm font-medium">Description</Label>
+                    <Label
+                        for="collection-description"
+                        class="text-sm font-medium"
+                        >Description</Label
+                    >
                     <textarea
                         id="collection-description"
                         v-model="newCollectionDescription"
                         placeholder="Optional description..."
                         rows="3"
-                        class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                        class="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                 </div>
             </div>
             <DialogFooter class="gap-2">
                 <DialogClose as-child>
-                    <Button variant="secondary" :disabled="isCreating">Cancel</Button>
+                    <Button variant="secondary" :disabled="isCreating"
+                        >Cancel</Button
+                    >
                 </DialogClose>
                 <Button
                     :disabled="!newCollectionName.trim() || isCreating"

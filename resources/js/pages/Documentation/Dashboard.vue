@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
     BookOpen,
     Eye,
@@ -16,7 +16,8 @@ import {
     AlertCircle,
     Info,
     Search,
-    ExternalLink
+    ExternalLink,
+    X
 } from 'lucide-vue-next';
 import { ref, watch, computed } from 'vue';
 import { toast } from 'vue-sonner';
@@ -43,10 +44,13 @@ const props = defineProps<{
             body: any;
         }>;
     }>;
+    selectedCollectionId?: string;
+    documentation?: any;
+    requestsList?: any[];
 }>();
 
 // State vars
-const selectedCollectionId = ref<string>('');
+const selectedCollectionId = ref<string>(props.selectedCollectionId || '');
 const isLoading = ref<boolean>(false);
 const activeTab = ref<'settings' | 'intro' | 'requests'>('settings');
 
@@ -86,179 +90,106 @@ const newExampleBody = ref<string>('{\n  "status": "success"\n}');
 // Keep track of edited descriptions
 const editedRequestDescriptions = ref<Record<string, string>>({});
 
-// Watch selected collection change to fetch details
-watch(selectedCollectionId, async (newVal) => {
+watch(selectedCollectionId, (newVal) => {
     if (!newVal) {
         docId.value = '';
         requestsList.value = [];
-
         return;
     }
     
-    isLoading.value = true;
-
-    try {
-        const xsrfToken = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
-        const response = await fetch(`/api/documentation/collection/${newVal}`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
-            }
+    if (newVal !== props.selectedCollectionId) {
+        isLoading.value = true;
+        router.get('/documentation', { collection_id: newVal }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['documentation', 'requestsList', 'selectedCollectionId'],
+            onFinish: () => isLoading.value = false
         });
-        const data = await response.json();
-        
-        const doc = data.documentation;
-        docId.value = doc.id;
-        isPublic.value = doc.is_public;
-        publicSlug.value = doc.public_slug;
-        version.value = doc.version;
-        markdownIntro.value = doc.markdown_intro || '';
-        authInfo.value = doc.auth_info || '';
-        docSettings.value = doc.settings || {};
-        
-        requestsList.value = data.requests || [];
-        editedRequestDescriptions.value = {};
-        
-        if (requestsList.value.length > 0) {
-            selectedRequestId.value = requestsList.value[0].id;
-        } else {
-            selectedRequestId.value = '';
-        }
-    } catch (e) {
-        toast.error('Failed to load documentation details');
-    } finally {
-        isLoading.value = false;
     }
 });
 
+watch(() => props.documentation, (newDoc) => {
+    if (newDoc) {
+        docId.value = newDoc.id;
+        isPublic.value = newDoc.is_public;
+        publicSlug.value = newDoc.public_slug;
+        version.value = newDoc.version;
+        markdownIntro.value = newDoc.markdown_intro || '';
+        authInfo.value = newDoc.auth_info || '';
+        docSettings.value = newDoc.settings || {};
+    } else {
+        docId.value = '';
+    }
+}, { immediate: true });
+
+watch(() => props.requestsList, (newList) => {
+    requestsList.value = newList ? JSON.parse(JSON.stringify(newList)) : [];
+    editedRequestDescriptions.value = {};
+    if (requestsList.value.length > 0) {
+        if (!requestsList.value.find(r => r.id === selectedRequestId.value)) {
+            selectedRequestId.value = requestsList.value[0].id;
+        }
+    } else {
+        selectedRequestId.value = '';
+    }
+}, { immediate: true });
+
 // Save Documentation
-const handleSave = async () => {
-    if (!selectedCollectionId.value) {
-return;
-}
+const handleSave = () => {
+    if (!selectedCollectionId.value) return;
     
     isLoading.value = true;
 
-    try {
-        const payload = {
-            is_public: isPublic.value,
-            public_slug: publicSlug.value,
-            version: version.value,
-            markdown_intro: markdownIntro.value,
-            auth_info: authInfo.value,
-            settings: docSettings.value,
-            requests_descriptions: {
-                ...editedRequestDescriptions.value
-            }
-        };
-        
-        const xsrfToken = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
-        const response = await fetch(`/api/documentation/collection/${selectedCollectionId.value}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
-            },
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-
-        if (data.success) {
+    router.post(`/documentation/collection/${selectedCollectionId.value}`, {
+        is_public: isPublic.value,
+        public_slug: publicSlug.value,
+        version: version.value,
+        markdown_intro: markdownIntro.value,
+        auth_info: authInfo.value,
+        settings: docSettings.value,
+        requests_descriptions: { ...editedRequestDescriptions.value }
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => {
             toast.success('Documentation saved successfully');
-            // Refresh slug or changes
-            publicSlug.value = data.documentation.public_slug;
-        } else {
-            toast.error('Failed to save documentation');
-        }
-    } catch (e) {
-        toast.error('Error saving documentation');
-    } finally {
-        isLoading.value = false;
-    }
+        },
+        onError: () => toast.error('Failed to save documentation'),
+        onFinish: () => isLoading.value = false
+    });
 };
 
 // Add Mock Response Example
-const handleAddExample = async () => {
-    if (!selectedRequestId.value) {
-return;
-}
+const handleAddExample = () => {
+    if (!selectedRequestId.value) return;
     
-    try {
-        const payload = {
-            name: newExampleName.value,
-            status_code: newExampleStatus.value,
-            body: newExampleBody.value,
-            headers: { 'Content-Type': 'application/json' }
-        };
-        
-        const xsrfToken = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
-        const response = await fetch(`/api/documentation/request/${selectedRequestId.value}/response-examples`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
-            },
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-
-        if (data.success) {
+    router.post(`/documentation/request/${selectedRequestId.value}/response-examples`, {
+        name: newExampleName.value,
+        status_code: newExampleStatus.value,
+        body: newExampleBody.value,
+        headers: { 'Content-Type': 'application/json' }
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => {
             toast.success('Response example added!');
-            
-            // Add example to reactive request view
-            const req = requestsList.value.find(r => r.id === selectedRequestId.value);
-
-            if (req) {
-                if (!req.examples) {
-req.examples = [];
-}
-
-                req.examples.push(data.example);
-            }
-            
-            // Reset modal inputs
             newExampleName.value = '200 OK Success';
             newExampleStatus.value = 200;
             newExampleBody.value = '{\n  "status": "success"\n}';
             showAddExample.value = false;
-        } else {
-            toast.error('Failed to add example');
-        }
-    } catch (e) {
-        toast.error('Error adding example');
-    }
+        },
+        onError: () => toast.error('Failed to add example')
+    });
 };
 
 // Delete Response Example
-const handleDeleteExample = async (exampleId: string) => {
-    try {
-        const xsrfToken = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || '';
-        const response = await fetch(`/api/documentation/response-examples/${exampleId}`, {
-            method: 'DELETE',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
-            }
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            toast.success('Example deleted successfully');
-            const req = requestsList.value.find(r => r.id === selectedRequestId.value);
-
-            if (req) {
-                req.examples = req.examples.filter((e: any) => e.id !== exampleId);
-            }
-        }
-    } catch (e) {
-        toast.error('Failed to delete example');
-    }
+const handleDeleteExample = (exampleId: string) => {
+    router.delete(`/documentation/response-examples/${exampleId}`, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => toast.success('Example deleted successfully'),
+        onError: () => toast.error('Failed to delete example')
+    });
 };
 
 // Track modified request description
@@ -572,7 +503,8 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                                             @click="showAddExample = !showAddExample"
                                             class="gap-1.5"
                                         >
-                                            <Plus class="h-3.5 w-3.5" />
+                                            <X v-if="showAddExample" class="h-3.5 w-3.5" />
+                                            <Plus v-else class="h-3.5 w-3.5" />
                                             {{ showAddExample ? 'Cancel' : 'Add Example' }}
                                         </Button>
                                     </div>
