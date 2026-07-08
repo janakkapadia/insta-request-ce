@@ -36,7 +36,7 @@ InstaRequest Community Edition offers everything you need to build, test, and do
 InstaRequest is built on modern, developer-friendly technologies:
 - **Backend:** Laravel Framework 13.x
 - **Frontend:** Vue.js 3 + Inertia.js
-- **Styling:** Tailwind CSS v4 + Reka UI
+- **Styling:** Tailwind CSS v4 + shadcn-vue
 - **Testing:** Pest
 
 ## ⚙️ Installation
@@ -82,10 +82,10 @@ InstaRequest comes with built-in shortcuts to speed up your workflow:
 | Action | macOS | Windows / Linux |
 | :--- | :--- | :--- |
 | **Command Palette** | `Cmd + K` | `Ctrl + K` |
-| **New Request** | `Cmd + T` (Desktop) or `Option + T` (Web) | `Alt + T` |
+| **New Request** | `Option + T` | `Alt + T` |
 | **Open Request in New Tab** | `Cmd + Click` (or Middle Click) | `Ctrl + Click` (or Middle Click) |
-| **Close Current Tab** | `Cmd + W` or `Option + W` | `Ctrl + W` or `Alt + W` |
-| **Save Request** | `Cmd + S` or `Option + S` | `Ctrl + S` or `Alt + S` |
+| **Close Current Tab** | `Option + W` | `Alt + W` |
+| **Save Request** | `Option + S` | `Alt + S` |
 
 ## 🤝 Contributing
 Contributions are welcome! Please submit a pull request or open an issue to discuss proposed changes.
