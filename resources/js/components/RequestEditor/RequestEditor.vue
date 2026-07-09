@@ -1050,7 +1050,7 @@ const handleEditorMount = (editor: any) => {
     editorRef.value = editor;
 };
 
-const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
+const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD', 'QUERY'];
 
 const handleFileChange = (e: Event, item: any) => {
     const target = e.target as HTMLInputElement;

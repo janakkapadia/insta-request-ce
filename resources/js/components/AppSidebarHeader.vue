@@ -95,7 +95,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
         return;
     }
 
-    if (isW && (e.metaKey || e.ctrlKey || e.altKey)) {
+    if (isW && e.altKey) {
         if (confirmDialog.value.isOpen) {
             e.preventDefault();
             return;
@@ -331,8 +331,7 @@ const copyUrl = async (req: any) => {
                                     <ContextMenuItem @click="closeTab($event, req.id)" class="cursor-pointer">
                                         Close
                                         <ContextMenuShortcut>
-                                            <span v-if="isMac && isDesktop"><span class="text-[14px] leading-none">⌘</span> + W</span>
-                                            <span v-else-if="isMac"><span class="text-[14px] leading-none">⌥</span> + W</span>
+                                            <span v-if="isMac"><span class="text-[14px] leading-none">⌥</span> + W</span>
                                             <span v-else>Alt + W</span>
                                         </ContextMenuShortcut>
                                     </ContextMenuItem>
