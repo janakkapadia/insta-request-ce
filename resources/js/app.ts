@@ -14,7 +14,7 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 import { breadcrumbsMap } from '@/lib/layoutState';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'InstaRequest';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
