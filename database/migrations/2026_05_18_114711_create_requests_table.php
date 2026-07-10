@@ -21,7 +21,7 @@ return new class extends Migration
             $table->json('headers')->nullable();
             $table->json('query_params')->nullable();
             $table->json('body')->nullable();
-            $table->json('auth')->nullable();
+            $table->text('auth')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
