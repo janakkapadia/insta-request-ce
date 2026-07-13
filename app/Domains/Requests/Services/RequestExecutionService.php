@@ -263,9 +263,9 @@ class RequestExecutionService
             return $content;
         }
 
-        // Find {variable_name} and replace with value from $variables
-        return preg_replace_callback('/\{([^}]+)\}/', function ($matches) use ($variables) {
-            $key = trim($matches[1]);
+        // Find {{variable_name}} or {variable_name} and replace with value from $variables
+        return preg_replace_callback('/\{\{\s*([^}]+?)\s*\}\}|\{\s*([^}]+?)\s*\}/', function ($matches) use ($variables) {
+            $key = trim(!empty($matches[1]) ? $matches[1] : $matches[2]);
             return $variables[$key] ?? $matches[0];
         }, $content);
     }
