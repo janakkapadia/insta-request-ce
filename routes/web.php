@@ -58,6 +58,8 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])
         Route::delete('environments/{environment}', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'destroy'])->name('environments.destroy')->middleware('team_permission:environment:delete');
         Route::delete('api/environments/{environment}', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'destroy'])->name('api.environments.destroy')->middleware('team_permission:environment:delete');
         Route::post('environments/{environment}/replace-value', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'replaceValue'])->name('environments.replaceValue')->middleware('team_permission:environment:manage_variables');
+        Route::get('environments/{environment}/export', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'export'])->name('environments.export');
+        Route::post('environments/import', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'import'])->name('environments.import');
 
         // History logs
         Route::get('history', [\App\Domains\History\Controllers\HistoryController::class, 'index'])->name('history.index');

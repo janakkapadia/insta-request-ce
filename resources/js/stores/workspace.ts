@@ -940,6 +940,34 @@ return;
         });
     };
 
+    const exportEnvironment = (envId: string) => {
+        window.location.href = `/environments/${envId}/export`;
+    };
+
+    const importEnvironment = (data: { file?: File; content?: string }) => {
+        return new Promise((resolve) => {
+            router.post(
+                '/environments/import',
+                data as any,
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    forceFormData: !!data.file,
+                    onSuccess: () => {
+                        toast.success('Environment imported successfully');
+                        resolve(true);
+                    },
+                    onError: (e) => {
+                        console.error('Failed to import environment', e);
+                        const msg = (e as any)?.error || 'Failed to import environment';
+                        toast.error(msg);
+                        resolve(false);
+                    },
+                },
+            );
+        });
+    };
+
     onUnmounted(() => {
         cleanupChannels();
     });
@@ -1080,6 +1108,8 @@ return;
         createEnvironment,
         updateEnvironment,
         deleteEnvironment,
+        exportEnvironment,
+        importEnvironment,
         activeNewFolder,
         activeNewRequest,
         selectionModeCollectionId,

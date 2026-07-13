@@ -106,3 +106,55 @@ test('user can delete environment', function () {
     $response->assertStatus(200);
     expect(Environment::find($env->id))->toBeNull();
 });
+
+test('user can export an environment to postman environment format', function () {
+    $this->actingAs($this->user);
+
+    $env = Environment::create([
+        'team_id' => $this->team->id,
+        'name' => 'Exportable Env'
+    ]);
+
+    $env->variables()->create([
+        'key' => 'api_url',
+        'value' => 'https://api.test.com',
+        'enabled' => true
+    ]);
+
+    $response = $this->get(route('environments.export', ['environment' => $env->id]));
+    $response->assertStatus(200);
+
+    $json = json_decode($response->streamedContent(), true);
+    expect($json)->not->toBeNull();
+    expect($json['name'])->toBe('Exportable Env');
+    expect($json['_postman_variable_scope'])->toBe('environment');
+    expect($json['values'])->toHaveCount(1);
+    expect($json['values'][0]['key'])->toBe('api_url');
+    expect($json['values'][0]['value'])->toBe('https://api.test.com');
+});
+
+test('user can import an environment from json content', function () {
+    $this->actingAs($this->user);
+
+    $importPayload = [
+        'name' => 'Imported Production Env',
+        'values' => [
+            ['key' => 'SECRET_KEY', 'value' => 'abc-123', 'enabled' => true],
+            ['key' => 'DEBUG', 'value' => 'false', 'enabled' => false],
+        ],
+        '_postman_variable_scope' => 'environment'
+    ];
+
+    $response = $this->postJson(route('environments.import'), [
+        'content' => json_encode($importPayload)
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['name' => 'Imported Production Env']);
+
+    $env = Environment::where('name', 'Imported Production Env')->first();
+    expect($env)->not->toBeNull();
+    expect($env->variables)->toHaveCount(2);
+    expect($env->variables()->where('key', 'SECRET_KEY')->first()->value)->toBe('abc-123');
+});
+

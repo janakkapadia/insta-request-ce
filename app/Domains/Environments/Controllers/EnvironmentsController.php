@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EnvironmentsController extends Controller
 {
@@ -141,6 +142,140 @@ class EnvironmentsController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function export(Environment $environment)
+    {
+        if ($environment->team_id !== Auth::user()->current_team_id) {
+            abort(403);
+        }
+
+        $environment->load('variables');
+
+        $exportData = [
+            'id' => $environment->id,
+            'name' => $environment->name,
+            'values' => $environment->variables->map(function ($v) {
+                return [
+                    'key' => $v->key,
+                    'value' => $v->value,
+                    'type' => 'default',
+                    'enabled' => (bool) $v->enabled,
+                ];
+            })->values()->toArray(),
+            '_postman_variable_scope' => 'environment',
+            '_postman_exported_at' => now()->toIso8601String(),
+            '_postman_exported_using' => 'Jackman/1.0.0',
+        ];
+
+        $filename = Str::slug($environment->name) . '.postman_environment.json';
+
+        return response()->streamDownload(function () use ($exportData) {
+            echo json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        }, $filename, [
+            'Content-Type' => 'application/json',
+        ]);
+    }
+
+    public function import(Request $request)
+    {
+        $team = Auth::user()->currentTeam;
+        if (!$team) {
+            if ($request->wantsJson()) {
+                return response()->json(['error' => 'No active team'], 403);
+            }
+            return back()->withErrors(['error' => 'No active team']);
+        }
+
+        $request->validate([
+            'file' => 'required_without:content|file|max:10240',
+            'content' => 'required_without:file|nullable|string',
+        ]);
+
+        $content = $request->hasFile('file')
+            ? $request->file('file')->get()
+            : $request->input('content');
+
+        $data = json_decode($content, true);
+
+        if (!is_array($data)) {
+            $msg = 'Invalid JSON environment format.';
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $msg], 422);
+            }
+            return back()->withErrors(['error' => $msg]);
+        }
+
+        $name = $data['name'] ?? null;
+        if (!$name) {
+            if ($request->hasFile('file')) {
+                $filename = $request->file('file')->getClientOriginalName();
+                $name = pathinfo($filename, PATHINFO_FILENAME);
+                $name = preg_replace('/\.postman_environment$/i', '', $name);
+            } else {
+                $name = 'Imported Environment';
+            }
+        }
+
+        $variablesList = [];
+        if (isset($data['values']) && is_array($data['values'])) {
+            $variablesList = $data['values'];
+        } elseif (isset($data['variables']) && is_array($data['variables'])) {
+            $variablesList = $data['variables'];
+        } elseif (isset($data['environment']) && is_array($data['environment'])) {
+            $variablesList = $data['environment'];
+        } elseif (array_is_list($data)) {
+            $variablesList = $data;
+        } else {
+            foreach ($data as $k => $v) {
+                if (is_string($k) && !in_array($k, ['id', 'name', '_postman_variable_scope', '_postman_exported_at', '_postman_exported_using', '_type'])) {
+                    $variablesList[] = [
+                        'key' => $k,
+                        'value' => is_scalar($v) ? (string) $v : json_encode($v),
+                        'enabled' => true,
+                    ];
+                }
+            }
+        }
+
+        $environment = DB::transaction(function () use ($name, $variablesList, $team) {
+            $env = Environment::create([
+                'team_id' => $team->id,
+                'name' => $name,
+            ]);
+
+            foreach ($variablesList as $var) {
+                if (!is_array($var)) {
+                    continue;
+                }
+                $key = $var['key'] ?? $var['name'] ?? null;
+                if (!$key || !is_string($key) || trim($key) === '') {
+                    continue;
+                }
+                $value = $var['value'] ?? '';
+                if (!is_scalar($value)) {
+                    $value = json_encode($value);
+                }
+                $enabled = isset($var['enabled']) ? (bool) $var['enabled'] : true;
+
+                $env->variables()->create([
+                    'key' => trim($key),
+                    'value' => (string) $value,
+                    'enabled' => $enabled,
+                ]);
+            }
+
+            return $env;
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json($environment->load('variables'));
+        }
+
+        return redirect()->back()->with('flash', [
+            'message' => 'Environment imported successfully',
+            'environment' => $environment->load('variables'),
+        ]);
     }
 
     public function replaceValue(Request $request, Environment $environment)
