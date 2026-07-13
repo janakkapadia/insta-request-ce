@@ -14,7 +14,7 @@ import {
     Upload,
     FileJson,
 } from 'lucide-vue-next';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -120,6 +120,7 @@ defineOptions({
 
 const props = defineProps<{
     environments: EnvironmentItem[];
+    activeEnvironmentId?: string | null;
 }>();
 
 // Initialize and fetch environments on mount using Inertia props
@@ -137,10 +138,37 @@ onMounted(() => {
         }
     }
 
+    if (props.activeEnvironmentId) {
+        const found = store.environments.find((e) => e.id === props.activeEnvironmentId);
+        if (found) {
+            selectEnv(found, false);
+            return;
+        }
+    }
+
     if (store.environments.length > 0) {
-        selectEnv(store.environments[0]);
+        selectEnv(store.environments[0], true);
     }
 });
+
+watch(() => props.activeEnvironmentId, (newId) => {
+    if (newId && newId !== selectedEnvId.value) {
+        const found = store.environments.find((e) => e.id === newId);
+        if (found) {
+            selectEnv(found, false);
+        }
+    }
+});
+
+watch(() => props.environments, (newEnvs) => {
+    store.setEnvironments(newEnvs);
+    if (props.activeEnvironmentId && selectedEnvId.value !== props.activeEnvironmentId) {
+        const found = store.environments.find((e) => e.id === props.activeEnvironmentId);
+        if (found) {
+            selectEnv(found, false);
+        }
+    }
+}, { deep: true });
 
 const filteredEnvironments = computed(() => {
     if (!searchQuery.value) {
@@ -158,13 +186,21 @@ const activeEnv = computed(() => {
     return store.environments.find((e) => e.id === selectedEnvId.value) || null;
 });
 
-const selectEnv = (env: EnvironmentItem) => {
+const selectEnv = (env: EnvironmentItem, updateRoute = true) => {
     selectedEnvId.value = env.id;
     envName.value = env.name;
 
     // Deep clone variables and ensure there is always at least one empty row at the bottom
     localVariables.value = env.variables.map((v) => ({ ...v }));
     ensureEmptyRow();
+
+    if (updateRoute) {
+        router.get(`/environments/${env.id}`, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['activeEnvironmentId'],
+        });
+    }
 };
 
 const ensureEmptyRow = () => {
@@ -201,7 +237,7 @@ const createNewEnvironment = async () => {
         const newEnv = store.environments.find((e) => e.name === name);
 
         if (newEnv) {
-            selectEnv(newEnv);
+            selectEnv(newEnv, true);
         }
     }
 };
@@ -235,7 +271,7 @@ const saveEnvironmentDetails = async () => {
             );
 
             if (updated) {
-                selectEnv(updated);
+                selectEnv(updated, false);
             }
         }
     } catch {
@@ -245,20 +281,46 @@ const saveEnvironmentDetails = async () => {
     }
 };
 
-const deleteActiveEnvironment = async () => {
-    if (!selectedEnvId.value) {
+const environmentToDelete = ref<EnvironmentItem | null>(null);
+const isDeleting = ref(false);
+
+const promptDeleteEnvironment = (env?: EnvironmentItem | null) => {
+    const target = env || activeEnv.value;
+    if (!target) {
+        return;
+    }
+    environmentToDelete.value = target;
+};
+
+const confirmDeleteEnvironment = async () => {
+    if (!environmentToDelete.value) {
         return;
     }
 
-    if (confirm('Are you sure you want to delete this environment?')) {
-        const idToDelete = selectedEnvId.value;
-        selectedEnvId.value = null;
+    const idToDelete = environmentToDelete.value.id;
+    isDeleting.value = true;
+
+    try {
         await store.deleteEnvironment(idToDelete);
+        const wasActive = selectedEnvId.value === idToDelete;
+        if (wasActive) {
+            selectedEnvId.value = null;
+        }
+
+        environmentToDelete.value = null;
         toast.success('Environment deleted successfully');
 
-        if (store.environments.length > 0) {
-            selectEnv(store.environments[0]);
+        if (wasActive) {
+            if (store.environments.length > 0) {
+                selectEnv(store.environments[0], true);
+            } else {
+                envName.value = '';
+                localVariables.value = [];
+                router.get('/environments');
+            }
         }
+    } finally {
+        isDeleting.value = false;
     }
 };
 
@@ -381,12 +443,24 @@ const executeReplace = async () => {
                                 env.name
                             }}</span>
                         </div>
-                        <span
-                            v-if="store.activeEnvironment?.id === env.id"
-                            class="shrink-0 rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
-                        >
-                            Active
-                        </span>
+                        <div class="flex shrink-0 items-center gap-1.5">
+                            <span
+                                v-if="store.activeEnvironment?.id === env.id"
+                                class="shrink-0 rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                            >
+                                Active
+                            </span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="h-6 w-6 rounded text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                                :class="{ 'opacity-100': selectedEnvId === env.id }"
+                                @click.stop="promptDeleteEnvironment(env)"
+                                title="Delete Environment"
+                            >
+                                <Trash2 class="h-3 w-3" />
+                            </Button>
+                        </div>
                     </button>
 
                     <div
@@ -425,7 +499,7 @@ const executeReplace = async () => {
                             "
                             size="sm"
                             :class="[
-                                'h-9 gap-1.5 px-3 text-xs transition-all duration-200',
+                                'h-9 shrink-0 gap-1.5 px-3 text-xs transition-all duration-200',
                                 store.activeEnvironment?.id === activeEnv.id
                                     ? 'border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
                                     : 'border-input/60 text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -455,7 +529,7 @@ const executeReplace = async () => {
                         <Button
                             variant="default"
                             size="sm"
-                            class="h-9 gap-1.5 px-4 text-xs"
+                            class="h-9 shrink-0 gap-1.5 px-4 text-xs"
                             :disabled="isSaving"
                             @click="saveEnvironmentDetails"
                         >
@@ -479,7 +553,7 @@ const executeReplace = async () => {
                             variant="outline"
                             size="sm"
                             class="h-9 shrink-0 gap-1.5 border-destructive/20 px-3 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            @click="deleteActiveEnvironment"
+                            @click="promptDeleteEnvironment(activeEnv)"
                         >
                             <Trash2 class="h-3.5 w-3.5" />
                             Delete
@@ -866,6 +940,27 @@ const executeReplace = async () => {
                         class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"
                     />
                     Import
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog :open="!!environmentToDelete" @update:open="(val) => { if (!val) environmentToDelete = null; }">
+        <DialogContent class="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Delete Environment</DialogTitle>
+                <DialogDescription>
+                    Are you sure you want to delete the environment <strong class="font-semibold text-foreground">{{ environmentToDelete?.name }}</strong>? This action cannot be undone.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="mt-4 gap-2 sm:gap-2">
+                <Button variant="outline" :disabled="isDeleting" @click="environmentToDelete = null">
+                    Cancel
+                </Button>
+                <Button variant="destructive" :disabled="isDeleting" @click="confirmDeleteEnvironment">
+                    <Trash2 class="mr-2 h-4 w-4" v-if="!isDeleting" />
+                    <span v-else class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                    Delete
                 </Button>
             </DialogFooter>
         </DialogContent>

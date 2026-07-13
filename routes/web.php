@@ -60,6 +60,7 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])
         Route::post('environments/{environment}/replace-value', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'replaceValue'])->name('environments.replaceValue')->middleware('team_permission:environment:manage_variables');
         Route::get('environments/{environment}/export', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'export'])->name('environments.export');
         Route::post('environments/import', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'import'])->name('environments.import');
+        Route::get('environments/{environment}', [\App\Domains\Environments\Controllers\EnvironmentsController::class, 'show'])->name('environments.show');
 
         // History logs
         Route::get('history', [\App\Domains\History\Controllers\HistoryController::class, 'index'])->name('history.index');

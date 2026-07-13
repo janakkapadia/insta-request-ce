@@ -12,9 +12,13 @@ use Illuminate\Support\Str;
 
 class EnvironmentsController extends Controller
 {
-    public function index()
+    public function index(Environment $environment = null)
     {
         $team = Auth::user()->currentTeam;
+        if ($environment && $environment->team_id !== $team->id) {
+            abort(403);
+        }
+
         $environments = Environment::where('team_id', $team->id)
             ->with('variables')
             ->orderBy('name')
@@ -22,7 +26,20 @@ class EnvironmentsController extends Controller
 
         return inertia('Environments/Index', [
             'environments' => $environments,
+            'activeEnvironmentId' => $environment ? $environment->id : null,
         ]);
+    }
+
+    public function show(Request $request, $environmentId)
+    {
+        $team = Auth::user()->currentTeam;
+        $environment = Environment::where('team_id', $team->id)->where('id', $environmentId)->first();
+
+        if (!$environment) {
+            return redirect()->route('environments.index');
+        }
+
+        return $this->index($environment);
     }
 
     public function apiList()
@@ -141,7 +158,7 @@ class EnvironmentsController extends Controller
             return response()->json(['message' => 'Environment deleted']);
         }
 
-        return redirect()->back();
+        return redirect()->route('environments.index');
     }
 
     public function export(Environment $environment)
