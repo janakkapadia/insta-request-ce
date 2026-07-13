@@ -21,7 +21,7 @@ import {
     Check,
     ChevronDown,
 } from 'lucide-vue-next';
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, watch, nextTick } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -66,10 +66,33 @@ const emit = defineEmits<{
 
 const store = useWorkspaceStore();
 
+const fileInput = ref<HTMLInputElement | null>(null);
+
+watch(() => props.open, (newVal) => {
+    if (newVal) {
+        reset();
+    }
+});
+
+const scrollContainer = ref<HTMLElement | null>(null);
+
+const scrollToTop = () => {
+    nextTick(() => {
+        if (scrollContainer.value) {
+            scrollContainer.value.scrollTop = 0;
+        }
+    });
+};
+
+
 // ── State ─────────────────────────────────────────────────────────────
 type Step = 'upload' | 'preview' | 'options' | 'confirming' | 'done';
 
 const step = ref<Step>('upload');
+
+watch(step, () => {
+    scrollToTop();
+});
 const isLoading = ref(false);
 const error = ref('');
 // Folder collapse state (keyed by string path now)
@@ -414,6 +437,10 @@ const handleFileSelect = (e: Event) => {
 };
 
 const uploadFile = async (file: File) => {
+    // Cancel any in-flight Inertia visit (e.g. the router.get from a previous
+    // import's onSuccess) so it doesn't auto-cancel this new upload request.
+    router.cancelAll();
+
     isLoading.value = true;
     error.value = '';
 
@@ -439,6 +466,9 @@ const uploadFile = async (file: File) => {
         },
         onFinish: () => {
             isLoading.value = false;
+            if (fileInput.value) {
+                fileInput.value.value = '';
+            }
         }
     });
 };
@@ -447,6 +477,9 @@ const handleCurlImport = async () => {
     if (!curlInput.value.trim()) {
 return;
 }
+
+    // Cancel any in-flight Inertia visit so it doesn't cancel this request.
+    router.cancelAll();
 
     isLoading.value = true;
     error.value = '';
@@ -478,6 +511,9 @@ const handleUrlImport = async () => {
     if (!urlInput.value.trim()) {
 return;
 }
+
+    // Cancel any in-flight Inertia visit so it doesn't cancel this request.
+    router.cancelAll();
 
     isLoading.value = true;
     error.value = '';
@@ -548,6 +584,7 @@ return;
                             router.get('/collections/' + newCol.id, {}, {
                                 preserveState: true,
                                 preserveScroll: true,
+                                async: true,
                                 only: ['activeCollectionId', 'activeRequestId']
                             });
                         }
@@ -587,6 +624,11 @@ const reset = () => {
     targetCollectionId.value = '';
     targetFolderId.value = 'root';
     finalResult.value = null;
+
+    if (fileInput.value) {
+        fileInput.value.value = '';
+    }
+    scrollToTop();
 };
 
 const close = () => {
@@ -649,7 +691,7 @@ const methodColor = (method: string) => {
             </div>
 
             <!-- Content -->
-            <div class="flex-1 min-h-0 overflow-y-auto">
+            <div ref="scrollContainer" class="flex-1 min-h-0 overflow-y-auto">
                     <div class="px-6 py-4">
                         <!-- UPLOAD STEP -->
                         <div v-if="step === 'upload'" class="space-y-3">
@@ -682,7 +724,7 @@ const methodColor = (method: string) => {
                                 @dragover.prevent="dragActive = true"
                                 @dragleave="dragActive = false"
                                 @drop="handleDrop"
-                                @click="($refs.fileInput as HTMLInputElement)?.click()"
+                                @click="fileInput?.click()"
                             >
                                 <input
                                     ref="fileInput"
@@ -791,7 +833,7 @@ const methodColor = (method: string) => {
                                 <div>
                                     <div class="text-xs font-medium text-muted-foreground mb-0.5">Collection</div>
                                     <div class="text-sm font-semibold">{{ preview.collection_name }}</div>
-                                    <div v-if="preview.collection_description" class="text-xs text-muted-foreground mt-1">
+                                    <div v-if="preview.collection_description" class="text-xs text-muted-foreground mt-1 max-h-32 overflow-y-auto pr-1">
                                         {{ preview.collection_description }}
                                     </div>
                                 </div>

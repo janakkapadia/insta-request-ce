@@ -197,7 +197,7 @@ const confirmDeleteCollection = async () => {
 };
 
 const handleImported = async () => {
-    await store.refreshCollections();
+    // Collections are already refreshed by confirmImport inside ImportModal
 };
 
 const handleSelectCollection = (collection: any) => {
