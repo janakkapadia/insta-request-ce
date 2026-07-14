@@ -80,6 +80,60 @@ class ConflictResolver
         );
     }
 
+    /**
+     * Find existing requests in the collection that are not present in the parsed import data (to be deleted/pruned).
+     *
+     * @return array<ConflictItem>
+     */
+    public function findDeletions(ImportParseResult $parsed, Collection $collection): array
+    {
+        $collection->load(['requests', 'folders.requests']);
+
+        // Index incoming requests by fast lookup key
+        $incomingIndex = [];
+        foreach ($parsed->requests as $parsedReq) {
+            $key = $this->makeKey($parsedReq->name, $parsedReq->method, $parsedReq->url);
+            $incomingIndex[$key] = true;
+        }
+        foreach ($parsed->folders as $folder) {
+            foreach ($folder->requests as $parsedReq) {
+                $key = $this->makeKey($parsedReq->name, $parsedReq->method, $parsedReq->url);
+                $incomingIndex[$key] = true;
+            }
+        }
+
+        $deletions = [];
+        $allExistingRequests = [...$collection->requests];
+        foreach ($collection->folders as $folder) {
+            foreach ($folder->requests as $req) {
+                $allExistingRequests[] = $req;
+            }
+        }
+
+        foreach ($allExistingRequests as $existing) {
+            $key = $this->makeKey($existing->name, $existing->method, $existing->url);
+            if (!isset($incomingIndex[$key])) {
+                $deletions[] = new ConflictItem(
+                    requestName: $existing->name,
+                    method: $existing->method,
+                    url: $existing->url,
+                    existingRequestId: $existing->id,
+                    incomingData: [],
+                    existingData: [
+                        'name' => $existing->name,
+                        'method' => $existing->method,
+                        'url' => $existing->url,
+                        'headers' => $existing->headers ?? [],
+                        'query_params' => $existing->query_params ?? [],
+                        'body' => $existing->body ?? [],
+                    ],
+                );
+            }
+        }
+
+        return $deletions;
+    }
+
     private function makeKey(string $name, string $method, ?string $url = null): string
     {
         return RequestMatcher::makeKey($name, $method, $url);

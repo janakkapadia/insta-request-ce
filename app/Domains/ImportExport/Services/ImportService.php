@@ -236,24 +236,60 @@ class ImportService
 
     private function mergeIntoCollection(ImportParseResult $parsed, Collection $collection, MergeStrategy $strategy, ?string $targetFolderId = null): void
     {
+        if ($strategy === MergeStrategy::Mirror) {
+            $collection->update([
+                'name' => $parsed->collectionName,
+                'description' => $parsed->collectionDescription,
+            ]);
+        }
+
         $collection->load(['requests', 'folders.requests']);
+
+        if ($strategy === MergeStrategy::Mirror) {
+            $incomingIndex = [];
+            foreach ($parsed->requests as $req) {
+                $incomingIndex[$this->makeKey($req->name, $req->method, $req->url)] = true;
+            }
+            $this->collectIncomingKeysFromFolders($parsed->folders, $incomingIndex);
+
+            foreach ($collection->requests as $req) {
+                if (!isset($incomingIndex[$this->makeKey($req->name, $req->method, $req->url)])) {
+                    $req->delete();
+                }
+            }
+            foreach ($collection->folders as $folder) {
+                foreach ($folder->requests as $req) {
+                    if (!isset($incomingIndex[$this->makeKey($req->name, $req->method, $req->url)])) {
+                        $req->delete();
+                    }
+                }
+            }
+        }
 
         // Index existing requests
         $existingIndex = [];
         foreach ($collection->requests as $req) {
-            $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
+            if (!$req->trashed()) {
+                $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
+            }
         }
         foreach ($collection->folders as $folder) {
-            foreach ($folder->requests as $req) {
-                $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
+            if (!$folder->trashed()) {
+                foreach ($folder->requests as $req) {
+                    if (!$req->trashed()) {
+                        $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
+                    }
+                }
             }
         }
 
         // Index existing folders
         $existingFolders = [];
         foreach ($collection->folders as $folder) {
-            $key = strtolower(trim($folder->name)) . '::' . ($folder->parent_id ?? 'root');
-            $existingFolders[$key] = $folder;
+            if (!$folder->trashed()) {
+                $key = strtolower(trim($folder->name)) . '::' . ($folder->parent_id ?? 'root');
+                $existingFolders[$key] = $folder;
+            }
         }
 
         // Merge root requests
@@ -263,6 +299,10 @@ class ImportService
 
         // Merge folders and their requests
         $this->mergeParsedFolders($parsed->folders, $collection->id, $targetFolderId, $existingIndex, $existingFolders, $strategy);
+
+        if ($strategy === MergeStrategy::Mirror) {
+            $this->pruneEmptyFolders($collection->id);
+        }
     }
 
     private function mergeParsedFolders(array $folders, string $collectionId, ?string $parentId, array &$existingIndex, array &$existingFolders, MergeStrategy $strategy): void
@@ -273,6 +313,11 @@ class ImportService
 
             if ($existingFolder) {
                 $folderId = $existingFolder->id;
+                if ($strategy === MergeStrategy::MergeReplace || $strategy === MergeStrategy::Mirror) {
+                    $existingFolder->update([
+                        'description' => $folder->description,
+                    ]);
+                }
             } else {
                 $newFolder = CollectionFolder::create([
                     'collection_id' => $collectionId,
@@ -303,8 +348,8 @@ class ImportService
         $key = $this->makeKey($parsed->name, $parsed->method, $parsed->url);
 
         if (isset($existingIndex[$key])) {
-            if ($strategy === MergeStrategy::MergeReplace) {
-                $existingIndex[$key]->update([
+            if ($strategy === MergeStrategy::MergeReplace || $strategy === MergeStrategy::Mirror) {
+                $updateData = [
                     'name' => $parsed->name,
                     'url' => $parsed->url,
                     'description' => $parsed->description,
@@ -312,7 +357,11 @@ class ImportService
                     'query_params' => $parsed->queryParams,
                     'body' => $parsed->body,
                     'auth' => $parsed->auth,
-                ]);
+                ];
+                if ($strategy === MergeStrategy::Mirror) {
+                    $updateData['folder_id'] = $folderId;
+                }
+                $existingIndex[$key]->update($updateData);
             }
             // MergeSkip: do nothing
             return;
@@ -353,6 +402,32 @@ class ImportService
         foreach ($folder->folders as $childFolder) {
             $this->createFolderWithRequests($childFolder, $collectionId, $dbFolder->id);
         }
+    }
+
+    private function collectIncomingKeysFromFolders(array $folders, array &$incomingIndex): void
+    {
+        foreach ($folders as $folder) {
+            foreach ($folder->requests as $req) {
+                $incomingIndex[$this->makeKey($req->name, $req->method, $req->url)] = true;
+            }
+            $this->collectIncomingKeysFromFolders($folder->folders, $incomingIndex);
+        }
+    }
+
+    private function pruneEmptyFolders(string $collectionId): void
+    {
+        do {
+            $deletedCount = 0;
+            $folders = CollectionFolder::where('collection_id', $collectionId)->get();
+            foreach ($folders as $folder) {
+                $hasRequests = $folder->requests()->exists();
+                $hasChildren = $folder->children()->exists();
+                if (!$hasRequests && !$hasChildren) {
+                    $folder->delete();
+                    $deletedCount++;
+                }
+            }
+        } while ($deletedCount > 0);
     }
 
     private function makeKey(string $name, string $method, ?string $url = null): string

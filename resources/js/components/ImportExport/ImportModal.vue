@@ -20,6 +20,9 @@ import {
     Minus,
     Check,
     ChevronDown,
+    AlertTriangle,
+    RefreshCw,
+    Trash2,
 } from 'lucide-vue-next';
 import { ref, reactive, computed, watch, nextTick } from 'vue';
 import { Badge } from '@/components/ui/badge';
@@ -109,17 +112,18 @@ const selectedFormat = ref<ImportFormat | ''>('');
 const importRecord = ref<ImportRecord | null>(null);
 const preview = ref<ImportPreview | null>(null);
 const conflicts = ref<ConflictItem[]>([]);
+const deletions = ref<any[]>([]);
 const selections = reactive<Record<string, boolean>>({});
 // Search term for filtering requests and folders
 const searchTerm = ref('');
 interface FlatFolder {
-    folder: any;
+    folder: ParsedFolder;
     path: string;
     displayName: string;
     level: number;
 }
 
-const getFlatFolders = (folders: any[], prefix = 'folder', parentName = '', level = 0): FlatFolder[] => {
+const getFlatFolders = (folders: ParsedFolder[], prefix = 'folder', parentName = '', level = 0): FlatFolder[] => {
     let result: FlatFolder[] = [];
     folders.forEach((f, i) => {
         const path = `${prefix}:${i}`;
@@ -192,8 +196,26 @@ const mergeStrategy = ref<MergeStrategy>('create_new');
 const targetCollectionId = ref<string>('');
 const targetFolderId = ref<string>('root');
 
-watch(targetCollectionId, () => {
+watch(targetCollectionId, (newVal) => {
     targetFolderId.value = 'root';
+
+    if (newVal && importRecord.value) {
+        router.get(`/import/${importRecord.value.id}/preview`, {
+            target_collection_id: newVal,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['flash'],
+            onSuccess: (page) => {
+                const flash = (page.props.flash || {}) as any;
+                conflicts.value = flash.conflicts || [];
+                deletions.value = flash.deletions || [];
+            },
+        });
+    } else {
+        conflicts.value = [];
+        deletions.value = [];
+    }
 });
 
 const setTargetCollection = (val: any) => {
@@ -318,42 +340,42 @@ delete selections[`root:${index}`];
 };
 
 // Folder State
-const folderSelected = (path: string, f: any) => {
+const folderSelected = (path: string, f: ParsedFolder) => {
     if (f.requests.length === 0) {
-return !!selections[path];
-}
+        return !!selections[path];
+    }
 
     let selectedCount = 0;
     f.requests.forEach((r, ri) => {
         if (selections[`${path}:req:${ri}`]) {
-selectedCount++;
-}
+            selectedCount++;
+        }
     });
 
     if (selectedCount === 0) {
-return false;
-}
+        return false;
+    }
 
     if (selectedCount === f.requests.length) {
-return true;
-}
+        return true;
+    }
 
     return 'indeterminate';
 };
 
-const toggleFolder = (path: string, f: any, checked: boolean) => {
+const toggleFolder = (path: string, f: ParsedFolder, checked: boolean) => {
     if (checked) {
-selections[path] = true;
-} else {
-delete selections[path];
-}
+        selections[path] = true;
+    } else {
+        delete selections[path];
+    }
     
     f.requests.forEach((r, ri) => {
         if (checked) {
-selections[`${path}:req:${ri}`] = true;
-} else {
-delete selections[`${path}:req:${ri}`];
-}
+            selections[`${path}:req:${ri}`] = true;
+        } else {
+            delete selections[`${path}:req:${ri}`];
+        }
     });
 };
 
@@ -466,6 +488,7 @@ const uploadFile = async (file: File) => {
         },
         onFinish: () => {
             isLoading.value = false;
+
             if (fileInput.value) {
                 fileInput.value.value = '';
             }
@@ -544,6 +567,7 @@ const handleUploadResponse = (data: any) => {
     importRecord.value = data.import;
     preview.value = data.preview;
     conflicts.value = data.conflicts || [];
+    deletions.value = data.deletions || [];
     step.value = 'preview';
 };
 
@@ -615,6 +639,7 @@ const reset = () => {
     importRecord.value = null;
     preview.value = null;
     conflicts.value = [];
+    deletions.value = [];
 
     for (const key of Object.keys(selections)) {
         delete selections[key];
@@ -628,6 +653,7 @@ const reset = () => {
     if (fileInput.value) {
         fileInput.value.value = '';
     }
+
     scrollToTop();
 };
 
@@ -962,6 +988,7 @@ const methodColor = (method: string) => {
                                         { value: 'create_new' as MergeStrategy, icon: Plus, label: 'Create New Collection', desc: 'Import as a fresh, standalone collection' },
                                         { value: 'merge_replace' as MergeStrategy, icon: GitMerge, label: 'Merge & Replace', desc: 'Merge into existing collection, replace duplicates' },
                                         { value: 'merge_skip' as MergeStrategy, icon: SkipForward, label: 'Merge & Skip', desc: 'Merge into existing collection, skip duplicates' },
+                                        { value: 'mirror' as MergeStrategy, icon: RefreshCw, label: 'Mirror / Prune', desc: 'Sync exactly to spec: update/add requests, remove missing ones' },
                                     ])"
                                     :key="opt.value"
                                     class="flex items-start gap-3 rounded-lg border px-4 py-3 text-left transition-all hover:bg-muted/30"
@@ -1021,7 +1048,7 @@ const methodColor = (method: string) => {
                             </div>
 
                             <!-- Conflict Warning -->
-                            <div v-if="conflicts.length > 0" class="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+                            <div v-if="conflicts.length > 0 && mergeStrategy !== 'create_new'" class="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
                                 <div class="flex items-center gap-2 text-xs font-medium text-amber-600 mb-2">
                                     <AlertTriangle class="w-3.5 h-3.5" />
                                     {{ conflicts.length }} conflicting request(s) found
@@ -1036,6 +1063,29 @@ const methodColor = (method: string) => {
                                     </div>
                                     <div v-if="conflicts.length > 5" class="text-[11px] text-muted-foreground">
                                         ...and {{ conflicts.length - 5 }} more
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Deletions Warning for Mirror Strategy -->
+                            <div v-if="mergeStrategy === 'mirror' && deletions.length > 0" class="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+                                <div class="flex items-center gap-2 text-xs font-semibold text-destructive mb-1.5">
+                                    <Trash2 class="w-3.5 h-3.5" />
+                                    {{ deletions.length }} request(s) will be deleted (pruned)
+                                </div>
+                                <div class="text-[11px] text-muted-foreground mb-2">
+                                    Because they exist in the target collection but are not present in the imported spec:
+                                </div>
+                                <div class="space-y-1">
+                                    <div v-for="d in deletions.slice(0, 5)" :key="d.existing_request_id || d.request_name" class="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                        <span
+                                            class="font-mono font-bold text-[9px] rounded px-1"
+                                            :style="{ color: methodColor(d.method), background: methodColor(d.method) + '18' }"
+                                        >{{ d.method }}</span>
+                                        {{ d.request_name }}
+                                    </div>
+                                    <div v-if="deletions.length > 5" class="text-[11px] text-muted-foreground">
+                                        ...and {{ deletions.length - 5 }} more
                                     </div>
                                 </div>
                             </div>
