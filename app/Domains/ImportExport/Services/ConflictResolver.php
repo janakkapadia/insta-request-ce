@@ -19,15 +19,15 @@ class ConflictResolver
         $collection->load(['requests', 'folders.requests']);
         $conflicts = [];
 
-        // Index existing requests by name+method for fast lookup
+        // Index existing requests by fast lookup key
         $existingIndex = [];
         foreach ($collection->requests as $req) {
-            $key = $this->makeKey($req->name, $req->method);
+            $key = $this->makeKey($req->name, $req->method, $req->url);
             $existingIndex[$key] = $req;
         }
         foreach ($collection->folders as $folder) {
             foreach ($folder->requests as $req) {
-                $key = $this->makeKey($req->name, $req->method);
+                $key = $this->makeKey($req->name, $req->method, $req->url);
                 $existingIndex[$key] = $req;
             }
         }
@@ -55,7 +55,7 @@ class ConflictResolver
 
     private function checkConflict(ParsedRequest $parsed, array $existingIndex): ?ConflictItem
     {
-        $key = $this->makeKey($parsed->name, $parsed->method);
+        $key = $this->makeKey($parsed->name, $parsed->method, $parsed->url);
 
         if (!isset($existingIndex[$key])) {
             return null;
@@ -80,8 +80,8 @@ class ConflictResolver
         );
     }
 
-    private function makeKey(string $name, string $method): string
+    private function makeKey(string $name, string $method, ?string $url = null): string
     {
-        return strtolower(trim($name)) . '::' . strtoupper($method);
+        return RequestMatcher::makeKey($name, $method, $url);
     }
 }
