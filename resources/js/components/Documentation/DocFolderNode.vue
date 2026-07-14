@@ -19,22 +19,33 @@ const currentDepth = props.depth || 0;
 const isExpanded = ref<boolean>(true);
 
 const childFolders = computed(() => {
-    if (!props.folders) return [];
+    if (!props.folders) {
+return [];
+}
+
     return props.folders.filter(f => f.parent_id === props.folder.id);
 });
 
 const folderRequests = computed(() => {
-    if (!props.requests) return [];
+    if (!props.requests) {
+return [];
+}
+
     return props.requests.filter(r => r.folder_id === props.folder.id);
 });
 
 const getFolderRequestsCount = (folderId: string): number => {
-    if (!props.requests || !props.folders) return 0;
+    if (!props.requests || !props.folders) {
+return 0;
+}
+
     let count = props.requests.filter(r => r.folder_id === folderId).length;
     const children = props.folders.filter(f => f.parent_id === folderId);
+
     for (const child of children) {
         count += getFolderRequestsCount(child.id);
     }
+
     return count;
 };
 

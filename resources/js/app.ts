@@ -34,6 +34,7 @@ createInertiaApp({
 
                 const marketingPages = [
                     'Documentation/PublicViewer',
+                    'Documentation/PublicIndex',
                     'PrivacyPolicy',
                     'TermsOfService'
                 ];

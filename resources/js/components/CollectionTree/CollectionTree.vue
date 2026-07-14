@@ -4,16 +4,6 @@ import { useWorkspaceStore } from '@/stores/workspace';
 import { usePage, router } from '@inertiajs/vue3';
 import { ChevronRight, ChevronDown, Folder, FileJson, Plus, FolderPlus, FilePlus, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 
 const store = useWorkspaceStore();
 const page = usePage();
@@ -125,15 +115,28 @@ const handleDeleteRequest = (requestId: string) => {
     );
 };
 
+import { nextTick } from 'vue';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
 import collections from '@/routes/collections';
-import { nextTick } from 'vue';
 
 const vFocus = {
     mounted: (el: HTMLElement) => {
         nextTick(() => {
             const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
-            if (input) input.focus();
+
+            if (input) {
+input.focus();
+}
         });
     }
 };

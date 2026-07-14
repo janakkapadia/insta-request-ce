@@ -17,15 +17,17 @@ import {
     Info,
     Search,
     ExternalLink,
-    X
+    X,
+    Copy,
+    ArrowLeft
 } from 'lucide-vue-next';
 import { ref, watch, computed } from 'vue';
 import { toast } from 'vue-sonner';
+import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import { parseMarkdown } from '@/lib/markdown';
 
 // Props passed from Inertia controller
@@ -34,6 +36,17 @@ const props = defineProps<{
         id: string;
         name: string;
         description: string | null;
+        documentation?: {
+            id: string;
+            collection_id: string;
+            is_public: boolean;
+            public_slug: string;
+            version: string;
+            markdown_intro?: string | null;
+            auth_info?: string | null;
+            settings?: any;
+            environment_id?: string | null;
+        } | null;
         requests: Array<{
             id: string;
             name: string;
@@ -55,6 +68,75 @@ const props = defineProps<{
         variables: Array<{ key: string; value: string; enabled: boolean }>;
     }>;
 }>();
+
+// Overview state & helpers
+const overviewSearch = ref('');
+const overviewFilter = ref<'all' | 'public' | 'private'>('all');
+const copiedUrlId = ref<string | null>(null);
+
+const filteredOverviewCollections = computed(() => {
+    return props.collections.filter(c => {
+        const matchesSearch = !overviewSearch.value.trim() ||
+            c.name.toLowerCase().includes(overviewSearch.value.toLowerCase()) ||
+            (c.documentation?.public_slug || '').toLowerCase().includes(overviewSearch.value.toLowerCase());
+        
+        if (!matchesSearch) {
+return false;
+}
+
+        if (overviewFilter.value === 'public') {
+            return c.documentation && c.documentation.is_public;
+        }
+
+        if (overviewFilter.value === 'private') {
+            return !c.documentation || !c.documentation.is_public;
+        }
+
+        return true;
+    });
+});
+
+const totalPublicCount = computed(() => {
+    return props.collections.filter(c => c.documentation && c.documentation.is_public).length;
+});
+
+const totalPrivateCount = computed(() => {
+    return props.collections.filter(c => !c.documentation || !c.documentation.is_public).length;
+});
+
+const copyPublicUrl = (col: any) => {
+    if (!col.documentation?.public_slug) {
+return;
+}
+
+    const url = `${window.location.origin}/docs/${col.id}/${col.documentation.public_slug}`;
+    navigator.clipboard.writeText(url);
+    copiedUrlId.value = col.id;
+    toast.success('Public URL copied to clipboard');
+    setTimeout(() => {
+        if (copiedUrlId.value === col.id) {
+copiedUrlId.value = null;
+}
+    }, 2000);
+};
+
+const quickTogglePublic = (col: any) => {
+    isLoading.value = true;
+    const newStatus = !(col.documentation?.is_public);
+    router.post(`/documentation/collection/${col.id}`, {
+        is_public: newStatus,
+        public_slug: col.documentation?.public_slug || (`${col.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).substring(2, 8)}`),
+        version: col.documentation?.version || '1.0.0',
+        markdown_intro: col.documentation?.markdown_intro || '',
+        auth_info: col.documentation?.auth_info || '',
+        settings: col.documentation?.settings || {},
+        environment_id: col.documentation?.environment_id || null
+    }, {
+        preserveScroll: true,
+        onSuccess: () => toast.success(`Documentation is now ${newStatus ? 'Public' : 'Private'}`),
+        onFinish: () => isLoading.value = false
+    });
+};
 
 // State vars
 const selectedCollectionId = ref<string>(props.selectedCollectionId || '');
@@ -81,8 +163,12 @@ const selectedRequest = computed(() => {
 });
 
 const activeCollectionFolders = computed(() => {
-    if (!selectedCollectionId.value) return [];
+    if (!selectedCollectionId.value) {
+return [];
+}
+
     const col = props.collections.find(c => c.id === selectedCollectionId.value);
+
     return col?.folders || [];
 });
 
@@ -116,6 +202,7 @@ watch(selectedCollectionId, (newVal) => {
     if (!newVal) {
         docId.value = '';
         requestsList.value = [];
+
         return;
     }
     
@@ -149,6 +236,7 @@ watch(() => props.documentation, (newDoc) => {
 watch(() => props.requestsList, (newList) => {
     requestsList.value = newList ? JSON.parse(JSON.stringify(newList)) : [];
     editedRequestDescriptions.value = {};
+
     if (requestsList.value.length > 0) {
         if (!requestsList.value.find(r => r.id === selectedRequestId.value)) {
             selectedRequestId.value = requestsList.value[0].id;
@@ -160,7 +248,9 @@ watch(() => props.requestsList, (newList) => {
 
 // Save Documentation
 const handleSave = () => {
-    if (!selectedCollectionId.value) return;
+    if (!selectedCollectionId.value) {
+return;
+}
     
     isLoading.value = true;
 
@@ -192,7 +282,9 @@ const handleSave = () => {
 
 // Add Mock Response Example
 const handleAddExample = () => {
-    if (!selectedRequestId.value) return;
+    if (!selectedRequestId.value) {
+return;
+}
     
     router.post(`/documentation/request/${selectedRequestId.value}/response-examples`, {
         name: newExampleName.value,
@@ -259,6 +351,16 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
             </div>
             
             <div class="flex items-center gap-3">
+                <Button
+                    v-if="selectedCollectionId"
+                    variant="outline"
+                    @click="selectedCollectionId = ''"
+                    class="gap-1.5 text-xs h-9 cursor-pointer"
+                >
+                    <ArrowLeft class="h-3.5 w-3.5" />
+                    All Docs Hub
+                </Button>
+
                 <select
                     v-model="selectedCollectionId"
                     class="h-9 w-64 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -285,14 +387,212 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
             </div>
         </div>
 
-        <div v-if="!selectedCollectionId" class="flex-1 flex flex-col items-center justify-center border border-dashed rounded-xl p-12 bg-card text-center min-h-[400px]">
-            <div class="rounded-full bg-primary/10 p-4 mb-4">
-                <BookOpen class="h-10 w-10 text-primary" />
+        <!-- All Documentation & Public Portals Hub -->
+        <div v-if="!selectedCollectionId" class="flex-1 flex flex-col gap-6">
+            <!-- Stats & Quick Actions Banner -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card class="bg-card border border-border shadow-xs">
+                    <CardContent class="p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Collections</p>
+                            <h3 class="text-2xl font-extrabold text-foreground mt-1">{{ props.collections.length }}</h3>
+                        </div>
+                        <div class="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                            <BookOpen class="h-5 w-5" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card class="bg-card border border-border shadow-xs">
+                    <CardContent class="p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Public Portals Active</p>
+                            <h3 class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{{ totalPublicCount }}</h3>
+                        </div>
+                        <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                            <Globe class="h-5 w-5" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card class="bg-card border border-border shadow-xs">
+                    <CardContent class="p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Private / Draft Docs</p>
+                            <h3 class="text-2xl font-extrabold text-muted-foreground mt-1">{{ totalPrivateCount }}</h3>
+                        </div>
+                        <div class="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                            <Lock class="h-5 w-5" />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
-            <h3 class="text-lg font-bold text-foreground mb-1">No Collection Selected</h3>
-            <p class="text-sm text-muted-foreground max-w-sm mb-6">
-                Choose a collection from the dropdown in the header to start generating gorgeous web docs and code snippets.
-            </p>
+
+            <!-- Search & Filters -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-2xs">
+                <div class="relative flex-1 max-w-md">
+                    <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        v-model="overviewSearch"
+                        placeholder="Search documentation or public slug..."
+                        class="pl-9 h-9 text-xs"
+                    />
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center rounded-lg bg-muted p-0.5 text-xs font-semibold">
+                        <button
+                            @click="overviewFilter = 'all'"
+                            class="px-3 py-1 rounded-md transition-all cursor-pointer"
+                            :class="overviewFilter === 'all' ? 'bg-background text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+                        >
+                            All ({{ props.collections.length }})
+                        </button>
+                        <button
+                            @click="overviewFilter = 'public'"
+                            class="px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1"
+                            :class="overviewFilter === 'public' ? 'bg-background text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+                        >
+                            <Globe class="h-3 w-3 text-emerald-500" />
+                            Public ({{ totalPublicCount }})
+                        </button>
+                        <button
+                            @click="overviewFilter = 'private'"
+                            class="px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1"
+                            :class="overviewFilter === 'private' ? 'bg-background text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+                        >
+                            <Lock class="h-3 w-3 text-muted-foreground" />
+                            Private ({{ totalPrivateCount }})
+                        </button>
+                    </div>
+
+                    <a
+                        v-if="totalPublicCount > 0"
+                        href="/docs"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all ml-1"
+                    >
+                        <Globe class="h-3.5 w-3.5" />
+                        Live Public Portal
+                        <ExternalLink class="h-3 w-3 opacity-70" />
+                    </a>
+                </div>
+            </div>
+
+            <!-- Collections Overview Grid -->
+            <div v-if="filteredOverviewCollections.length === 0" class="flex flex-col items-center justify-center border border-dashed rounded-xl p-12 bg-card text-center min-h-[300px]">
+                <div class="rounded-full bg-muted p-4 mb-3">
+                    <Search class="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 class="text-base font-bold text-foreground">No matching documentation collections</h3>
+                <p class="text-xs text-muted-foreground mt-1 max-w-sm">
+                    No collections match your current search query or status filter. Try resetting your filters.
+                </p>
+                <Button variant="outline" size="sm" @click="overviewSearch = ''; overviewFilter = 'all'" class="mt-4 text-xs">
+                    Reset Filters
+                </Button>
+            </div>
+
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <Card
+                    v-for="col in filteredOverviewCollections"
+                    :key="col.id"
+                    class="flex flex-col justify-between bg-card border border-border shadow-xs hover:border-border/80 hover:shadow-md transition-all"
+                >
+                    <div>
+                        <CardHeader class="p-4 pb-3 border-b border-border/50">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="space-y-1 overflow-hidden">
+                                    <CardTitle class="text-base font-bold text-foreground truncate flex items-center gap-2">
+                                        <BookOpen class="h-4 w-4 text-primary shrink-0" />
+                                        <span class="truncate">{{ col.name }}</span>
+                                    </CardTitle>
+                                    <CardDescription class="text-xs line-clamp-1">
+                                        {{ col.description || 'No description provided' }}
+                                    </CardDescription>
+                                </div>
+                                <span class="text-[10px] bg-muted text-muted-foreground font-mono font-bold px-2 py-0.5 rounded-full border border-border shrink-0">
+                                    {{ col.requests?.length || 0 }} Endpoints
+                                </span>
+                            </div>
+
+                            <div class="mt-3 flex items-center justify-between pt-1">
+                                <div v-if="col.documentation && col.documentation.is_public" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Public Portal
+                                    <span class="font-mono opacity-80 ml-1">v{{ col.documentation.version }}</span>
+                                </div>
+                                <div v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+                                    <Lock class="h-3 w-3" />
+                                    Private / Draft
+                                    <span v-if="col.documentation" class="font-mono opacity-80 ml-1">v{{ col.documentation.version }}</span>
+                                </div>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent class="p-4 space-y-3">
+                            <div v-if="col.documentation && col.documentation.is_public" class="space-y-1.5">
+                                <Label class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Public Portal URL</Label>
+                                <div class="flex items-center gap-1.5 rounded-lg bg-muted/50 border border-border p-1.5 font-mono text-xs text-foreground overflow-hidden">
+                                    <Globe class="h-3.5 w-3.5 text-emerald-500 shrink-0 ml-1" />
+                                    <span class="truncate flex-1 text-[11px] select-all">
+                                        /docs/{{ col.id }}/{{ col.documentation.public_slug }}
+                                    </span>
+                                    <button
+                                        @click="copyPublicUrl(col)"
+                                        class="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors shrink-0 cursor-pointer"
+                                        title="Copy Public URL"
+                                    >
+                                        <Check v-if="copiedUrlId === col.id" class="h-3.5 w-3.5 text-emerald-500" />
+                                        <Copy v-else class="h-3.5 w-3.5" />
+                                    </button>
+                                    <a
+                                        :href="'/docs/' + col.id + '/' + col.documentation.public_slug"
+                                        target="_blank"
+                                        class="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors shrink-0"
+                                        title="Open Public Portal"
+                                    >
+                                        <ExternalLink class="h-3.5 w-3.5" />
+                                    </a>
+                                </div>
+                            </div>
+                            <div v-else class="py-2 px-3 rounded-lg bg-muted/30 border border-dashed border-border text-[11px] text-muted-foreground flex items-center justify-between">
+                                <span>Not published to public portal</span>
+                                <button
+                                    @click="quickTogglePublic(col)"
+                                    :disabled="isLoading"
+                                    class="text-xs font-bold text-primary hover:underline cursor-pointer"
+                                >
+                                    Quick Publish
+                                </button>
+                            </div>
+                        </CardContent>
+                    </div>
+
+                    <!-- Card Actions -->
+                    <div class="p-4 pt-2 border-t border-border/40 bg-muted/10 flex items-center justify-between gap-2">
+                        <button
+                            @click="quickTogglePublic(col)"
+                            :disabled="isLoading"
+                            class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer"
+                            :class="col.documentation && col.documentation.is_public ? 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'"
+                        >
+                            <Lock v-if="col.documentation && col.documentation.is_public" class="h-3 w-3" />
+                            <Globe v-else class="h-3 w-3" />
+                            {{ col.documentation && col.documentation.is_public ? 'Make Private' : 'Make Public' }}
+                        </button>
+
+                        <Button
+                            @click="selectedCollectionId = col.id"
+                            size="sm"
+                            class="gap-1.5 text-xs h-8 cursor-pointer"
+                        >
+                            <Settings class="h-3.5 w-3.5" />
+                            Configure & Edit
+                        </Button>
+                    </div>
+                </Card>
+            </div>
         </div>
 
         <!-- Selected Collection Panel -->

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SaveIcon, Folder, ChevronDown } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -11,9 +12,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useWorkspaceStore } from '@/stores/workspace';
-import { toast } from 'vue-sonner';
 import { cn } from '@/lib/utils';
+import { useWorkspaceStore } from '@/stores/workspace';
 
 const store = useWorkspaceStore();
 
@@ -26,9 +26,11 @@ const expandedNodes = ref<Set<string>>(new Set());
 
 const getCollectionInitials = (name: string): string => {
     const words = name.trim().split(/\s+/);
+
     if (words.length >= 2) {
         return (words[0][0] + words[1][0]).toUpperCase();
     }
+
     return name.substring(0, 2).toUpperCase();
 };
 
@@ -43,14 +45,19 @@ const COLLECTION_COLORS = [
 
 const getCollectionColor = (name: string) => {
     let hash = 0;
+
     for (let i = 0; i < name.length; i++) {
         hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
     }
+
     return COLLECTION_COLORS[Math.abs(hash) % COLLECTION_COLORS.length];
 };
 
 watch(location, (val) => {
-    if (!val) return;
+    if (!val) {
+return;
+}
+
     if (val.startsWith('c_')) {
         targetCollectionId.value = val.substring(2);
         targetFolderId.value = 'root';
@@ -58,6 +65,7 @@ watch(location, (val) => {
         const folderId = val.substring(2);
         targetFolderId.value = folderId;
         const col = store.collections.find(c => c.folders?.some(f => f.id === folderId));
+
         if (col) {
             targetCollectionId.value = col.id;
         }
@@ -67,6 +75,7 @@ watch(location, (val) => {
 watch(() => store.showSaveRequestModal, (isOpen) => {
     if (isOpen) {
         expandedNodes.value = new Set();
+
         if (store.selectedCollection) {
             targetCollectionId.value = store.selectedCollection.id;
             location.value = `c_${store.selectedCollection.id}`;
@@ -74,6 +83,7 @@ watch(() => store.showSaveRequestModal, (isOpen) => {
             targetCollectionId.value = store.collections[0].id;
             location.value = `c_${store.collections[0].id}`;
         }
+
         targetFolderId.value = 'root';
         requestName.value = store.selectedRequest?.name || 'New Request';
     }
@@ -124,11 +134,13 @@ const locationOptions = computed(() => {
 
 const toggleExpand = (id: string) => {
     const newSet = new Set(expandedNodes.value);
+
     if (newSet.has(id)) {
         newSet.delete(id);
     } else {
         newSet.add(id);
     }
+
     expandedNodes.value = newSet;
 };
 
@@ -138,7 +150,9 @@ const close = () => {
 };
 
 const handleSave = async () => {
-    if (!targetCollectionId.value || !requestName.value.trim()) return;
+    if (!targetCollectionId.value || !requestName.value.trim()) {
+return;
+}
 
     isSubmitting.value = true;
     

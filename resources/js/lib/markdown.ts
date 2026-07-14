@@ -70,6 +70,7 @@ return '';
         inlineCodeBlocks.push(
             `<code class="bg-muted px-1.5 py-0.5 rounded text-xs font-mono font-semibold text-primary">${code}</code>`,
         );
+
         return placeholder;
     });
 
@@ -92,9 +93,11 @@ return '';
                     if (/^@@@FENCEDCODEBLOCK\d+@@@$/.test(line) || /^@@@INLINECODE\d+@@@$/.test(line)) {
                         return line;
                     }
+
                     if (/^(<h[1-6]|<ul|<ol|<li|<div|<table|<hr)/.test(line)) {
                         return line;
                     }
+
                     return `<p class="my-1">${line}</p>`;
                 })
                 .join('\n');
@@ -136,6 +139,7 @@ return '';
                 // Collect every list-item line in this block (skip interleaved blanks)
                 const listItemLines: string[] = [allLines[i]];
                 i++;
+
                 while (i < allLines.length) {
                     if (isListLine(allLines[i])) {
                         listItemLines.push(allLines[i]);
@@ -143,7 +147,11 @@ return '';
                     } else if (/^\s*$/.test(allLines[i])) {
                         // Blank line — peek ahead: if a list item follows, skip blanks
                         let j = i + 1;
-                        while (j < allLines.length && /^\s*$/.test(allLines[j])) j++;
+
+                        while (j < allLines.length && /^\s*$/.test(allLines[j])) {
+j++;
+}
+
                         if (j < allLines.length && isListLine(allLines[j])) {
                             i = j; // skip blank gap, continue collecting
                         } else {
@@ -157,9 +165,14 @@ return '';
                 // --- build nested tree from collected lines ---
                 type LI = { indent: number; ordered: boolean; content: string; children: LI[] };
                 const items: LI[] = [];
+
                 for (const ln of listItemLines) {
                     const m = ln.match(/^([ \t]*)([\*\-]|\d+\.)\s+(.*)/);
-                    if (!m) continue;
+
+                    if (!m) {
+continue;
+}
+
                     items.push({
                         indent: m[1].replace(/\t/g, '    ').length,
                         ordered: /^\d+\.$/.test(m[2]),
@@ -168,21 +181,31 @@ return '';
                     });
                 }
 
-                if (items.length === 0) continue;
+                if (items.length === 0) {
+continue;
+}
 
                 const buildTree = (flat: LI[]): LI[] => {
                     const roots: LI[] = [];
                     const stack: LI[] = [];
+
                     for (const item of flat) {
-                        while (stack.length > 0 && stack[stack.length - 1].indent >= item.indent) stack.pop();
+                        while (stack.length > 0 && stack[stack.length - 1].indent >= item.indent) {
+stack.pop();
+}
+
                         (stack.length === 0 ? roots : stack[stack.length - 1].children).push(item);
                         stack.push(item);
                     }
+
                     return roots;
                 };
 
                 const render = (nodes: LI[], depth: number): string => {
-                    if (nodes.length === 0) return '';
+                    if (nodes.length === 0) {
+return '';
+}
+
                     const ordered = nodes[0].ordered;
                     const tag = ordered ? 'ol' : 'ul';
                     const style = ordered ? 'list-decimal' : 'list-disc';
@@ -190,6 +213,7 @@ return '';
                     const inner = nodes.map(n =>
                         `<li class="ml-4 ${style} text-muted-foreground">${n.content}${render(n.children, depth + 1)}</li>`
                     ).join('');
+
                     return `<${tag} class="${margin} space-y-1">${inner}</${tag}>`;
                 };
 
@@ -200,6 +224,7 @@ return '';
                 i++;
             }
         }
+
         html = outputLines.join('\n');
     }
 
@@ -208,6 +233,7 @@ return '';
         /^(([ \t]*\|?([^\n]+?)\|?[ \t]*\r?\n[ \t]*\|?([ \t]*:?[-=]+:?[ \t]*\|?)+[ \t]*\r?\n)([ \t]*\|?[^\n]+\|?[ \t]*(?:\r?\n|$))*)/gm,
         (tableBlock) => {
             const lines = tableBlock.trim().split(/\r?\n/);
+
             if (lines.length < 2) {
                 return tableBlock;
             }
@@ -218,9 +244,11 @@ return '';
 
             const parseRow = (rowStr: string, isHeader: boolean) => {
                 let trimmedRow = rowStr.trim();
+
                 if (trimmedRow.startsWith('|')) {
                     trimmedRow = trimmedRow.slice(1);
                 }
+
                 if (trimmedRow.endsWith('|')) {
                     trimmedRow = trimmedRow.slice(0, -1);
                 }

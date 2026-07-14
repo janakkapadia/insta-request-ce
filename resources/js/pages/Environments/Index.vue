@@ -140,8 +140,10 @@ onMounted(() => {
 
     if (props.activeEnvironmentId) {
         const found = store.environments.find((e) => e.id === props.activeEnvironmentId);
+
         if (found) {
             selectEnv(found, false);
+
             return;
         }
     }
@@ -154,6 +156,7 @@ onMounted(() => {
 watch(() => props.activeEnvironmentId, (newId) => {
     if (newId && newId !== selectedEnvId.value) {
         const found = store.environments.find((e) => e.id === newId);
+
         if (found) {
             selectEnv(found, false);
         }
@@ -162,8 +165,10 @@ watch(() => props.activeEnvironmentId, (newId) => {
 
 watch(() => props.environments, (newEnvs) => {
     store.setEnvironments(newEnvs);
+
     if (props.activeEnvironmentId && selectedEnvId.value !== props.activeEnvironmentId) {
         const found = store.environments.find((e) => e.id === props.activeEnvironmentId);
+
         if (found) {
             selectEnv(found, false);
         }
@@ -286,9 +291,11 @@ const isDeleting = ref(false);
 
 const promptDeleteEnvironment = (env?: EnvironmentItem | null) => {
     const target = env || activeEnv.value;
+
     if (!target) {
         return;
     }
+
     environmentToDelete.value = target;
 };
 
@@ -303,6 +310,7 @@ const confirmDeleteEnvironment = async () => {
     try {
         await store.deleteEnvironment(idToDelete);
         const wasActive = selectedEnvId.value === idToDelete;
+
         if (wasActive) {
             selectedEnvId.value = null;
         }

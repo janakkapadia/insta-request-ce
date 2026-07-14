@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import {
     BookOpen,
     Search,
     ChevronRight,
+    ChevronDown,
     Copy,
     Check,
     Globe,
@@ -22,6 +23,8 @@ import { ref, computed, onMounted } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import { parseMarkdown } from '@/lib/markdown';
 
+defineOptions({ layout: null });
+
 // Props
 const props = defineProps<{
     documentation: {
@@ -33,7 +36,7 @@ const props = defineProps<{
         markdown_intro: string | null;
         auth_info: string | null;
         settings: any;
-    };
+    } | null;
     collection: {
         id: string;
         name: string;
@@ -43,7 +46,7 @@ const props = defineProps<{
             name: string;
             parent_id: string | null;
         }>;
-    };
+    } | null;
     requests: Array<{
         id: string;
         folder_id: string | null;
@@ -69,18 +72,33 @@ const props = defineProps<{
         color: string | null;
         variables: Array<{ key: string; value: string; enabled: boolean }>;
     } | null;
+    publicDocsList?: Array<{
+        id: string;
+        collection_id: string;
+        public_slug: string;
+        version: string;
+        name: string;
+    }>;
 }>();
 
 // Environment state & variable substitution helper
 
 const activeEnvVariables = computed(() => {
-    if (!props.environment || !props.environment.variables) return [];
+    if (!props.environment || !props.environment.variables) {
+return [];
+}
+
     return props.environment.variables.filter(v => v.enabled !== false);
 });
 
 const substituteEnvVariables = (text: string | null | undefined): string => {
-    if (!text || typeof text !== 'string') return text || '';
-    if (!activeEnvVariables.value.length) return text;
+    if (!text || typeof text !== 'string') {
+return text || '';
+}
+
+    if (!activeEnvVariables.value.length) {
+return text;
+}
 
     let result = text;
     activeEnvVariables.value.forEach(v => {
@@ -88,6 +106,7 @@ const substituteEnvVariables = (text: string | null | undefined): string => {
         const regex2 = new RegExp(`\\{${v.key}\\}`, 'g');
         result = result.replace(regex1, v.value).replace(regex2, v.value);
     });
+
     return result;
 };
 
@@ -109,6 +128,17 @@ const toggleTheme = () => {
 // Search & Navigation
 const searchQuery = ref('');
 const selectedRequestId = ref<string | null>(null);
+const showDocsDropdown = ref(false);
+
+const switchCollection = (docItem: { id: string; collection_id: string; public_slug?: string; version: string; name: string }) => {
+    showDocsDropdown.value = false;
+
+    if (docItem.public_slug) {
+        router.get(`/docs/${docItem.collection_id}/${docItem.public_slug}`);
+    } else {
+        router.get(`/docs?collection_id=${docItem.collection_id}`);
+    }
+};
 
 // Code Generation State
 const selectedLang = ref<'curl' | 'fetch' | 'axios' | 'python' | 'go' | 'php-guzzle' | 'php-curl' | 'java'>('curl');
@@ -120,9 +150,13 @@ const activeExampleIndex = ref<Record<string, number>>({});
 
 // Filtered Requests
 const filteredRequests = computed(() => {
-    if (!searchQuery.value.trim()) {
-return props.requests;
+    if (!props.requests) {
+return [];
 }
+
+    if (!searchQuery.value.trim()) {
+        return props.requests;
+    }
 
     const query = searchQuery.value.toLowerCase();
 
@@ -132,7 +166,11 @@ return props.requests;
 });
 
 const rootFolders = computed(() => {
-    return (props.collection.folders || []).filter(f => !f.parent_id);
+    if (!props.collection || !props.collection.folders) {
+return [];
+}
+
+    return props.collection.folders.filter(f => !f.parent_id);
 });
 
 const rootRequests = computed(() => {
@@ -223,11 +261,11 @@ return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
 
 // Pre-render content
 const introHtml = computed(() => {
-    return parseMarkdown(props.documentation.markdown_intro || '# API Documentation\nWelcome to our API reference portal.');
+    return parseMarkdown((props.documentation && props.documentation.markdown_intro) || '# API Documentation\nWelcome to our API reference portal.');
 });
 
 const authHtml = computed(() => {
-    return parseMarkdown(props.documentation.auth_info || '');
+    return parseMarkdown((props.documentation && props.documentation.auth_info) || '');
 });
 
 const requestDescHtml = computed(() => {
@@ -626,30 +664,73 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head :title="props.collection.name + ' - API Reference'" />
+    <Head :title="((props.collection && props.collection.name) || 'API Documentation') + ' - API Reference'" />
 
     <div class="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
         <!-- Gorgeous Top Bar Banner -->
-        <header class="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none">
-            <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xs">
+        <header class="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none gap-4">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xs shrink-0">
                     <BookOpen class="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                    <h1 class="font-extrabold text-base tracking-tight text-foreground flex items-center gap-2">
-                        {{ props.collection.name }}
-                        <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold">
+                <div v-if="props.collection && props.documentation" class="relative shrink-0 max-w-[calc(100%-48px)]">
+                    <div v-if="props.publicDocsList && props.publicDocsList.length > 0" class="relative max-w-full">
+                        <button
+                            @click="showDocsDropdown = !showDocsDropdown"
+                            class="flex items-center gap-2.5 font-extrabold text-base tracking-tight text-foreground hover:text-primary transition-colors py-1.5 px-3 -ml-1 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/50 shadow-2xs cursor-pointer max-w-full text-left shrink-0"
+                        >
+                            <span class="truncate">{{ props.collection.name }}</span>
+                            <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap">
+                                v{{ props.documentation.version }}
+                            </span>
+                            <ChevronDown v-if="props.publicDocsList.length > 1" class="h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0" :class="{ 'rotate-180': showDocsDropdown }" />
+                        </button>
+
+                        <div v-if="showDocsDropdown && props.publicDocsList.length > 1" @click="showDocsDropdown = false" class="fixed inset-0 z-40"></div>
+
+                        <!-- Dropdown Menu -->
+                        <div
+                            v-if="showDocsDropdown && props.publicDocsList.length > 1"
+                            class="absolute left-0 top-full mt-2 min-w-[260px] max-w-[90vw] rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl py-1.5 z-50 backdrop-blur-xl"
+                        >
+                            <div class="px-3.5 py-2 border-b border-border/60 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                Switch API Collection
+                            </div>
+                            <div class="max-h-80 overflow-y-auto py-1 space-y-0.5 px-1">
+                                <button
+                                    v-for="docItem in props.publicDocsList"
+                                    :key="docItem.id"
+                                    @click="switchCollection(docItem)"
+                                    class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-left transition-all cursor-pointer"
+                                    :class="docItem.collection_id === props.collection?.id ? 'bg-primary/15 text-primary font-bold shadow-2xs' : 'hover:bg-muted/50 text-foreground'"
+                                >
+                                    <span class="truncate pr-2">{{ docItem.name }}</span>
+                                    <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded-md font-mono border border-border shrink-0">
+                                        v{{ docItem.version }}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h1 v-else class="font-extrabold text-base tracking-tight text-foreground flex items-center gap-2 truncate max-w-full">
+                        <span class="truncate">{{ props.collection.name }}</span>
+                        <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap">
                             v{{ props.documentation.version }}
                         </span>
                     </h1>
                 </div>
+                <div v-else>
+                    <h1 class="font-extrabold text-base tracking-tight text-foreground">
+                        API Documentation Portal
+                    </h1>
+                </div>
             </div>
 
-            <div class="flex items-center gap-3">
-
+            <div class="flex items-center gap-3 shrink-0">
                 <button
                     @click="toggleTheme"
-                    class="rounded-lg p-2 border border-border bg-muted/30 text-muted-foreground hover:text-foreground transition-all"
+                    class="rounded-lg p-2 border border-border bg-muted/30 text-muted-foreground hover:text-foreground transition-all cursor-pointer shrink-0"
                     aria-label="Toggle Night Mode"
                 >
                     <Sun v-if="isDark" class="h-4 w-4" />
@@ -658,8 +739,8 @@ onMounted(() => {
             </div>
         </header>
 
-        <!-- Main Workspace: 3 Column layout -->
-        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 w-full max-w-[1920px] mx-auto">
+        <!-- Main Workspace: 3 Column layout or Empty State -->
+        <div v-if="props.collection && props.documentation" class="flex-1 grid grid-cols-1 lg:grid-cols-12 w-full max-w-[1920px] mx-auto">
             
             <!-- Column 1: Left Navigation Sidebar -->
             <aside class="lg:col-span-3 xl:col-span-2 border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col gap-5 lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto lg:sticky lg:top-[69px]">
@@ -915,6 +996,27 @@ onMounted(() => {
                     </div>
                 </template>
             </aside>
+        </div>
+        <div v-else class="flex-1 flex items-center justify-center p-6">
+            <div class="text-center py-16 px-6 rounded-2xl border border-dashed border-border bg-muted/10 max-w-xl mx-auto space-y-4">
+                <div class="h-12 w-12 rounded-xl bg-muted/40 flex items-center justify-center mx-auto text-muted-foreground shadow-xs">
+                    <BookOpen class="h-6 w-6" />
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-base font-bold text-foreground">
+                        No Public API Collections Available
+                    </h3>
+                    <p class="text-xs text-muted-foreground max-w-md mx-auto">
+                        No documentation collections have been published as public yet. Team administrators can publish documentation from the dashboard.
+                    </p>
+                </div>
+                <a
+                    href="/login"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
+                >
+                    Team Login
+                </a>
+            </div>
         </div>
     </div>
 </template>

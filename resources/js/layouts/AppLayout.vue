@@ -26,6 +26,7 @@ watch(
 
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
     const store = useWorkspaceStore();
+
     if (store.hasDirtyRequests) {
         e.preventDefault();
         e.returnValue = '';

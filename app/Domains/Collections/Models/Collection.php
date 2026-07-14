@@ -46,6 +46,11 @@ class Collection extends Model
         return $this->hasMany(Request::class);
     }
 
+    public function documentation(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Domains\Documentation\Models\CollectionDocumentation::class);
+    }
+
     public function prunable(): Builder
     {
         return static::onlyTrashed()->where('deleted_at', '<=', now()->subDays(30));
