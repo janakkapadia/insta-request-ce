@@ -19,7 +19,6 @@ import {
     ExternalLink,
     AlertCircle
 } from 'lucide-vue-next';
-import { useMediaQuery } from '@vueuse/core';
 import { ref, computed, onMounted } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import {
@@ -30,8 +29,6 @@ import {
 import { parseMarkdown } from '@/lib/markdown';
 
 defineOptions({ layout: null });
-
-const isDesktop = useMediaQuery('(min-width: 1024px)');
 
 // Props
 const props = defineProps<{
@@ -752,11 +749,11 @@ onMounted(() => {
             v-if="props.collection && props.documentation"
             id="public-viewer-main-group"
             auto-save-id="public-viewer-main-group"
-            :direction="isDesktop ? 'horizontal' : 'vertical'"
+            direction="horizontal"
             class="flex-1 w-full max-w-[1920px] mx-auto h-[calc(100vh-69px)] overflow-hidden"
         >
             <!-- Column 1: Left Navigation Sidebar -->
-            <ResizablePanel id="public-viewer-sidebar-panel" :default-size="isDesktop ? 20 : 30" :min-size="15" :max-size="45" class="flex flex-col">
+            <ResizablePanel id="public-viewer-sidebar-panel" :default-size="20" :min-size="15" :max-size="45" class="flex flex-col">
                 <aside class="h-full border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col gap-5 overflow-y-auto">
                 <!-- Interactive Search Bar -->
                 <div class="relative w-full">
@@ -825,7 +822,7 @@ onMounted(() => {
             <ResizableHandle id="public-viewer-handle-1" with-handle />
 
             <!-- Column 2: Center Content & Markdown Reader -->
-            <ResizablePanel id="public-viewer-content-panel" :default-size="isDesktop ? 50 : 40" :min-size="25" class="flex flex-col">
+            <ResizablePanel id="public-viewer-content-panel" :default-size="50" :min-size="25" class="flex flex-col">
                 <main class="h-full p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border overflow-y-auto select-text">
                 <!-- Overview Guide View -->
                 <div v-if="selectedRequestId === null" class="space-y-8 animate-in fade-in duration-300">
