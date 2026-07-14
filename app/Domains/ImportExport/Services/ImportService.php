@@ -241,11 +241,11 @@ class ImportService
         // Index existing requests
         $existingIndex = [];
         foreach ($collection->requests as $req) {
-            $existingIndex[$this->makeKey($req->name, $req->method)] = $req;
+            $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
         }
         foreach ($collection->folders as $folder) {
             foreach ($folder->requests as $req) {
-                $existingIndex[$this->makeKey($req->name, $req->method)] = $req;
+                $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
             }
         }
 
@@ -300,11 +300,12 @@ class ImportService
         array $existingIndex,
         MergeStrategy $strategy,
     ): void {
-        $key = $this->makeKey($parsed->name, $parsed->method);
+        $key = $this->makeKey($parsed->name, $parsed->method, $parsed->url);
 
         if (isset($existingIndex[$key])) {
             if ($strategy === MergeStrategy::MergeReplace) {
                 $existingIndex[$key]->update([
+                    'name' => $parsed->name,
                     'url' => $parsed->url,
                     'description' => $parsed->description,
                     'headers' => $parsed->headers,
@@ -354,8 +355,8 @@ class ImportService
         }
     }
 
-    private function makeKey(string $name, string $method): string
+    private function makeKey(string $name, string $method, ?string $url = null): string
     {
-        return strtolower(trim($name)) . '::' . strtoupper($method);
+        return RequestMatcher::makeKey($name, $method, $url);
     }
 }
