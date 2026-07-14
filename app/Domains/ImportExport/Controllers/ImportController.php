@@ -85,14 +85,17 @@ class ImportController extends Controller
             format: $format,
         );
 
-        // Check for conflicts if a target collection is specified
+        // Check for conflicts and deletions if a target collection is specified
         $conflicts = [];
+        $deletions = [];
         if ($request->input('target_collection_id')) {
             $collection = Collection::find($request->input('target_collection_id'));
             if ($collection) {
                 $parsed = \App\Domains\ImportExport\DTOs\ImportParseResult::fromArray($import->parsed_data);
                 $conflictItems = $this->conflictResolver->findConflicts($parsed, $collection);
                 $conflicts = array_map(fn ($c) => $c->toArray(), $conflictItems);
+                $deletionItems = $this->conflictResolver->findDeletions($parsed, $collection);
+                $deletions = array_map(fn ($d) => $d->toArray(), $deletionItems);
             }
         }
 
@@ -100,6 +103,7 @@ class ImportController extends Controller
             'import' => $import,
             'preview' => $import->parsed_data,
             'conflicts' => $conflicts,
+            'deletions' => $deletions,
         ]);
     }
 
@@ -113,8 +117,9 @@ class ImportController extends Controller
             abort(403);
         }
 
-        // Check for conflicts against a target collection
+        // Check for conflicts and deletions against a target collection
         $conflicts = [];
+        $deletions = [];
         $targetId = $request->query('target_collection_id');
         if ($targetId) {
             $collection = Collection::find($targetId);
@@ -122,6 +127,8 @@ class ImportController extends Controller
                 $parsed = \App\Domains\ImportExport\DTOs\ImportParseResult::fromArray($import->parsed_data);
                 $conflictItems = $this->conflictResolver->findConflicts($parsed, $collection);
                 $conflicts = array_map(fn ($c) => $c->toArray(), $conflictItems);
+                $deletionItems = $this->conflictResolver->findDeletions($parsed, $collection);
+                $deletions = array_map(fn ($d) => $d->toArray(), $deletionItems);
             }
         }
 
@@ -129,6 +136,7 @@ class ImportController extends Controller
             'import' => $import,
             'preview' => $import->parsed_data,
             'conflicts' => $conflicts,
+            'deletions' => $deletions,
         ]);
     }
 
@@ -143,7 +151,7 @@ class ImportController extends Controller
         }
 
         $validated = $request->validate([
-            'merge_strategy' => 'required|string|in:create_new,merge_replace,merge_skip',
+            'merge_strategy' => 'required|string|in:create_new,merge_replace,merge_skip,mirror',
             'target_collection_id' => 'nullable|uuid|exists:collections,id',
             'target_folder_id' => 'nullable|uuid|exists:collection_folders,id',
             'selections' => 'nullable|array',
