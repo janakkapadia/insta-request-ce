@@ -547,15 +547,15 @@ return '';
 
     // a. Extract comments (ensure we don't match double slashes inside URLs like http://)
     if (lang === 'python') {
-        escaped = escaped.replace(/(#[^\n]*)/g, (_, comment) => addPlaceholder(comment, 'text-zinc-500 italic'));
+        escaped = escaped.replace(/(#[^\n]*)/g, (_, comment) => addPlaceholder(comment, 'text-zinc-500 dark:text-zinc-400 italic'));
     } else {
-        escaped = escaped.replace(/((?<!:)\/\/[^\n]*)/g, (_, comment) => addPlaceholder(comment, 'text-zinc-500 italic'));
+        escaped = escaped.replace(/((?<!:)\/\/[^\n]*)/g, (_, comment) => addPlaceholder(comment, 'text-zinc-500 dark:text-zinc-400 italic'));
     }
 
     // b. Extract strings
-    escaped = escaped.replace(/("(\\.|[^"\\])*")/g, (_, str) => addPlaceholder(str, 'text-emerald-400 font-medium'));
-    escaped = escaped.replace(/('(\\.|[^'\\])*')/g, (_, str) => addPlaceholder(str, 'text-emerald-400 font-medium'));
-    escaped = escaped.replace(/(`(\\.|[^`\\])*`)/g, (_, str) => addPlaceholder(str, 'text-emerald-400 font-medium'));
+    escaped = escaped.replace(/("(\\.|[^"\\])*")/g, (_, str) => addPlaceholder(str, 'text-emerald-600 dark:text-emerald-400 font-medium'));
+    escaped = escaped.replace(/('(\\.|[^'\\])*')/g, (_, str) => addPlaceholder(str, 'text-emerald-600 dark:text-emerald-400 font-medium'));
+    escaped = escaped.replace(/(`(\\.|[^`\\])*`)/g, (_, str) => addPlaceholder(str, 'text-emerald-600 dark:text-emerald-400 font-medium'));
 
     // 3. Highlight core language terms
     // Keywords
@@ -566,7 +566,7 @@ return '';
         'public', 'static', 'void', 'throws'
     ];
     const keywordRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
-    escaped = escaped.replace(keywordRegex, '<span class="text-pink-400 font-semibold">$1</span>');
+    escaped = escaped.replace(keywordRegex, '<span class="text-pink-600 dark:text-pink-400 font-semibold">$1</span>');
 
     // Built-ins and common APIs
     const builtins = [
@@ -578,16 +578,16 @@ return '';
         'noBody', 'send'
     ];
     const builtinRegex = new RegExp(`\\b(${builtins.join('|')})\\b`, 'g');
-    escaped = escaped.replace(builtinRegex, '<span class="text-sky-400">$1</span>');
+    escaped = escaped.replace(builtinRegex, '<span class="text-sky-600 dark:text-sky-400">$1</span>');
 
     // Numbers & Booleans
-    escaped = escaped.replace(/\b(true|false|null|0|10|CURLOPT_[A-Z_]+)\b/g, '<span class="text-orange-400">$1</span>');
+    escaped = escaped.replace(/\b(true|false|null|0|10|CURLOPT_[A-Z_]+)\b/g, '<span class="text-orange-600 dark:text-orange-400">$1</span>');
 
     // HTTP Methods
-    escaped = escaped.replace(/\b(GET|POST|PUT|DELETE|PATCH)\b/g, '<span class="text-amber-400 font-bold">$1</span>');
+    escaped = escaped.replace(/\b(GET|POST|PUT|DELETE|PATCH)\b/g, '<span class="text-amber-600 dark:text-amber-400 font-bold">$1</span>');
 
     // Variables / properties
-    escaped = escaped.replace(/(\$[a-zA-Z_][a-zA-Z0-9_]*)/g, '<span class="text-indigo-300 font-semibold">$1</span>');
+    escaped = escaped.replace(/(\$[a-zA-Z_][a-zA-Z0-9_]*)/g, '<span class="text-indigo-600 dark:text-indigo-300 font-semibold">$1</span>');
 
     // 4. Restore strings and comments in order (reverse order handles nested string placeholders perfectly!)
     for (let i = placeholders.length - 1; i >= 0; i--) {
@@ -662,7 +662,7 @@ onMounted(() => {
         <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 w-full max-w-[1920px] mx-auto">
             
             <!-- Column 1: Left Navigation Sidebar -->
-            <aside class="lg:col-span-3 border-r border-border p-5 flex flex-col gap-5 max-h-[calc(100vh-69px)] overflow-y-auto sticky top-[69px]">
+            <aside class="lg:col-span-3 xl:col-span-2 border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col gap-5 lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto lg:sticky lg:top-[69px]">
                 <!-- Interactive Search Bar -->
                 <div class="relative w-full">
                     <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
@@ -727,7 +727,7 @@ onMounted(() => {
             </aside>
 
             <!-- Column 2: Center Content & Markdown Reader -->
-            <main class="lg:col-span-5 p-6 lg:p-8 border-r border-border max-h-[calc(100vh-69px)] overflow-y-auto select-text">
+            <main class="lg:col-span-6 xl:col-span-7 p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto select-text">
                 <!-- Overview Guide View -->
                 <div v-if="selectedRequestId === null" class="space-y-8 animate-in fade-in duration-300">
                     <div class="prose dark:prose-invert max-w-none" v-html="introHtml"></div>
@@ -823,7 +823,7 @@ onMounted(() => {
             </main>
 
             <!-- Column 3: Code Snippets & Response Mock Examples -->
-            <aside class="lg:col-span-4 bg-muted/15 p-6 border-l lg:border-l-0 max-h-[calc(100vh-69px)] overflow-y-auto sticky top-[69px] flex flex-col gap-6 select-text">
+            <aside class="lg:col-span-3 xl:col-span-3 bg-muted/15 p-6 lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto lg:sticky lg:top-[69px] flex flex-col gap-6 select-text">
                 <!-- If overview guide is selected, show general greeting details -->
                 <div v-if="selectedRequestId === null" class="flex flex-col gap-4 text-center justify-center items-center py-12 px-6 h-full">
                     <div class="rounded-full bg-primary/10 p-4 border border-primary/20 shadow-xs mb-2">
@@ -843,30 +843,30 @@ onMounted(() => {
                             Request Snippet
                         </h4>
                         
-                        <div class="border border-border rounded-xl bg-zinc-950 overflow-hidden shadow-md flex flex-col">
+                        <div class="border border-border rounded-xl bg-zinc-50 dark:bg-zinc-950 overflow-hidden shadow-md flex flex-col">
                             <!-- Snippet Language Header Selector -->
-                            <div class="flex items-center justify-between bg-zinc-900 border-b border-zinc-800 px-3 py-1.5 select-none">
-                                <div class="flex items-center gap-1 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                            <div class="flex items-center justify-between bg-zinc-100 dark:bg-zinc-900 border-b border-border dark:border-zinc-800 px-3 py-1.5 select-none">
+                                <div class="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider">
                                     <Code class="h-3.5 w-3.5" />
                                     Languages
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     <select
                                         v-model="selectedLang"
-                                        class="h-7 border-0 bg-transparent text-[11px] font-bold text-zinc-300 focus:outline-hidden cursor-pointer"
+                                        class="h-7 border-0 bg-transparent text-[11px] font-bold text-zinc-700 dark:text-zinc-300 focus:outline-hidden cursor-pointer"
                                     >
-                                        <option value="curl" class="bg-zinc-900 text-zinc-300">cURL</option>
-                                        <option value="fetch" class="bg-zinc-900 text-zinc-300">Javascript Fetch</option>
-                                        <option value="axios" class="bg-zinc-900 text-zinc-300">Axios</option>
-                                        <option value="python" class="bg-zinc-900 text-zinc-300">Python Requests</option>
-                                        <option value="go" class="bg-zinc-900 text-zinc-300">Go http</option>
-                                        <option value="php-guzzle" class="bg-zinc-900 text-zinc-300">PHP Guzzle</option>
-                                        <option value="php-curl" class="bg-zinc-900 text-zinc-300">PHP cURL</option>
-                                        <option value="java" class="bg-zinc-900 text-zinc-300">Java HttpClient</option>
+                                        <option value="curl" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">cURL</option>
+                                        <option value="fetch" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Javascript Fetch</option>
+                                        <option value="axios" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Axios</option>
+                                        <option value="python" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Python Requests</option>
+                                        <option value="go" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Go http</option>
+                                        <option value="php-guzzle" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">PHP Guzzle</option>
+                                        <option value="php-curl" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">PHP cURL</option>
+                                        <option value="java" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Java HttpClient</option>
                                     </select>
                                     <button
                                         @click="copySnippet"
-                                        class="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                                        class="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                                         title="Copy Snippet"
                                     >
                                         <Check v-if="copiedState" class="h-3.5 w-3.5 text-emerald-400" />
@@ -876,7 +876,7 @@ onMounted(() => {
                             </div>
 
                             <!-- Snippet Body -->
-                            <pre class="p-4 text-xs font-mono text-zinc-300 overflow-x-auto max-h-[300px] leading-relaxed select-all whitespace-pre"><code v-html="highlightedCode"></code></pre>
+                            <pre class="p-4 text-xs font-mono text-zinc-800 dark:text-zinc-300 overflow-x-auto max-h-[300px] leading-relaxed select-all whitespace-pre"><code v-html="highlightedCode"></code></pre>
                         </div>
                     </div>
 
@@ -884,9 +884,9 @@ onMounted(() => {
                     <div class="space-y-3">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mock response Example</h4>
                         
-                        <div v-if="activeRequest.examples && activeRequest.examples.length > 0" class="border rounded-xl bg-zinc-950 overflow-hidden shadow-md">
+                        <div v-if="activeRequest.examples && activeRequest.examples.length > 0" class="border border-border rounded-xl bg-zinc-50 dark:bg-zinc-950 overflow-hidden shadow-md">
                             <!-- Example Header Tab Selection -->
-                            <div class="flex items-center justify-between bg-zinc-900 border-b border-zinc-800 px-3 py-1.5 select-none">
+                            <div class="flex items-center justify-between bg-zinc-100 dark:bg-zinc-900 border-b border-border dark:border-zinc-800 px-3 py-1.5 select-none">
                                 <div class="flex items-center gap-1.5">
                                     <span
                                         class="h-2 w-2 rounded-full"
@@ -895,13 +895,13 @@ onMounted(() => {
                                     <select
                                         :value="activeExampleIndex[activeRequest.id] || 0"
                                         @change="activeExampleIndex[activeRequest.id] = parseInt(($event.target as HTMLSelectElement).value)"
-                                        class="h-7 border-0 bg-transparent text-[11px] font-bold text-zinc-300 focus:outline-hidden cursor-pointer"
+                                        class="h-7 border-0 bg-transparent text-[11px] font-bold text-zinc-700 dark:text-zinc-300 focus:outline-hidden cursor-pointer"
                                     >
                                         <option
                                             v-for="(example, idx) in activeRequest.examples"
                                             :key="example.id"
                                             :value="idx"
-                                            class="bg-zinc-900 text-zinc-300"
+                                            class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                                         >
                                             {{ example.status_code }} - {{ example.name }}
                                         </option>
@@ -910,7 +910,7 @@ onMounted(() => {
                             </div>
 
                             <!-- Example Body -->
-                            <pre class="p-4 text-xs font-mono text-zinc-300 overflow-x-auto max-h-[350px] leading-relaxed select-all whitespace-pre"><code>{{ activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.body || '{\n  "status": "empty"\n}' }}</code></pre>
+                            <pre class="p-4 text-xs font-mono text-zinc-800 dark:text-zinc-300 overflow-x-auto max-h-[350px] leading-relaxed select-all whitespace-pre"><code>{{ activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.body || '{\n  "status": "empty"\n}' }}</code></pre>
                         </div>
 
                         <!-- Fallback empty state -->
