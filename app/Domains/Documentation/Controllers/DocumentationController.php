@@ -43,6 +43,7 @@ class DocumentationController extends Controller
                 ->map(function ($req) {
                     return [
                         'id' => $req->id,
+                        'folder_id' => $req->folder_id,
                         'name' => $req->name,
                         'description' => $req->description,
                         'method' => $req->method,

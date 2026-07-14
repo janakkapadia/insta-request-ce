@@ -19,6 +19,7 @@ import {
     AlertCircle
 } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
+import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import { parseMarkdown } from '@/lib/markdown';
 
 // Props
@@ -129,6 +130,14 @@ return props.requests;
     return props.requests.filter(
         (r) => r.name.toLowerCase().includes(query) || r.url.toLowerCase().includes(query)
     );
+});
+
+const rootFolders = computed(() => {
+    return (props.collection.folders || []).filter(f => !f.parent_id);
+});
+
+const rootRequests = computed(() => {
+    return filteredRequests.value.filter(r => !r.folder_id);
 });
 
 // Currently viewed request
@@ -691,44 +700,31 @@ onMounted(() => {
                         Overview Guide
                     </button>
 
-                    <!-- Group Requests by Folder -->
-                    <div class="space-y-4">
-                        <!-- Folders -->
-                        <div v-for="folder in props.collection.folders" :key="folder.id" class="space-y-1.5">
-                            <h4 class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3">
-                                {{ folder.name }}
-                            </h4>
-                            
-                            <div class="space-y-0.5">
-                                <button
-                                    v-for="req in filteredRequests.filter(r => r.folder_id === folder.id)"
-                                    :key="req.id"
-                                    @click="selectedRequestId = req.id"
-                                    class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left text-xs transition-colors"
-                                    :class="selectedRequestId === req.id ? 'bg-muted border border-border font-semibold text-foreground' : 'text-muted-foreground hover:bg-muted/30'"
-                                >
-                                    <span
-                                        class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
-                                        :class="getMethodClass(req.method)"
-                                    >
-                                        {{ req.method }}
-                                    </span>
-                                    <span class="truncate">{{ req.name }}</span>
-                                </button>
-                            </div>
-                        </div>
+                    <!-- Group Requests by Folder (Collapsible Tree) -->
+                    <div class="space-y-1.5">
+                        <!-- Root Folders -->
+                        <DocFolderNode
+                            v-for="folder in rootFolders"
+                            :key="folder.id"
+                            :folder="folder"
+                            :folders="props.collection.folders || []"
+                            :requests="filteredRequests"
+                            :selected-request-id="selectedRequestId || ''"
+                            :get-method-color="getMethodClass"
+                            @select-request="id => selectedRequestId = id"
+                        />
 
-                        <!-- Unfolder-grouped Requests -->
-                        <div v-if="filteredRequests.filter(r => !r.folder_id).length > 0" class="space-y-1">
-                            <h4 class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3">
+                        <!-- Root Endpoints (Not inside any folder) -->
+                        <div v-if="rootRequests.length > 0" class="space-y-0.5" :class="{ 'pt-2 border-t border-border/50 mt-2': rootFolders.length > 0 }">
+                            <h4 v-if="rootFolders.length > 0" class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-1">
                                 Root Endpoints
                             </h4>
                             <button
-                                v-for="req in filteredRequests.filter(r => !r.folder_id)"
+                                v-for="req in rootRequests"
                                 :key="req.id"
                                 @click="selectedRequestId = req.id"
-                                class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left text-xs transition-colors"
-                                :class="selectedRequestId === req.id ? 'bg-muted border border-border font-semibold text-foreground' : 'text-muted-foreground hover:bg-muted/30'"
+                                class="w-full flex items-center gap-2 p-1.5 rounded-md text-left text-xs transition-colors group"
+                                :class="selectedRequestId === req.id ? 'bg-sidebar-accent border border-border/50 font-semibold text-sidebar-accent-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'"
                             >
                                 <span
                                     class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
@@ -736,7 +732,8 @@ onMounted(() => {
                                 >
                                     {{ req.method }}
                                 </span>
-                                <span class="truncate">{{ req.name }}</span>
+                                <span class="truncate flex-1">{{ req.name }}</span>
+                                <ChevronRight class="h-3 w-3 opacity-50 shrink-0 group-hover:opacity-100 transition-opacity" />
                             </button>
                         </div>
                     </div>

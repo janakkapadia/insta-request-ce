@@ -116,23 +116,92 @@ return '';
 
     // 6. Bold & Italic
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+    html = html.replace(/(?<!\w)__([^_]+)__(?!\w)/g, '<strong>$1</strong>');
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+    html = html.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
 
     // 7. Links: [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>');
 
-    // 8. Bullet Lists (Unordered & Ordered)
-    html = html.replace(/^\s*[\*\-]\s+(.+)$/gm, '<li class="ml-4 list-disc text-muted-foreground">$1</li>');
-    html = html.replace(/^\s*\d+\.\s+(.+)$/gm, '<li class="ml-4 list-decimal text-muted-foreground">$1</li>');
+    // 8. Nested Bullet Lists (Unordered & Ordered)
+    // Line-by-line scanner that collects list blocks (tolerates blank lines between items)
+    {
+        const isListLine = (ln: string) => /^[ \t]*(?:[\*\-]|\d+\.)\s+/.test(ln);
+        const allLines = html.split('\n');
+        const outputLines: string[] = [];
+        let i = 0;
 
-    // Wrap list items in list container tags
-    html = html.replace(/(<li[\s\S]*?<\/li>)/g, (match) => {
-        return `<ul class="my-2 space-y-1">${match}</ul>`;
-    });
-    // Deduplicate consecutive list wraps
-    html = html.replace(/<\/ul>\s*<ul class="my-2 space-y-1">/g, '');
+        while (i < allLines.length) {
+            if (isListLine(allLines[i])) {
+                // Collect every list-item line in this block (skip interleaved blanks)
+                const listItemLines: string[] = [allLines[i]];
+                i++;
+                while (i < allLines.length) {
+                    if (isListLine(allLines[i])) {
+                        listItemLines.push(allLines[i]);
+                        i++;
+                    } else if (/^\s*$/.test(allLines[i])) {
+                        // Blank line — peek ahead: if a list item follows, skip blanks
+                        let j = i + 1;
+                        while (j < allLines.length && /^\s*$/.test(allLines[j])) j++;
+                        if (j < allLines.length && isListLine(allLines[j])) {
+                            i = j; // skip blank gap, continue collecting
+                        } else {
+                            break; // end of list
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // --- build nested tree from collected lines ---
+                type LI = { indent: number; ordered: boolean; content: string; children: LI[] };
+                const items: LI[] = [];
+                for (const ln of listItemLines) {
+                    const m = ln.match(/^([ \t]*)([\*\-]|\d+\.)\s+(.*)/);
+                    if (!m) continue;
+                    items.push({
+                        indent: m[1].replace(/\t/g, '    ').length,
+                        ordered: /^\d+\.$/.test(m[2]),
+                        content: m[3],
+                        children: [],
+                    });
+                }
+
+                if (items.length === 0) continue;
+
+                const buildTree = (flat: LI[]): LI[] => {
+                    const roots: LI[] = [];
+                    const stack: LI[] = [];
+                    for (const item of flat) {
+                        while (stack.length > 0 && stack[stack.length - 1].indent >= item.indent) stack.pop();
+                        (stack.length === 0 ? roots : stack[stack.length - 1].children).push(item);
+                        stack.push(item);
+                    }
+                    return roots;
+                };
+
+                const render = (nodes: LI[], depth: number): string => {
+                    if (nodes.length === 0) return '';
+                    const ordered = nodes[0].ordered;
+                    const tag = ordered ? 'ol' : 'ul';
+                    const style = ordered ? 'list-decimal' : 'list-disc';
+                    const margin = depth === 0 ? 'my-2' : 'mt-1';
+                    const inner = nodes.map(n =>
+                        `<li class="ml-4 ${style} text-muted-foreground">${n.content}${render(n.children, depth + 1)}</li>`
+                    ).join('');
+                    return `<${tag} class="${margin} space-y-1">${inner}</${tag}>`;
+                };
+
+                outputLines.push(render(buildTree(items), 0));
+                outputLines.push(''); // preserve paragraph break after list
+            } else {
+                outputLines.push(allLines[i]);
+                i++;
+            }
+        }
+        html = outputLines.join('\n');
+    }
 
     // 9. Markdown Tables (GFM style)
     html = html.replace(

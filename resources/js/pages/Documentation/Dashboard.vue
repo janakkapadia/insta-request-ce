@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import { parseMarkdown } from '@/lib/markdown';
 
 // Props passed from Inertia controller
@@ -77,6 +78,20 @@ const selectedRequestId = ref<string>('');
 // Selected request details
 const selectedRequest = computed(() => {
     return requestsList.value.find(r => r.id === selectedRequestId.value) || null;
+});
+
+const activeCollectionFolders = computed(() => {
+    if (!selectedCollectionId.value) return [];
+    const col = props.collections.find(c => c.id === selectedCollectionId.value);
+    return col?.folders || [];
+});
+
+const rootFolders = computed(() => {
+    return activeCollectionFolders.value.filter(f => !f.parent_id);
+});
+
+const rootRequests = computed(() => {
+    return requestsList.value.filter(r => !r.folder_id);
 });
 
 // Markdown pre-render computed properties
@@ -495,13 +510,26 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                             <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Requests list</h4>
                             <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded font-bold">{{ requestsList.length }} items</span>
                         </div>
-                        <div class="overflow-y-auto pr-1 space-y-1 max-h-[calc(100vh-260px)] min-h-[200px]">
+                        <div class="overflow-y-auto pr-1 space-y-1.5 max-h-[calc(100vh-260px)] min-h-[200px]">
+                            <!-- Root Folders -->
+                            <DocFolderNode
+                                v-for="folder in rootFolders"
+                                :key="folder.id"
+                                :folder="folder"
+                                :folders="activeCollectionFolders"
+                                :requests="requestsList"
+                                :selected-request-id="selectedRequestId"
+                                :get-method-color="getMethodColor"
+                                @select-request="id => selectedRequestId = id"
+                            />
+
+                            <!-- Root Requests (not inside any folder) -->
                             <button
-                                v-for="req in requestsList"
+                                v-for="req in rootRequests"
                                 :key="req.id"
                                 @click="selectedRequestId = req.id"
-                                class="w-full flex items-center gap-2 p-2 rounded-md transition-colors text-left"
-                                :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-muted text-muted-foreground'"
+                                class="w-full flex items-center gap-2 p-1.5 rounded-md transition-colors text-left group"
+                                :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground border border-border/50 shadow-sm' : 'hover:bg-muted text-muted-foreground'"
                             >
                                 <span
                                     class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
@@ -510,8 +538,12 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                                     {{ req.method }}
                                 </span>
                                 <span class="text-xs truncate flex-1">{{ req.name }}</span>
-                                <ChevronRight class="h-3 w-3 opacity-50 shrink-0" />
+                                <ChevronRight class="h-3 w-3 opacity-50 shrink-0 group-hover:opacity-100 transition-opacity" />
                             </button>
+
+                            <div v-if="requestsList.length === 0 && rootFolders.length === 0" class="text-xs text-muted-foreground text-center py-6">
+                                No requests found in this collection.
+                            </div>
                         </div>
                     </div>
 
