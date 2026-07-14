@@ -89,6 +89,43 @@ class ImportMirrorTest extends TestCase
         $this->assertEquals('Old Endpoint', $deletions[0]->requestName);
     }
 
+    public function test_find_deletions_deduplicates_folder_requests(): void
+    {
+        $collection = Collection::create([
+            'team_id' => $this->team->id,
+            'name' => 'Folder Collection',
+        ]);
+
+        $folder = CollectionFolder::create([
+            'collection_id' => $collection->id,
+            'name' => 'Legacy Folder',
+        ]);
+
+        $reqInFolder = ApiRequest::create([
+            'collection_id' => $collection->id,
+            'folder_id' => $folder->id,
+            'name' => 'Folder Request To Delete',
+            'method' => 'POST',
+            'url' => 'https://api.example.com/charge',
+            'body' => ['text' => ''],
+        ]);
+
+        $parsed = new ImportParseResult(
+            collectionName: 'Mirror Spec',
+            collectionDescription: null,
+            folders: [],
+            requests: [],
+            validationMessages: []
+        );
+
+        $deletions = $this->conflictResolver->findDeletions($parsed, $collection);
+
+        // Even though $collection->requests and $collection->folders->requests both reference $reqInFolder,
+        // findDeletions should return exactly 1 unique deletion item.
+        $this->assertCount(1, $deletions);
+        $this->assertEquals($reqInFolder->id, $deletions[0]->existingRequestId);
+    }
+
     public function test_mirror_strategy_prunes_relocates_and_syncs_metadata(): void
     {
         $collection = Collection::create([

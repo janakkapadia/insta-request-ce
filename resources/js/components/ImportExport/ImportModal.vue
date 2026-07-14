@@ -1047,14 +1047,37 @@ const methodColor = (method: string) => {
                                 </div>
                             </div>
 
-                            <!-- Conflict Warning -->
-                            <div v-if="conflicts.length > 0 && mergeStrategy !== 'create_new'" class="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+                            <!-- Conflict Warning (Merge Replace / Merge Skip) -->
+                            <div v-if="conflicts.length > 0 && (mergeStrategy === 'merge_replace' || mergeStrategy === 'merge_skip')" class="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
                                 <div class="flex items-center gap-2 text-xs font-medium text-amber-600 mb-2">
                                     <AlertTriangle class="w-3.5 h-3.5" />
                                     {{ conflicts.length }} conflicting request(s) found
                                 </div>
                                 <div class="space-y-1">
                                     <div v-for="c in conflicts.slice(0, 5)" :key="c.request_name" class="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                        <span
+                                            class="font-mono font-bold text-[9px] rounded px-1"
+                                            :style="{ color: methodColor(c.method), background: methodColor(c.method) + '18' }"
+                                        >{{ c.method }}</span>
+                                        {{ c.request_name }}
+                                    </div>
+                                    <div v-if="conflicts.length > 5" class="text-[11px] text-muted-foreground">
+                                        ...and {{ conflicts.length - 5 }} more
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sync/Update Info for Mirror Strategy -->
+                            <div v-if="mergeStrategy === 'mirror' && conflicts.length > 0" class="rounded-md border border-blue-500/30 bg-blue-500/5 p-3">
+                                <div class="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
+                                    <RefreshCw class="w-3.5 h-3.5" />
+                                    {{ conflicts.length }} existing request(s) will be synced & updated
+                                </div>
+                                <div class="text-[11px] text-muted-foreground mb-2">
+                                    These requests already exist in the target collection and will be updated to match the imported spec:
+                                </div>
+                                <div class="space-y-1">
+                                    <div v-for="c in conflicts.slice(0, 5)" :key="c.existing_request_id || c.request_name" class="text-[11px] text-muted-foreground flex items-center gap-1.5">
                                         <span
                                             class="font-mono font-bold text-[9px] rounded px-1"
                                             :style="{ color: methodColor(c.method), background: methodColor(c.method) + '18' }"

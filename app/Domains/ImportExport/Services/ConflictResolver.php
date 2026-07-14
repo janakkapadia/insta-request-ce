@@ -21,32 +21,15 @@ class ConflictResolver
 
         // Index existing requests by fast lookup key
         $existingIndex = [];
-        foreach ($collection->requests as $req) {
+        foreach ($this->getAllExistingRequests($collection) as $req) {
             $key = $this->makeKey($req->name, $req->method, $req->url);
             $existingIndex[$key] = $req;
         }
-        foreach ($collection->folders as $folder) {
-            foreach ($folder->requests as $req) {
-                $key = $this->makeKey($req->name, $req->method, $req->url);
-                $existingIndex[$key] = $req;
-            }
-        }
 
-        // Check root-level parsed requests
-        foreach ($parsed->requests as $parsedReq) {
+        foreach ($this->getAllParsedRequests($parsed) as $parsedReq) {
             $conflict = $this->checkConflict($parsedReq, $existingIndex);
             if ($conflict) {
                 $conflicts[] = $conflict;
-            }
-        }
-
-        // Check folder-level parsed requests
-        foreach ($parsed->folders as $folder) {
-            foreach ($folder->requests as $parsedReq) {
-                $conflict = $this->checkConflict($parsedReq, $existingIndex);
-                if ($conflict) {
-                    $conflicts[] = $conflict;
-                }
             }
         }
 
@@ -91,26 +74,13 @@ class ConflictResolver
 
         // Index incoming requests by fast lookup key
         $incomingIndex = [];
-        foreach ($parsed->requests as $parsedReq) {
+        foreach ($this->getAllParsedRequests($parsed) as $parsedReq) {
             $key = $this->makeKey($parsedReq->name, $parsedReq->method, $parsedReq->url);
             $incomingIndex[$key] = true;
         }
-        foreach ($parsed->folders as $folder) {
-            foreach ($folder->requests as $parsedReq) {
-                $key = $this->makeKey($parsedReq->name, $parsedReq->method, $parsedReq->url);
-                $incomingIndex[$key] = true;
-            }
-        }
 
         $deletions = [];
-        $allExistingRequests = [...$collection->requests];
-        foreach ($collection->folders as $folder) {
-            foreach ($folder->requests as $req) {
-                $allExistingRequests[] = $req;
-            }
-        }
-
-        foreach ($allExistingRequests as $existing) {
+        foreach ($this->getAllExistingRequests($collection) as $existing) {
             $key = $this->makeKey($existing->name, $existing->method, $existing->url);
             if (!isset($incomingIndex[$key])) {
                 $deletions[] = new ConflictItem(
@@ -132,6 +102,68 @@ class ConflictResolver
         }
 
         return $deletions;
+    }
+
+    /**
+     * Get all unique existing requests in the collection across root and all folders recursively.
+     *
+     * @return array<int, \App\Domains\Requests\Models\Request>
+     */
+    private function getAllExistingRequests(Collection $collection): array
+    {
+        $unique = [];
+        if ($collection->relationLoaded('requests') || $collection->requests) {
+            foreach ($collection->requests as $req) {
+                $unique[$req->id] = $req;
+            }
+        }
+        if ($collection->relationLoaded('folders') || $collection->folders) {
+            $this->extractFolderRequests($collection->folders, $unique);
+        }
+        return array_values($unique);
+    }
+
+    private function extractFolderRequests($folders, array &$unique): void
+    {
+        foreach ($folders as $folder) {
+            if ($folder->relationLoaded('requests') || $folder->requests) {
+                foreach ($folder->requests as $req) {
+                    $unique[$req->id] = $req;
+                }
+            }
+            if ($folder->relationLoaded('folders') || $folder->folders) {
+                $this->extractFolderRequests($folder->folders, $unique);
+            }
+        }
+    }
+
+    /**
+     * Get all parsed requests across root and all folders recursively.
+     *
+     * @return array<int, ParsedRequest>
+     */
+    private function getAllParsedRequests(ImportParseResult $parsed): array
+    {
+        $all = [];
+        foreach ($parsed->requests as $req) {
+            $all[] = $req;
+        }
+        if ($parsed->folders) {
+            $this->extractParsedFolderRequests($parsed->folders, $all);
+        }
+        return $all;
+    }
+
+    private function extractParsedFolderRequests(array $folders, array &$all): void
+    {
+        foreach ($folders as $folder) {
+            foreach ($folder->requests as $req) {
+                $all[] = $req;
+            }
+            if (!empty($folder->folders)) {
+                $this->extractParsedFolderRequests($folder->folders, $all);
+            }
+        }
     }
 
     private function makeKey(string $name, string $method, ?string $url = null): string
