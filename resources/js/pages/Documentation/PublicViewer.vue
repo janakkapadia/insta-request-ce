@@ -881,10 +881,10 @@ onMounted(() => {
                     </div>
 
                     <!-- Mock response Examples Tab Selector -->
-                    <div class="space-y-3">
+                    <div v-if="activeRequest.examples && activeRequest.examples.length > 0" class="space-y-3">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mock response Example</h4>
                         
-                        <div v-if="activeRequest.examples && activeRequest.examples.length > 0" class="border border-border rounded-xl bg-zinc-50 dark:bg-zinc-950 overflow-hidden shadow-md">
+                        <div class="border border-border rounded-xl bg-zinc-50 dark:bg-zinc-950 overflow-hidden shadow-md">
                             <!-- Example Header Tab Selection -->
                             <div class="flex items-center justify-between bg-zinc-100 dark:bg-zinc-900 border-b border-border dark:border-zinc-800 px-3 py-1.5 select-none">
                                 <div class="flex items-center gap-1.5">
@@ -911,11 +911,6 @@ onMounted(() => {
 
                             <!-- Example Body -->
                             <pre class="p-4 text-xs font-mono text-zinc-800 dark:text-zinc-300 overflow-x-auto max-h-[350px] leading-relaxed select-all whitespace-pre"><code>{{ activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.body || '{\n  "status": "empty"\n}' }}</code></pre>
-                        </div>
-
-                        <!-- Fallback empty state -->
-                        <div v-else class="text-xs italic text-muted-foreground/60 p-6 border border-dashed rounded-xl text-center bg-muted/5">
-                            No response examples mock-ups registered for this endpoint.
                         </div>
                     </div>
                 </template>
