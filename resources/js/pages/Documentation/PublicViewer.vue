@@ -72,7 +72,6 @@ const props = defineProps<{
 }>();
 
 // Environment state & variable substitution helper
-const showEnvModal = ref(false);
 
 const activeEnvVariables = computed(() => {
     if (!props.environment || !props.environment.variables) return [];
@@ -647,19 +646,17 @@ onMounted(() => {
             </div>
 
             <div class="flex items-center gap-3">
-                <button
+                <div
                     v-if="props.environment"
-                    @click="showEnvModal = true"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-xs"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold shadow-xs"
                     :class="[
-                        props.environment.color ? 'bg-background hover:bg-muted/50' : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/15'
+                        props.environment.color ? 'bg-background' : 'bg-primary/10 text-primary border-primary/20'
                     ]"
                     :style="props.environment.color ? { borderColor: props.environment.color + '40', color: props.environment.color } : {}"
                 >
                     <span class="h-2 w-2 rounded-full shrink-0" :style="{ backgroundColor: props.environment.color || 'currentColor' }"></span>
                     <span>{{ props.environment.name }}</span>
-                    <span class="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.2 rounded font-mono">{{ activeEnvVariables.length }} vars</span>
-                </button>
+                </div>
 
                 <button
                     @click="toggleTheme"
@@ -934,39 +931,6 @@ onMounted(() => {
                     </div>
                 </template>
             </aside>
-        </div>
-
-        <!-- Environment Variables Viewer Modal -->
-        <div v-if="showEnvModal && props.environment" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200" @click.self="showEnvModal = false">
-            <div class="bg-card border border-border rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[85vh]">
-                <div class="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
-                    <div class="flex items-center gap-2.5">
-                        <span class="h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: props.environment.color || 'currentColor' }"></span>
-                        <div>
-                            <h3 class="text-sm font-extrabold tracking-tight text-foreground">{{ props.environment.name }} Environment</h3>
-                            <p class="text-[11px] text-muted-foreground">Dynamic variables attached to this documentation</p>
-                        </div>
-                    </div>
-                    <button @click="showEnvModal = false" class="text-muted-foreground hover:text-foreground text-xs font-bold px-2 py-1 rounded bg-muted/40">✕ Close</button>
-                </div>
-                <div class="p-5 overflow-y-auto space-y-3 flex-1">
-                    <p class="text-xs text-muted-foreground leading-relaxed">
-                        The following variables are automatically interpolated wherever <code class="bg-muted px-1 py-0.5 rounded text-foreground font-mono">{key}</code> or <code class="bg-muted px-1 py-0.5 rounded text-foreground font-mono">{{key}}</code> is referenced across endpoint URLs, query parameters, headers, and request bodies:
-                    </p>
-                    <div v-if="activeEnvVariables.length > 0" class="border border-border rounded-lg overflow-hidden divide-y divide-border">
-                        <div v-for="variable in activeEnvVariables" :key="variable.key" class="p-2.5 flex items-center justify-between gap-4 bg-muted/10 hover:bg-muted/30 transition-colors">
-                            <span class="font-mono text-xs font-bold text-primary shrink-0">{{ variable.key }}</span>
-                            <span class="font-mono text-xs text-muted-foreground truncate max-w-[240px] select-all bg-muted/40 px-2 py-0.5 rounded">{{ variable.value || '(empty)' }}</span>
-                        </div>
-                    </div>
-                    <div v-else class="p-4 border border-dashed border-border rounded-lg text-center text-xs text-muted-foreground italic">
-                        No variables configured in this environment.
-                    </div>
-                </div>
-                <div class="px-5 py-3 border-t border-border bg-muted/20 flex justify-end">
-                    <button @click="showEnvModal = false" class="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity">Got it</button>
-                </div>
-            </div>
         </div>
     </div>
 </template>
