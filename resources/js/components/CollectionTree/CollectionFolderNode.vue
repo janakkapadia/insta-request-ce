@@ -243,7 +243,10 @@ const vFocus = {
     mounted: (el: HTMLElement) => {
         nextTick(() => {
             const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
-            if (input) input.focus();
+
+            if (input) {
+input.focus();
+}
         });
     }
 };

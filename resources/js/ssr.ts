@@ -28,6 +28,7 @@ createServer((page) =>
                 if (module.default) {
                     const marketingPages = [
                         'Documentation/PublicViewer',
+                        'Documentation/PublicIndex',
                         'PrivacyPolicy',
                         'TermsOfService'
                     ];

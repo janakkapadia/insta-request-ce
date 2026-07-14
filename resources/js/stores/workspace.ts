@@ -356,6 +356,7 @@ return false;
             if (selectedRequest.value.id.startsWith('new-')) {
                 showSaveRequestModal.value = true;
                 pendingSaveRequestData.value = data;
+
                 return true;
             }
 
@@ -367,9 +368,11 @@ return false;
             const updatedReq = response.data.request || response.data;
             updateRequestInTree(updatedReq);
             selectedRequest.value = { ...selectedRequest.value, ...updatedReq };
+
             return false;
         } catch (e) {
             console.error('Failed to save request', e);
+
             return false;
         }
     };
@@ -500,7 +503,9 @@ return false;
     };
 
     const confirmSaveNewRequest = async (collectionId: string, folderId: string | null) => {
-        if (!selectedRequest.value || !selectedRequest.value.id.startsWith('new-')) return;
+        if (!selectedRequest.value || !selectedRequest.value.id.startsWith('new-')) {
+return;
+}
 
         const draftId = selectedRequest.value.id;
         const data = pendingSaveRequestData.value || {};
@@ -521,6 +526,7 @@ return false;
 
             // Update the tab from new-xxx to the actual ID
             const idx = openRequests.value.findIndex((r) => r.id === draftId);
+
             if (idx !== -1) {
                 openRequests.value[idx] = response.data.request || response.data;
             }

@@ -30,13 +30,13 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { ScrollBar } from '@/components/ui/scroll-area';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ScrollBar } from '@/components/ui/scroll-area';
 import environments from '@/routes/environments';
 
 withDefaults(
@@ -92,14 +92,17 @@ const handleKeyDown = (e: KeyboardEvent) => {
     if (isNewRequestShortcut) {
         e.preventDefault();
         handleNewRequest();
+
         return;
     }
 
     if (isW && e.altKey) {
         if (confirmDialog.value.isOpen) {
             e.preventDefault();
+
             return;
         }
+
         if (store.selectedRequest?.id) {
             e.preventDefault();
             closeTab(null, store.selectedRequest.id);
@@ -124,11 +127,14 @@ const handleNewRequest = async () => {
 };
 
 const handleTabClick = (e: MouseEvent, req: any) => {
-    if (editingTabId.value === req.id) return;
+    if (editingTabId.value === req.id) {
+return;
+}
 
     if (req.id.startsWith('new-')) {
         e.preventDefault();
     }
+
     store.selectRequest(req, false);
 };
 
@@ -143,6 +149,7 @@ const startRenameTab = async (req: any, e?: Event) => {
     
     await nextTick();
     const input = document.getElementById(`tab-rename-input-${req.id}`) as HTMLInputElement;
+
     if (input) {
         input.focus();
         input.select();
@@ -151,9 +158,11 @@ const startRenameTab = async (req: any, e?: Event) => {
 
 const commitRenameTab = async (req: any) => {
     const trimmed = editingTabName.value.trim();
+
     if (trimmed && trimmed !== req.name) {
         await store.renameRequest(req.id, trimmed);
     }
+
     editingTabId.value = null;
 };
 

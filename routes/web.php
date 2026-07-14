@@ -4,7 +4,15 @@ use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login')->name('home');
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    if (\App\Domains\Documentation\Models\CollectionDocumentation::where('is_public', true)->exists()) {
+        return redirect()->route('documentation.public.index');
+    }
+    return redirect()->route('login');
+})->name('home');
 
 // Redirect front pages to login
 Route::redirect('postman-alternative', '/login')->name('postman-alternative');
@@ -84,6 +92,7 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])
     });
 
 // Public Documentation Portal
+Route::get('docs', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'publicIndex'])->name('documentation.public.index');
 Route::get('docs/{collection}/{slug}', [\App\Domains\Documentation\Controllers\DocumentationController::class, 'viewPublic'])->name('documentation.public');
 
 Route::middleware(['auth'])->group(function () {

@@ -16,7 +16,6 @@ import {
     Edit3,
     Eye,
 } from 'lucide-vue-next';
-import { parseMarkdown } from '@/lib/markdown';
 import {
     ref,
     watch,
@@ -66,6 +65,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import VariableInput from '@/components/VariableInput.vue';
+import { parseMarkdown } from '@/lib/markdown';
 
 const store = useWorkspaceStore();
 const page = usePage();
@@ -149,7 +149,10 @@ const historyFetchedForRequestId = ref<string | null>(null);
 
 const fetchRequestHistory = async () => {
     const currentId = store.selectedRequest?.id;
-    if (!currentId) return;
+
+    if (!currentId) {
+return;
+}
 
     if (historyFetchedForRequestId.value === currentId && requestHistoryItems.value.length > 0) {
         return;
@@ -169,7 +172,10 @@ const fetchRequestHistory = async () => {
 
 const graphPoints = computed(() => {
     const items = requestHistoryItems.value.slice(0, 20).reverse();
-    if (items.length === 0) return [];
+
+    if (items.length === 0) {
+return [];
+}
     
     const maxTime = Math.max(...items.map(i => i.time_ms));
     const padding = 10; // 10% padding top and bottom
@@ -178,30 +184,42 @@ const graphPoints = computed(() => {
         const x = arr.length > 1 ? ((i + 0.5) / arr.length) * 100 : 50;
         const normalizedVal = maxTime > 0 ? item.time_ms / maxTime : 0;
         const y = 100 - (padding + normalizedVal * (100 - 2 * padding));
+
         return { x, y, ms: item.time_ms, item };
     });
 });
 
 const generateLinePath = (points: any[]) => {
-    if (points.length === 0) return '';
-    if (points.length === 1) return `M 0,${points[0].y} L 100,${points[0].y}`;
+    if (points.length === 0) {
+return '';
+}
+
+    if (points.length === 1) {
+return `M 0,${points[0].y} L 100,${points[0].y}`;
+}
     
     let d = `M ${points[0].x},${points[0].y}`;
+
     for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i];
         const p2 = points[i + 1];
         const cp1x = (p1.x + p2.x) / 2;
         d += ` C ${cp1x},${p1.y} ${cp1x},${p2.y} ${p2.x},${p2.y}`;
     }
+
     return d;
 };
 
 const graphLinePath = computed(() => generateLinePath(graphPoints.value));
 const graphAreaPath = computed(() => {
-    if (graphPoints.value.length === 0) return '';
+    if (graphPoints.value.length === 0) {
+return '';
+}
+
     const points = graphPoints.value;
     const startX = points.length === 1 ? 0 : points[0].x;
     const endX = points.length === 1 ? 100 : points[points.length - 1].x;
+
     return `${graphLinePath.value} L ${endX},100 L ${startX},100 Z`;
 });
 
@@ -877,6 +895,7 @@ watch(
                     const draft = JSON.parse(draftStr);
                     method.value = draft.method || 'GET';
                     url.value = draft.url || '';
+
                     if (draft.description !== undefined) {
                         description.value = draft.description;
                     }

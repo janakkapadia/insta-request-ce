@@ -19,7 +19,7 @@ class DocumentationController extends Controller
         $team = $request->user()->currentTeam;
         
         $collections = Collection::where('team_id', $team->id)
-            ->with(['folders', 'requests'])
+            ->with(['folders', 'requests', 'documentation'])
             ->get();
 
         $doc = null;
@@ -135,6 +135,56 @@ class DocumentationController extends Controller
         return back();
     }
 
+    private function getPublicDocsList()
+    {
+        return CollectionDocumentation::where('is_public', true)
+            ->with('collection')
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->filter(function ($doc) {
+                return $doc->collection !== null && $doc->collection->deleted_at === null;
+            })
+            ->map(function ($doc) {
+                return [
+                    'id' => $doc->id,
+                    'collection_id' => $doc->collection_id,
+                    'public_slug' => $doc->public_slug,
+                    'version' => $doc->version,
+                    'name' => $doc->collection->name,
+                ];
+            })
+            ->values();
+    }
+
+    public function publicIndex(HttpRequest $request)
+    {
+        $publicDocsList = $this->getPublicDocsList();
+
+        if ($publicDocsList->isEmpty()) {
+            return Inertia::render('Documentation/PublicViewer', [
+                'documentation' => null,
+                'collection' => null,
+                'requests' => [],
+                'environment' => null,
+                'publicDocsList' => [],
+            ]);
+        }
+
+        $targetCollectionId = $request->query('collection_id') ?: $publicDocsList[0]['collection_id'];
+
+        $doc = CollectionDocumentation::where('collection_id', $targetCollectionId)
+            ->where('is_public', true)
+            ->first();
+
+        if (!$doc) {
+            $doc = CollectionDocumentation::where('collection_id', $publicDocsList[0]['collection_id'])
+                ->where('is_public', true)
+                ->firstOrFail();
+        }
+
+        return $this->renderDoc($doc, $publicDocsList);
+    }
+
     public function viewPublic(string $collectionId, string $slug)
     {
         $doc = CollectionDocumentation::where('collection_id', $collectionId)
@@ -142,6 +192,11 @@ class DocumentationController extends Controller
             ->where('is_public', true)
             ->firstOrFail();
 
+        return $this->renderDoc($doc, $this->getPublicDocsList());
+    }
+
+    private function renderDoc(CollectionDocumentation $doc, $publicDocsList)
+    {
         $collection = Collection::where('id', $doc->collection_id)
             ->with(['folders'])
             ->firstOrFail();
@@ -178,6 +233,7 @@ class DocumentationController extends Controller
             'collection' => $collection,
             'requests' => $requests,
             'environment' => $environment,
+            'publicDocsList' => $publicDocsList,
         ]);
     }
 }
