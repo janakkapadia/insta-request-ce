@@ -677,9 +677,9 @@ onMounted(() => {
                     <div v-if="props.publicDocsList && props.publicDocsList.length > 0" class="relative max-w-full">
                         <button
                             @click="showDocsDropdown = !showDocsDropdown"
-                            class="flex items-center gap-2.5 font-extrabold text-base tracking-tight text-foreground hover:text-primary transition-colors py-1.5 px-3 -ml-1 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/50 shadow-2xs cursor-pointer max-w-full text-left shrink-0"
+                            class="flex items-center gap-2.5 font-extrabold text-base tracking-tight text-foreground hover:text-primary transition-colors py-1.5 px-3 -ml-1 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/50 shadow-2xs cursor-pointer text-left"
                         >
-                            <span class="truncate">{{ props.collection.name }}</span>
+                            <span class="whitespace-nowrap">{{ props.collection.name }}</span>
                             <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap">
                                 v{{ props.documentation.version }}
                             </span>
@@ -713,8 +713,8 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <h1 v-else class="font-extrabold text-base tracking-tight text-foreground flex items-center gap-2 truncate max-w-full">
-                        <span class="truncate">{{ props.collection.name }}</span>
+                    <h1 v-else class="font-extrabold text-base tracking-tight text-foreground flex items-center gap-2">
+                        <span class="whitespace-nowrap">{{ props.collection.name }}</span>
                         <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap">
                             v{{ props.documentation.version }}
                         </span>

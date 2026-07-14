@@ -106,18 +106,47 @@ const totalPrivateCount = computed(() => {
 
 const copyPublicUrl = (col: any) => {
     if (!col.documentation?.public_slug) {
-return;
-}
+        return;
+    }
 
     const url = `${window.location.origin}/docs/${col.id}/${col.documentation.public_slug}`;
-    navigator.clipboard.writeText(url);
-    copiedUrlId.value = col.id;
-    toast.success('Public URL copied to clipboard');
-    setTimeout(() => {
-        if (copiedUrlId.value === col.id) {
-copiedUrlId.value = null;
-}
-    }, 2000);
+
+    const doCopy = () => {
+        copiedUrlId.value = col.id;
+        toast.success('Public URL copied to clipboard');
+        setTimeout(() => {
+            if (copiedUrlId.value === col.id) {
+                copiedUrlId.value = null;
+            }
+        }, 2000);
+    };
+
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(doCopy).catch(() => {
+            // fallback on clipboard permission denied
+            fallbackCopy(url, doCopy);
+        });
+    } else {
+        fallbackCopy(url, doCopy);
+    }
+};
+
+const fallbackCopy = (text: string, onSuccess: () => void) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        onSuccess();
+    } catch {
+        toast.error('Failed to copy URL');
+    } finally {
+        document.body.removeChild(textarea);
+    }
 };
 
 const quickTogglePublic = (col: any) => {
@@ -493,84 +522,72 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                 </Button>
             </div>
 
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <Card
+            <div v-else class="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden bg-card shadow-xs">
+                <div
                     v-for="col in filteredOverviewCollections"
                     :key="col.id"
-                    class="flex flex-col justify-between bg-card border border-border shadow-xs hover:border-border/80 hover:shadow-md transition-all"
+                    class="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors group"
                 >
-                    <div>
-                        <CardHeader class="p-4 pb-3 border-b border-border/50">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="space-y-1 overflow-hidden">
-                                    <CardTitle class="text-base font-bold text-foreground truncate flex items-center gap-2">
-                                        <BookOpen class="h-4 w-4 text-primary shrink-0" />
-                                        <span class="truncate">{{ col.name }}</span>
-                                    </CardTitle>
-                                    <CardDescription class="text-xs line-clamp-1">
-                                        {{ col.description || 'No description provided' }}
-                                    </CardDescription>
-                                </div>
-                                <span class="text-[10px] bg-muted text-muted-foreground font-mono font-bold px-2 py-0.5 rounded-full border border-border shrink-0">
-                                    {{ col.requests?.length || 0 }} Endpoints
-                                </span>
-                            </div>
-
-                            <div class="mt-3 flex items-center justify-between pt-1">
-                                <div v-if="col.documentation && col.documentation.is_public" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Public Portal
-                                    <span class="font-mono opacity-80 ml-1">v{{ col.documentation.version }}</span>
-                                </div>
-                                <div v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
-                                    <Lock class="h-3 w-3" />
-                                    Private / Draft
-                                    <span v-if="col.documentation" class="font-mono opacity-80 ml-1">v{{ col.documentation.version }}</span>
-                                </div>
-                            </div>
-                        </CardHeader>
-
-                        <CardContent class="p-4 space-y-3">
-                            <div v-if="col.documentation && col.documentation.is_public" class="space-y-1.5">
-                                <Label class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Public Portal URL</Label>
-                                <div class="flex items-center gap-1.5 rounded-lg bg-muted/50 border border-border p-1.5 font-mono text-xs text-foreground overflow-hidden">
-                                    <Globe class="h-3.5 w-3.5 text-emerald-500 shrink-0 ml-1" />
-                                    <span class="truncate flex-1 text-[11px] select-all">
-                                        /docs/{{ col.id }}/{{ col.documentation.public_slug }}
-                                    </span>
-                                    <button
-                                        @click="copyPublicUrl(col)"
-                                        class="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors shrink-0 cursor-pointer"
-                                        title="Copy Public URL"
-                                    >
-                                        <Check v-if="copiedUrlId === col.id" class="h-3.5 w-3.5 text-emerald-500" />
-                                        <Copy v-else class="h-3.5 w-3.5" />
-                                    </button>
-                                    <a
-                                        :href="'/docs/' + col.id + '/' + col.documentation.public_slug"
-                                        target="_blank"
-                                        class="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors shrink-0"
-                                        title="Open Public Portal"
-                                    >
-                                        <ExternalLink class="h-3.5 w-3.5" />
-                                    </a>
-                                </div>
-                            </div>
-                            <div v-else class="py-2 px-3 rounded-lg bg-muted/30 border border-dashed border-border text-[11px] text-muted-foreground flex items-center justify-between">
-                                <span>Not published to public portal</span>
-                                <button
-                                    @click="quickTogglePublic(col)"
-                                    :disabled="isLoading"
-                                    class="text-xs font-bold text-primary hover:underline cursor-pointer"
-                                >
-                                    Quick Publish
-                                </button>
-                            </div>
-                        </CardContent>
+                    <!-- Icon + Name + Description -->
+                    <div class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <BookOpen class="h-4 w-4" />
                     </div>
 
-                    <!-- Card Actions -->
-                    <div class="p-4 pt-2 border-t border-border/40 bg-muted/10 flex items-center justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm font-bold text-foreground truncate">{{ col.name }}</span>
+                            <!-- Public / Private Badge -->
+                            <span v-if="col.documentation && col.documentation.is_public" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Public Portal · v{{ col.documentation.version }}
+                            </span>
+                            <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border">
+                                <Lock class="h-2.5 w-2.5" />
+                                Private / Draft
+                            </span>
+                            <!-- Endpoint Count -->
+                            <span class="text-[10px] bg-muted text-muted-foreground font-mono font-bold px-2 py-0.5 rounded-full border border-border">
+                                {{ col.requests?.length || 0 }} Endpoints
+                            </span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate mt-0.5">
+                            {{ col.description || 'No description provided' }}
+                        </p>
+                        <!-- Public URL (shown when public) -->
+                        <div v-if="col.documentation && col.documentation.is_public" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+                            <Globe class="h-3 w-3 text-emerald-500 shrink-0" />
+                            <span class="truncate">/docs/{{ col.id }}/{{ col.documentation.public_slug }}</span>
+                            <button
+                                @click="copyPublicUrl(col)"
+                                class="p-0.5 rounded hover:text-foreground transition-colors cursor-pointer shrink-0"
+                                title="Copy Public URL"
+                            >
+                                <Check v-if="copiedUrlId === col.id" class="h-3 w-3 text-emerald-500" />
+                                <Copy v-else class="h-3 w-3" />
+                            </button>
+                            <a
+                                :href="'/docs/' + col.id + '/' + col.documentation.public_slug"
+                                target="_blank"
+                                class="p-0.5 rounded hover:text-primary transition-colors shrink-0"
+                                title="Open Public Portal"
+                            >
+                                <ExternalLink class="h-3 w-3" />
+                            </a>
+                        </div>
+                        <div v-else class="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span>Not published to public portal</span>
+                            <button
+                                @click="quickTogglePublic(col)"
+                                :disabled="isLoading"
+                                class="font-bold text-primary hover:underline cursor-pointer"
+                            >
+                                Quick Publish
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Actions (right-aligned) -->
+                    <div class="flex items-center gap-2 shrink-0">
                         <button
                             @click="quickTogglePublic(col)"
                             :disabled="isLoading"
@@ -585,13 +602,14 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                         <Button
                             @click="selectedCollectionId = col.id"
                             size="sm"
+                            variant="outline"
                             class="gap-1.5 text-xs h-8 cursor-pointer"
                         >
                             <Settings class="h-3.5 w-3.5" />
                             Configure & Edit
                         </Button>
                     </div>
-                </Card>
+                </div>
             </div>
         </div>
 
