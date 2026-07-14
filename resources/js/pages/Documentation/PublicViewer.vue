@@ -646,17 +646,6 @@ onMounted(() => {
             </div>
 
             <div class="flex items-center gap-3">
-                <div
-                    v-if="props.environment"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold shadow-xs"
-                    :class="[
-                        props.environment.color ? 'bg-background' : 'bg-primary/10 text-primary border-primary/20'
-                    ]"
-                    :style="props.environment.color ? { borderColor: props.environment.color + '40', color: props.environment.color } : {}"
-                >
-                    <span class="h-2 w-2 rounded-full shrink-0" :style="{ backgroundColor: props.environment.color || 'currentColor' }"></span>
-                    <span>{{ props.environment.name }}</span>
-                </div>
 
                 <button
                     @click="toggleTheme"
