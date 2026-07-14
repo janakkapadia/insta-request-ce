@@ -19,11 +19,19 @@ import {
     ExternalLink,
     AlertCircle
 } from 'lucide-vue-next';
+import { useMediaQuery } from '@vueuse/core';
 import { ref, computed, onMounted } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import { parseMarkdown } from '@/lib/markdown';
 
 defineOptions({ layout: null });
+
+const isDesktop = useMediaQuery('(min-width: 1024px)');
 
 // Props
 const props = defineProps<{
@@ -739,11 +747,17 @@ onMounted(() => {
             </div>
         </header>
 
-        <!-- Main Workspace: 3 Column layout or Empty State -->
-        <div v-if="props.collection && props.documentation" class="flex-1 grid grid-cols-1 lg:grid-cols-12 w-full max-w-[1920px] mx-auto">
-            
+        <!-- Main Workspace: 3 Column resizable layout or Empty State -->
+        <ResizablePanelGroup
+            v-if="props.collection && props.documentation"
+            id="public-viewer-main-group"
+            auto-save-id="public-viewer-main-group"
+            :direction="isDesktop ? 'horizontal' : 'vertical'"
+            class="flex-1 w-full max-w-[1920px] mx-auto h-[calc(100vh-69px)] overflow-hidden"
+        >
             <!-- Column 1: Left Navigation Sidebar -->
-            <aside class="lg:col-span-3 xl:col-span-2 border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col gap-5 lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto lg:sticky lg:top-[69px]">
+            <ResizablePanel id="public-viewer-sidebar-panel" :default-size="isDesktop ? 20 : 30" :min-size="15" :max-size="45" class="flex flex-col">
+                <aside class="h-full border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col gap-5 overflow-y-auto">
                 <!-- Interactive Search Bar -->
                 <div class="relative w-full">
                     <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
@@ -806,9 +820,13 @@ onMounted(() => {
                     </div>
                 </div>
             </aside>
+            </ResizablePanel>
+
+            <ResizableHandle id="public-viewer-handle-1" with-handle />
 
             <!-- Column 2: Center Content & Markdown Reader -->
-            <main class="lg:col-span-6 xl:col-span-7 p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto select-text">
+            <ResizablePanel id="public-viewer-content-panel" :default-size="isDesktop ? 50 : 40" :min-size="25" class="flex flex-col">
+                <main class="h-full p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border overflow-y-auto select-text">
                 <!-- Overview Guide View -->
                 <div v-if="selectedRequestId === null" class="space-y-8 animate-in fade-in duration-300">
                     <div class="prose dark:prose-invert max-w-none" v-html="introHtml"></div>
@@ -902,9 +920,13 @@ onMounted(() => {
                     </div>
                 </div>
             </main>
+            </ResizablePanel>
+
+            <ResizableHandle id="public-viewer-handle-2" with-handle />
 
             <!-- Column 3: Code Snippets & Response Mock Examples -->
-            <aside class="lg:col-span-3 xl:col-span-3 bg-muted/15 p-6 lg:max-h-[calc(100vh-69px)] lg:overflow-y-auto lg:sticky lg:top-[69px] flex flex-col gap-6 select-text">
+            <ResizablePanel id="public-viewer-code-panel" :default-size="30" :min-size="20" :max-size="50" class="flex flex-col">
+                <aside class="h-full bg-muted/15 p-6 overflow-y-auto flex flex-col gap-6 select-text">
                 <!-- If overview guide is selected, show general greeting details -->
                 <div v-if="selectedRequestId === null" class="flex flex-col gap-4 text-center justify-center items-center py-12 px-6 h-full">
                     <div class="rounded-full bg-primary/10 p-4 border border-primary/20 shadow-xs mb-2">
@@ -996,7 +1018,8 @@ onMounted(() => {
                     </div>
                 </template>
             </aside>
-        </div>
+            </ResizablePanel>
+        </ResizablePanelGroup>
         <div v-else class="flex-1 flex items-center justify-center p-6">
             <div class="text-center py-16 px-6 rounded-2xl border border-dashed border-border bg-muted/10 max-w-xl mx-auto space-y-4">
                 <div class="h-12 w-12 rounded-xl bg-muted/40 flex items-center justify-center mx-auto text-muted-foreground shadow-xs">
