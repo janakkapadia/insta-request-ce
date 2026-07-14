@@ -45,6 +45,7 @@ export interface RequestItem {
     collection_id: string;
     folder_id: string | null;
     name: string;
+    description?: string | null;
     method: string;
     url: string | null;
     headers: any;
@@ -479,6 +480,7 @@ return false;
             folder_id: folderId,
             name,
             method,
+            description: '',
             url: '',
             headers: [],
             query_params: [],

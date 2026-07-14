@@ -13,7 +13,10 @@ import {
     AlertCircle,
     X,
     Loader2,
+    Edit3,
+    Eye,
 } from 'lucide-vue-next';
+import { parseMarkdown } from '@/lib/markdown';
 import {
     ref,
     watch,
@@ -340,6 +343,9 @@ const syncPathVariablesFromUrl = (newVal: string) => {
 
 
 
+const description = ref('');
+const activeDocTab = ref<'write' | 'preview'>('write');
+
 const queryParams = ref<
     Array<{ key: string; value: string; enabled: boolean; description: string }>
 >([{ key: '', value: '', enabled: true, description: '' }]);
@@ -597,6 +603,7 @@ const getCurrentPayloadStr = () => {
     return JSON.stringify({
         method: method.value,
         url: url.value,
+        description: description.value,
         bodyConfig: bodyConfig.value,
         queryParams: cleanParams,
         pathVariables: pathVariables.value,
@@ -609,6 +616,7 @@ watch(
     [
         method,
         url,
+        description,
         bodyConfig,
         queryParams,
         pathVariables,
@@ -641,6 +649,7 @@ watch(
                 requestHistoryItems.value = [];
                 method.value = newReq.method || 'GET';
                 url.value = newReq.url || '';
+                description.value = newReq.description || '';
             // Populate bodyConfig
             const parsedBody =
                 typeof newReq.body === 'string'
@@ -868,6 +877,9 @@ watch(
                     const draft = JSON.parse(draftStr);
                     method.value = draft.method || 'GET';
                     url.value = draft.url || '';
+                    if (draft.description !== undefined) {
+                        description.value = draft.description;
+                    }
 
                     if (draft.bodyConfig) {
 bodyConfig.value = draft.bodyConfig;
@@ -1074,6 +1086,7 @@ return;
         const modalOpened = await store.saveRequest({
             method: method.value,
             url: url.value,
+            description: description.value,
             body: JSON.stringify(bodyConfig.value),
             query_params: cleanParams,
             path_variables: pathVariables.value,
@@ -1302,6 +1315,11 @@ return;
                                         value="auth"
                                         class="py-1 text-xs"
                                         >Auth</TabsTrigger
+                                    >
+                                    <TabsTrigger
+                                        value="description"
+                                        class="py-1 text-xs"
+                                        >Docs</TabsTrigger
                                     >
 
                                 </TabsList>
@@ -2259,6 +2277,110 @@ return;
                                         </div>
                                     </TabsContent>
 
+                                    <!-- Docs Tab -->
+                                    <TabsContent
+                                        value="description"
+                                        class="m-0 flex h-full flex-col overflow-hidden bg-background/50 p-2"
+                                    >
+                                        <div
+                                            class="mb-4 flex shrink-0 items-center justify-between border-b pb-2"
+                                        >
+                                            <div
+                                                class="flex space-x-1 rounded-md bg-muted/30 p-1"
+                                            >
+                                                <button
+                                                    @click="
+                                                        activeDocTab = 'write'
+                                                    "
+                                                    class="flex items-center gap-1.5 rounded-sm px-3 py-1 text-xs transition-colors"
+                                                    :class="
+                                                        activeDocTab === 'write'
+                                                            ? 'bg-background font-medium text-foreground shadow-sm'
+                                                            : 'text-muted-foreground hover:text-foreground'
+                                                    "
+                                                >
+                                                    <Edit3
+                                                        class="h-3.5 w-3.5"
+                                                    />
+                                                    Write
+                                                </button>
+                                                <button
+                                                    @click="
+                                                        activeDocTab = 'preview'
+                                                    "
+                                                    class="flex items-center gap-1.5 rounded-sm px-3 py-1 text-xs transition-colors"
+                                                    :class="
+                                                        activeDocTab ===
+                                                        'preview'
+                                                            ? 'bg-background font-medium text-foreground shadow-sm'
+                                                            : 'text-muted-foreground hover:text-foreground'
+                                                    "
+                                                >
+                                                    <Eye class="h-3.5 w-3.5" />
+                                                    Preview
+                                                </button>
+                                            </div>
+                                            <span
+                                                class="font-mono text-xs text-muted-foreground"
+                                            >
+                                                Markdown Supported
+                                            </span>
+                                        </div>
+
+                                        <div
+                                            class="relative flex-1 overflow-hidden rounded-md border bg-background"
+                                        >
+                                            <div
+                                                v-show="
+                                                    activeDocTab === 'write'
+                                                "
+                                                class="absolute inset-0 flex flex-col"
+                                            >
+                                                <VueMonacoEditor
+                                                    v-model:value="description"
+                                                    :theme="monacoTheme"
+                                                    language="markdown"
+                                                    :options="{
+                                                        minimap: {
+                                                            enabled: false,
+                                                        },
+                                                        wordWrap: 'on',
+                                                        automaticLayout: true,
+                                                        tabSize: 2,
+                                                        scrollBeyondLastLine: false,
+                                                    }"
+                                                />
+                                            </div>
+
+                                            <div
+                                                v-show="
+                                                    activeDocTab === 'preview'
+                                                "
+                                                class="absolute inset-0 overflow-y-auto p-4"
+                                            >
+                                                <div
+                                                    v-if="
+                                                        description &&
+                                                        description.trim()
+                                                    "
+                                                    class="prose dark:prose-invert max-w-none text-sm leading-relaxed"
+                                                    v-html="
+                                                        parseMarkdown(
+                                                            description,
+                                                        )
+                                                    "
+                                                ></div>
+                                                <div
+                                                    v-else
+                                                    class="flex h-full items-center justify-center text-xs text-muted-foreground italic"
+                                                >
+                                                    No documentation written
+                                                    yet. Switch to "Write" to
+                                                    add markdown documentation.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
 
                                 </div>
                             </Tabs>

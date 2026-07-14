@@ -47,6 +47,12 @@ const props = defineProps<{
     selectedCollectionId?: string;
     documentation?: any;
     requestsList?: any[];
+    environments?: Array<{
+        id: string;
+        name: string;
+        color: string | null;
+        variables: Array<{ key: string; value: string; enabled: boolean }>;
+    }>;
 }>();
 
 // State vars
@@ -62,6 +68,7 @@ const version = ref<string>('1.0.0');
 const markdownIntro = ref<string>('');
 const authInfo = ref<string>('');
 const docSettings = ref<any>({});
+const environmentId = ref<string>('');
 
 // Requests of selected collection with descriptions and mock response examples
 const requestsList = ref<Array<any>>([]);
@@ -102,7 +109,7 @@ watch(selectedCollectionId, (newVal) => {
         router.get('/documentation', { collection_id: newVal }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['documentation', 'requestsList', 'selectedCollectionId'],
+            only: ['documentation', 'requestsList', 'selectedCollectionId', 'environments'],
             onFinish: () => isLoading.value = false
         });
     }
@@ -117,8 +124,10 @@ watch(() => props.documentation, (newDoc) => {
         markdownIntro.value = newDoc.markdown_intro || '';
         authInfo.value = newDoc.auth_info || '';
         docSettings.value = newDoc.settings || {};
+        environmentId.value = newDoc.environment_id || '';
     } else {
         docId.value = '';
+        environmentId.value = '';
     }
 }, { immediate: true });
 
@@ -147,6 +156,7 @@ const handleSave = () => {
         markdown_intro: markdownIntro.value,
         auth_info: authInfo.value,
         settings: docSettings.value,
+        environment_id: environmentId.value || null,
         requests_descriptions: { ...editedRequestDescriptions.value }
     }, {
         preserveState: true,
@@ -345,6 +355,48 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                             </div>
                         </div>
 
+                        <!-- Attached Environment Selector -->
+                        <div class="space-y-3 p-4 border rounded-lg bg-muted/20">
+                            <div class="flex items-center justify-between flex-wrap gap-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-foreground">Attached Environment</h4>
+                                    <p class="text-xs text-muted-foreground mt-0.5">Link an environment to resolve dynamic variables inside public documentation URLs and code snippets.</p>
+                                </div>
+                                <select
+                                    id="environmentId"
+                                    v-model="environmentId"
+                                    class="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-primary min-w-[220px] text-foreground"
+                                >
+                                    <option value="">-- No Environment Attached --</option>
+                                    <option
+                                        v-for="env in props.environments"
+                                        :key="env.id"
+                                        :value="env.id"
+                                    >
+                                        {{ env.name }} ({{ env.variables?.length || 0 }} vars)
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Preview of Attached Variables -->
+                            <div v-if="environmentId && props.environments?.find(e => e.id === environmentId)" class="mt-3 pt-3 border-t border-border/60">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: props.environments.find(e => e.id === environmentId)?.color || '#10b981' }"></span>
+                                    <span class="text-xs font-bold text-foreground">{{ props.environments.find(e => e.id === environmentId)?.name }} Variables Preview</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                                    <div
+                                        v-for="varItem in props.environments.find(e => e.id === environmentId)?.variables || []"
+                                        :key="varItem.key"
+                                        class="flex items-center justify-between bg-background border px-2.5 py-1.5 rounded-md text-xs font-mono shadow-2xs"
+                                    >
+                                        <span class="font-bold text-primary truncate mr-2">{{ '{' + varItem.key + '}' }}</span>
+                                        <span class="text-muted-foreground truncate max-w-[120px]" :title="varItem.value">{{ varItem.value || 'empty' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Public Slug Customizer -->
                         <div class="space-y-2" v-if="isPublic">
                             <Label for="slug" class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Link Slug</Label>
@@ -436,33 +488,31 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                 </Card>
 
                 <!-- Requests Documentation Manager -->
-                <div v-if="activeTab === 'requests'" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div v-if="activeTab === 'requests'" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                     <!-- Requests Sub-sidebar -->
-                    <div class="md:col-span-1 bg-card rounded-xl p-3 border border-border flex flex-col gap-2">
-                        <div class="flex items-center justify-between px-2 mb-2">
+                    <div class="md:col-span-1 bg-card rounded-xl p-3 border border-border flex flex-col gap-2 max-h-[calc(100vh-220px)] sticky top-6">
+                        <div class="flex items-center justify-between px-2 mb-1 shrink-0">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Requests list</h4>
                             <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded font-bold">{{ requestsList.length }} items</span>
                         </div>
-                        <ScrollArea class="h-[400px] pr-1">
-                            <div class="space-y-1">
-                                <button
-                                    v-for="req in requestsList"
-                                    :key="req.id"
-                                    @click="selectedRequestId = req.id"
-                                    class="w-full flex items-center gap-2 p-2 rounded-md transition-colors text-left"
-                                    :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-muted text-muted-foreground'"
+                        <div class="overflow-y-auto pr-1 space-y-1 max-h-[calc(100vh-260px)] min-h-[200px]">
+                            <button
+                                v-for="req in requestsList"
+                                :key="req.id"
+                                @click="selectedRequestId = req.id"
+                                class="w-full flex items-center gap-2 p-2 rounded-md transition-colors text-left"
+                                :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-muted text-muted-foreground'"
+                            >
+                                <span
+                                    class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
+                                    :class="getMethodColor(req.method)"
                                 >
-                                    <span
-                                        class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
-                                        :class="getMethodColor(req.method)"
-                                    >
-                                        {{ req.method }}
-                                    </span>
-                                    <span class="text-xs truncate flex-1">{{ req.name }}</span>
-                                    <ChevronRight class="h-3 w-3 opacity-50 shrink-0" />
-                                </button>
-                            </div>
-                        </ScrollArea>
+                                    {{ req.method }}
+                                </span>
+                                <span class="text-xs truncate flex-1">{{ req.name }}</span>
+                                <ChevronRight class="h-3 w-3 opacity-50 shrink-0" />
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Request Edit Workarea -->

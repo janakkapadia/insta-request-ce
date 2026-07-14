@@ -125,6 +125,8 @@ class PostmanV2Parser implements ImportParserInterface
                 $headers[] = [
                     'key' => $header['key'],
                     'value' => $header['value'] ?? '',
+                    'enabled' => !($header['disabled'] ?? false),
+                    'description' => is_array($header['description'] ?? null) ? ($header['description']['content'] ?? '') : (is_string($header['description'] ?? null) ? $header['description'] : ''),
                 ];
             }
         }
@@ -137,6 +139,8 @@ class PostmanV2Parser implements ImportParserInterface
                     $queryParams[] = [
                         'key' => $param['key'],
                         'value' => $param['value'] ?? '',
+                        'enabled' => !($param['disabled'] ?? false),
+                        'description' => is_array($param['description'] ?? null) ? ($param['description']['content'] ?? '') : (is_string($param['description'] ?? null) ? $param['description'] : ''),
                     ];
                 }
             }
@@ -170,6 +174,14 @@ class PostmanV2Parser implements ImportParserInterface
             $auth = $req['auth'];
         }
 
+        $description = null;
+        if (isset($req['description'])) {
+            $description = is_array($req['description']) ? ($req['description']['content'] ?? null) : (is_string($req['description']) ? $req['description'] : null);
+        }
+        if (!$description && isset($item['description'])) {
+            $description = is_array($item['description']) ? ($item['description']['content'] ?? null) : (is_string($item['description']) ? $item['description'] : null);
+        }
+
         return new ParsedRequest(
             name: $item['name'] ?? 'Untitled Request',
             method: $method,
@@ -178,6 +190,7 @@ class PostmanV2Parser implements ImportParserInterface
             queryParams: $queryParams,
             body: $body,
             auth: $auth,
+            description: $description,
         );
     }
 }

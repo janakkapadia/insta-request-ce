@@ -56,11 +56,19 @@ class DocumentationController extends Controller
                 });
         }
 
+        $environments = \App\Domains\Environments\Models\Environment::where('team_id', $team->id)
+            ->with(['variables' => function ($q) {
+                $q->where('enabled', true)->orderBy('key');
+            }])
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Documentation/Dashboard', [
             'collections' => $collections,
             'selectedCollectionId' => $request->collection_id ?: '',
             'documentation' => $doc,
             'requestsList' => $requestsWithExamples,
+            'environments' => $environments,
         ]);
     }
 
@@ -74,12 +82,14 @@ class DocumentationController extends Controller
                 'string',
                 Rule::unique('collection_documentations', 'public_slug')->ignore($collection->id, 'collection_id'),
             ],
+            'environment_id' => 'nullable|uuid|exists:environments,id',
         ]);
 
         $doc = CollectionDocumentation::updateOrCreate(
             ['collection_id' => $collection->id],
             [
                 'team_id' => $collection->team_id,
+                'environment_id' => $request->input('environment_id') ?: null,
                 'is_public' => $request->boolean('is_public'),
                 'public_slug' => $request->input('public_slug') ?: (Str::slug($collection->name) . '-' . Str::lower(Str::random(6))),
                 'version' => $request->input('version', '1.0.0'),
@@ -153,10 +163,21 @@ class DocumentationController extends Controller
                 ];
             });
 
+        $environment = null;
+        if ($doc->environment_id) {
+            $environment = \App\Domains\Environments\Models\Environment::where('id', $doc->environment_id)
+                ->with(['variables' => function ($q) {
+                    $q->where('enabled', true)->orderBy('key');
+                }])
+                ->first();
+        }
+
         return Inertia::render('Documentation/PublicViewer', [
             'documentation' => $doc,
             'collection' => $collection,
             'requests' => $requests,
+            'environment' => $environment,
         ]);
     }
 }
+

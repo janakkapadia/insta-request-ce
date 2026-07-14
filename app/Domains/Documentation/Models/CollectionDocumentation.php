@@ -18,6 +18,7 @@ class CollectionDocumentation extends Model
     protected $fillable = [
         'collection_id',
         'team_id',
+        'environment_id',
         'is_public',
         'public_slug',
         'version',
@@ -40,4 +41,10 @@ class CollectionDocumentation extends Model
     {
         return $this->belongsTo(Team::class);
     }
+
+    public function environment(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Environments\Models\Environment::class);
+    }
 }
+

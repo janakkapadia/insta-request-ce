@@ -306,6 +306,7 @@ class ImportService
             if ($strategy === MergeStrategy::MergeReplace) {
                 $existingIndex[$key]->update([
                     'url' => $parsed->url,
+                    'description' => $parsed->description,
                     'headers' => $parsed->headers,
                     'query_params' => $parsed->queryParams,
                     'body' => $parsed->body,
@@ -325,6 +326,7 @@ class ImportService
             'collection_id' => $collectionId,
             'folder_id' => $folderId,
             'name' => $parsed->name,
+            'description' => $parsed->description,
             'method' => $parsed->method,
             'url' => $parsed->url,
             'headers' => $parsed->headers,

@@ -122,6 +122,7 @@ class CollectionsController extends Controller
             'folder_id' => 'nullable|uuid|exists:collection_folders,id',
             'method' => 'required|string|in:GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD',
             'url' => 'nullable|string',
+            'description' => 'nullable|string',
             'pre_request_script' => 'nullable|string',
             'test_script' => 'nullable|string',
         ]);
@@ -131,6 +132,7 @@ class CollectionsController extends Controller
             'user_id' => $request->user()?->id,
             'folder_id' => $validated['folder_id'] ?? null,
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'method' => $validated['method'],
             'url' => $validated['url'] ?? '',
             'pre_request_script' => $validated['pre_request_script'] ?? '',
@@ -158,6 +160,7 @@ class CollectionsController extends Controller
             'collection_id' => 'nullable|uuid|exists:collections,id',
             'folder_id' => 'nullable|uuid|exists:collection_folders,id',
             'name' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
             'method' => 'nullable|string|in:GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD',
             'url' => 'nullable|string',
             'headers' => 'nullable|array',

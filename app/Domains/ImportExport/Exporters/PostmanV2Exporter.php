@@ -73,21 +73,43 @@ class PostmanV2Exporter implements ExportGeneratorInterface
 
         // Add query params
         if (!empty($req->query_params)) {
-            $urlObj['query'] = array_map(fn ($p) => [
-                'key' => $p['key'] ?? '',
-                'value' => $p['value'] ?? '',
-            ], $req->query_params);
+            $urlObj['query'] = array_map(function ($p) {
+                $item = [
+                    'key' => $p['key'] ?? '',
+                    'value' => $p['value'] ?? '',
+                ];
+                if (isset($p['enabled']) && !$p['enabled']) {
+                    $item['disabled'] = true;
+                }
+                if (!empty($p['description'])) {
+                    $item['description'] = $p['description'];
+                }
+                return $item;
+            }, $req->query_params);
         }
 
         $requestObj = [
             'method' => $req->method,
-            'header' => array_map(fn ($h) => [
-                'key' => $h['key'] ?? '',
-                'value' => $h['value'] ?? '',
-                'type' => 'text',
-            ], $req->headers ?? []),
+            'header' => array_map(function ($h) {
+                $item = [
+                    'key' => $h['key'] ?? '',
+                    'value' => $h['value'] ?? '',
+                    'type' => 'text',
+                ];
+                if (isset($h['enabled']) && !$h['enabled']) {
+                    $item['disabled'] = true;
+                }
+                if (!empty($h['description'])) {
+                    $item['description'] = $h['description'];
+                }
+                return $item;
+            }, $req->headers ?? []),
             'url' => $urlObj,
         ];
+
+        if (!empty($req->description)) {
+            $requestObj['description'] = $req->description;
+        }
 
         // Add body
         $body = $req->body ?? [];
@@ -124,7 +146,7 @@ class PostmanV2Exporter implements ExportGeneratorInterface
         }
 
         return [
-            'name' => $req->name,
+            'name' => $req->name ?? 'Untitled Request',
             'request' => $requestObj,
             'response' => [],
         ];

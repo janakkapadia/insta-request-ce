@@ -12,6 +12,7 @@ class ParsedRequest
         public readonly array $queryParams = [],
         public readonly array $body = [],
         public readonly array $auth = [],
+        public readonly ?string $description = null,
     ) {}
 
     public function toArray(): array
@@ -24,6 +25,7 @@ class ParsedRequest
             'query_params' => $this->queryParams,
             'body' => $this->body,
             'auth' => $this->auth,
+            'description' => $this->description,
         ];
     }
 
@@ -37,6 +39,7 @@ class ParsedRequest
             queryParams: $data['query_params'] ?? [],
             body: $data['body'] ?? [],
             auth: $data['auth'] ?? [],
+            description: $data['description'] ?? null,
         );
     }
 }
