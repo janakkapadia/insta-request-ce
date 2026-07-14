@@ -671,9 +671,9 @@ onMounted(() => {
 <template>
     <Head :title="((props.collection && props.collection.name) || 'API Documentation') + ' - API Reference'" />
 
-    <div class="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
+    <div class="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
         <!-- Gorgeous Top Bar Banner -->
-        <header class="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none gap-4">
+        <header class="h-[69px] shrink-0 sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none gap-4">
             <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xs shrink-0">
                     <BookOpen class="h-5 w-5 text-primary" />
@@ -750,11 +750,11 @@ onMounted(() => {
             id="public-viewer-main-group"
             auto-save-id="public-viewer-main-group"
             direction="horizontal"
-            class="flex-1 w-full max-w-[1920px] mx-auto h-[calc(100vh-69px)] overflow-hidden"
+            class="flex-1 min-h-0 w-full max-w-[1920px] mx-auto overflow-hidden"
         >
             <!-- Column 1: Left Navigation Sidebar -->
-            <ResizablePanel id="public-viewer-sidebar-panel" :default-size="20" :min-size="15" :max-size="45" class="flex flex-col">
-                <aside class="h-full border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col gap-5 overflow-y-auto">
+            <ResizablePanel id="public-viewer-sidebar-panel" :default-size="20" :min-size="15" :max-size="45" class="flex flex-col h-full min-h-0 overflow-hidden min-w-0">
+                <aside class="flex-1 min-h-0 h-full p-5 flex flex-col gap-5 overflow-y-auto min-w-0">
                 <!-- Interactive Search Bar -->
                 <div class="relative w-full">
                     <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
@@ -822,8 +822,8 @@ onMounted(() => {
             <ResizableHandle id="public-viewer-handle-1" with-handle />
 
             <!-- Column 2: Center Content & Markdown Reader -->
-            <ResizablePanel id="public-viewer-content-panel" :default-size="50" :min-size="25" class="flex flex-col">
-                <main class="h-full p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border overflow-y-auto select-text">
+            <ResizablePanel id="public-viewer-content-panel" :default-size="50" :min-size="25" class="flex flex-col h-full min-h-0 overflow-hidden min-w-0">
+                <main class="flex-1 min-h-0 h-full p-6 lg:p-8 overflow-y-auto select-text min-w-0">
                 <!-- Overview Guide View -->
                 <div v-if="selectedRequestId === null" class="space-y-8 animate-in fade-in duration-300">
                     <div class="prose dark:prose-invert max-w-none" v-html="introHtml"></div>
@@ -922,8 +922,8 @@ onMounted(() => {
             <ResizableHandle id="public-viewer-handle-2" with-handle />
 
             <!-- Column 3: Code Snippets & Response Mock Examples -->
-            <ResizablePanel id="public-viewer-code-panel" :default-size="30" :min-size="20" :max-size="50" class="flex flex-col">
-                <aside class="h-full bg-muted/15 p-6 overflow-y-auto flex flex-col gap-6 select-text">
+            <ResizablePanel id="public-viewer-code-panel" :default-size="30" :min-size="20" :max-size="50" class="flex flex-col h-full min-h-0 overflow-hidden min-w-0">
+                <aside class="flex-1 min-h-0 h-full bg-muted/15 p-6 overflow-y-auto flex flex-col gap-6 select-text min-w-0">
                 <!-- If overview guide is selected, show general greeting details -->
                 <div v-if="selectedRequestId === null" class="flex flex-col gap-4 text-center justify-center items-center py-12 px-6 h-full">
                     <div class="rounded-full bg-primary/10 p-4 border border-primary/20 shadow-xs mb-2">
