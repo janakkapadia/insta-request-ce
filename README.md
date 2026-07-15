@@ -88,7 +88,10 @@ InstaRequest comes with built-in shortcuts to speed up your workflow:
 | **Save Request** | `Option + S` | `Alt + S` |
 
 ## 🤝 Contributing
-Contributions are welcome! Please submit a pull request or open an issue to discuss proposed changes.
+Contributions are welcome! Please check out our [Contributing Guide](file:///Users/janakkapadia/code/insta-request-ce/CONTRIBUTING.md) to get started with local setup, automated quality checks (`composer ci:check`), and testing (`./vendor/bin/pest`).
+
+Please note that this project is released with a [Code of Conduct](file:///Users/janakkapadia/code/insta-request-ce/CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+
 
 ## 📄 License
 The InstaRequest Community Edition source code is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
