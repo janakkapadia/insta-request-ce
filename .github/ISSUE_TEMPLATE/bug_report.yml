@@ -1,0 +1,90 @@
+name: 🐞 Bug Report
+description: Report an unexpected bug, UI behavior, or API request execution error in InstaRequest CE
+title: "[Bug]: <short summary of the issue>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 🚀
+        **Important:** If you believe you have found a security vulnerability, please do NOT open an issue here. Report it privately via [GitHub Security Advisories](https://github.com/janakkapadia/insta-request-ce/security/advisories/new) or check our [SECURITY.md](file:///Users/janakkapadia/code/insta-request-ce/SECURITY.md).
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-Submission Checks
+      description: Please verify the following before submitting your bug report.
+      options:
+        - label: I have searched [existing issues](https://github.com/janakkapadia/insta-request-ce/issues) and confirmed this is not a duplicate.
+          required: true
+        - label: This is NOT a security vulnerability report.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: InstaRequest CE Version / Git Commit
+      description: What version or branch/commit of InstaRequest CE are you running? (e.g., `v1.0.0` or `main @ cfb5932`)
+      placeholder: "e.g., v1.0.2 or main branch"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment & System Details
+      description: Please share your local runtime details so we can reproduce the issue accurately.
+      value: |
+        - PHP Version (`php -v`): 
+        - Node.js & npm Version (`node -v` / `npm -v`): 
+        - Operating System: 
+        - Web Browser & Version: 
+        - Database (SQLite / MySQL / PostgreSQL): 
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "When opening the request editor and clicking 'Send' on a GraphQL endpoint..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide exact, step-by-step instructions to trigger the behavior. If possible, include sample cURL requests, JSON import payloads, or mock data.
+      value: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Enter payload '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+      placeholder: "The request should execute successfully and return a 200 OK JSON response in the viewer panel."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs & Stack Traces
+      description: Paste any relevant Laravel server logs (`storage/logs/laravel.log`), browser console errors, or terminal output here.
+      render: shell
+      placeholder: |
+        [2026-07-15 23:55:00] local.ERROR: SQLSTATE[HY000]: General error...
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Screen Recordings
+      description: If applicable, drag and drop screenshots or recordings here to illustrate the UI anomaly or unexpected behavior.

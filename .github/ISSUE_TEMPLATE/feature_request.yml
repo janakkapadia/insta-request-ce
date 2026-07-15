@@ -1,0 +1,49 @@
+name: ✨ Feature Request
+description: Suggest a new capability, workflow enhancement, or UI/UX improvement for InstaRequest CE
+title: "[Feature]: <short summary of the requested feature>"
+labels: ["enhancement", "under review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We love new ideas! 💡 Please share how we can make **InstaRequest Community Edition (CE)** even better for developer teams and API workflows.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-Submission Checks
+      description: Please verify the following before submitting your request.
+      options:
+        - label: I have searched [existing feature requests and discussions](https://github.com/janakkapadia/insta-request-ce/issues?q=label%3Aenhancement) and confirmed this is not a duplicate.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem or workflow bottleneck?
+      description: A clear and concise description of the problem or pain point you are experiencing.
+      placeholder: "I'm always frustrated when I need to manually sync..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & Desired Behavior
+      description: Describe what you would like InstaRequest CE to do. Include sample API payloads, CLI command syntax (`php artisan ...`), or UI interaction descriptions.
+      placeholder: "It would be amazing if the request builder allowed..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative tools, manual workarounds, or approaches you've considered.
+      placeholder: "Currently, we export to Postman and run a separate script..."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context & Mockups
+      description: Add any other context, sketches, UI mockups, or inspiration from other open-source developer tools here.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Report a Security Vulnerability
+    url: https://github.com/janakkapadia/insta-request-ce/security/advisories/new
+    about: Please report potential security vulnerabilities privately via GitHub Security Advisories. Do not open public issues!
+  - name: 💬 Questions & Community Support
+    url: https://github.com/janakkapadia/insta-request-ce/discussions
+    about: Ask setup questions, share architectural ideas, or chat with fellow developers on GitHub Discussions.
