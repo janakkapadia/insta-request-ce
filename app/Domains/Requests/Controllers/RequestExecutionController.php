@@ -19,7 +19,7 @@ class RequestExecutionController extends Controller
     public function resolve(Request $request): JsonResponse
     {
         $payload = $request->validate([
-            'request_id' => 'nullable|uuid|exists:requests,id',
+            'request_id' => 'nullable|string',
             'method' => 'required|string',
             'url' => 'required|string',
             'headers' => 'nullable|array',
@@ -27,18 +27,24 @@ class RequestExecutionController extends Controller
             'path_variables' => 'nullable|array',
             'body' => 'nullable',
             'auth' => 'nullable|array',
-            'environment_id' => 'nullable|uuid',
+            'environment_id' => 'nullable|string',
         ]);
 
-        if (!empty($payload['request_id'])) {
+        if (!empty($payload['request_id']) && \Illuminate\Support\Str::isUuid($payload['request_id'])) {
             $apiRequest = ApiRequest::find($payload['request_id']);
-            $team = $request->user()->currentTeam;
-            abort_if(!$team || !$apiRequest || $apiRequest->collection->team_id !== $team->id, 403, 'Unauthorized access to this request');
+            if ($apiRequest) {
+                $team = $request->user()->currentTeam;
+                abort_if(!$team || $apiRequest->collection->team_id !== $team->id, 403, 'Unauthorized access to this request');
+            }
         }
+
+        $validEnvironmentId = (!empty($payload['environment_id']) && \Illuminate\Support\Str::isUuid($payload['environment_id']))
+            ? $payload['environment_id']
+            : null;
 
         $result = $this->executionService->resolve(
             $payload,
-            $payload['environment_id'] ?? null
+            $validEnvironmentId
         );
 
         return response()->json($result);
@@ -47,7 +53,7 @@ class RequestExecutionController extends Controller
     public function saveHistory(Request $request): JsonResponse
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'request_id' => 'nullable|uuid|exists:requests,id',
+            'request_id' => 'nullable|string',
             'method' => 'required|string',
             'url' => 'required|string',
             'status' => 'required|integer',
@@ -64,12 +70,16 @@ class RequestExecutionController extends Controller
 
         $payload = $validator->validated();
 
+        $validRequestId = (!empty($payload['request_id']) && \Illuminate\Support\Str::isUuid($payload['request_id']) && ApiRequest::where('id', $payload['request_id'])->exists())
+            ? $payload['request_id']
+            : null;
+
         $team = $request->user()->currentTeam;
         if ($team) {
             RequestHistory::create([
                 'team_id' => $team->id,
                 'user_id' => $request->user()->id,
-                'request_id' => $payload['request_id'] ?? null,
+                'request_id' => $validRequestId,
                 'method' => $payload['method'],
                 'url' => $payload['url'],
                 'status' => $payload['status'],
@@ -86,7 +96,7 @@ class RequestExecutionController extends Controller
     public function execute(Request $request): JsonResponse
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'request_id' => 'nullable|uuid|exists:requests,id',
+            'request_id' => 'nullable|string',
             'method' => 'required|string',
             'url' => 'required|string',
             'headers' => 'nullable|array',
@@ -94,7 +104,7 @@ class RequestExecutionController extends Controller
             'path_variables' => 'nullable|array',
             'body' => 'nullable',
             'auth' => 'nullable|array',
-            'environment_id' => 'nullable|uuid',
+            'environment_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -104,15 +114,23 @@ class RequestExecutionController extends Controller
 
         $payload = $validator->validated();
 
-        if (!empty($payload['request_id'])) {
+        $validRequestId = null;
+        if (!empty($payload['request_id']) && \Illuminate\Support\Str::isUuid($payload['request_id'])) {
             $apiRequest = ApiRequest::find($payload['request_id']);
-            $team = $request->user()->currentTeam;
-            abort_if(!$team || !$apiRequest || $apiRequest->collection->team_id !== $team->id, 403, 'Unauthorized access to this request');
+            if ($apiRequest) {
+                $team = $request->user()->currentTeam;
+                abort_if(!$team || $apiRequest->collection->team_id !== $team->id, 403, 'Unauthorized access to this request');
+                $validRequestId = $apiRequest->id;
+            }
         }
+
+        $validEnvironmentId = (!empty($payload['environment_id']) && \Illuminate\Support\Str::isUuid($payload['environment_id']))
+            ? $payload['environment_id']
+            : null;
 
         $result = $this->executionService->execute(
             $payload,
-            $payload['environment_id'] ?? null
+            $validEnvironmentId
         );
 
         $team = $request->user()->currentTeam;
@@ -133,7 +151,7 @@ class RequestExecutionController extends Controller
             RequestHistory::create([
                 'team_id' => $team->id,
                 'user_id' => $request->user()->id,
-                'request_id' => $payload['request_id'] ?? null,
+                'request_id' => $validRequestId,
                 'method' => $payload['method'],
                 'url' => $result['resolved_url'] ?? $payload['url'],
                 'status' => $result['status'],

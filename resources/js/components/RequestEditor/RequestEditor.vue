@@ -1108,8 +1108,15 @@ return;
         const cleanHeaders = headersList.value.filter((h) => h.key || h.value);
 
 
+        const validRequestId = (store.selectedRequest?.id && !store.selectedRequest.id.startsWith('new-'))
+            ? store.selectedRequest.id
+            : null;
+        const validEnvironmentId = (store.activeEnvironment?.id && !store.activeEnvironment.id.startsWith('no-env'))
+            ? store.activeEnvironment.id
+            : null;
+
         const res = await axios.post(`/requests/execute`, {
-            request_id: store.selectedRequest?.id,
+            request_id: validRequestId,
             method: method.value,
             url: targetUrl,
             body: JSON.stringify(bodyConfig.value),
@@ -1117,7 +1124,7 @@ return;
             path_variables: pathVariables.value,
             headers: cleanHeaders,
             auth: authConfig.value,
-            environment_id: store.activeEnvironment?.id,
+            environment_id: validEnvironmentId,
         });
         const data = res.data;
 

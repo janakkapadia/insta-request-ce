@@ -39,7 +39,7 @@ class HistoryController extends Controller
         
         \Log::info('apiIndex called', ['request_id' => $request->input('request_id'), 'team_id' => $team->id]);
 
-        if ($request->has('request_id')) {
+        if ($request->has('request_id') && \Illuminate\Support\Str::isUuid($request->input('request_id'))) {
             $query->where('request_id', $request->input('request_id'));
         }
 
