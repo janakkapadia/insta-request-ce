@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
-import type { BreadcrumbItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
+import { usePage, Link } from '@inertiajs/vue3';
 import { SlidersHorizontal, ChevronDown, Check, X, Pencil, Plus } from 'lucide-vue-next';
 import { ScrollAreaRoot, ScrollAreaViewport } from 'reka-ui';
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
@@ -37,7 +35,10 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
 import environments from '@/routes/environments';
+import { useWorkspaceStore } from '@/stores/workspace';
+import type { BreadcrumbItem } from '@/types';
 
 withDefaults(
     defineProps<{
@@ -50,9 +51,6 @@ withDefaults(
 
 const store = useWorkspaceStore();
 const page = usePage();
-
-import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
-import { useWorkspaceStore } from '@/stores/workspace';
 
 const confirmDialog = ref({
     isOpen: false,

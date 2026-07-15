@@ -46,8 +46,13 @@ return [];
     return props.collection.folders.filter((f: any) => f.parent_id === props.folder.id);
 });
 
+const setFolderExpanded = (expanded: boolean) => {
+    const f = props.folder as Record<string, any>;
+    f.expanded = expanded;
+};
+
 const toggle = () => {
-    props.folder.expanded = !props.folder.expanded;
+    setFolderExpanded(!props.folder.expanded);
 };
 
 const startRenameFolder = (e?: Event) => {
@@ -223,7 +228,7 @@ const handleCreateRequest = async () => {
     await store.createRequest(props.collection.id, newRequestName.value.trim(), props.folder.id);
     store.activeNewRequest = null;
     newRequestName.value = '';
-    props.folder.expanded = true;
+    setFolderExpanded(true);
 };
 
 const handleCreateFolder = async () => {
@@ -237,7 +242,7 @@ const handleCreateFolder = async () => {
     await store.createFolder(props.collection.id, newFolderName.value.trim(), props.folder.id);
     store.activeNewFolder = null;
     newFolderName.value = '';
-    props.folder.expanded = true;
+    setFolderExpanded(true);
 };
 const vFocus = {
     mounted: (el: HTMLElement) => {

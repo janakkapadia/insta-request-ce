@@ -1,11 +1,10 @@
 import { createInertiaApp } from '@inertiajs/vue3';
-import { usePage } from '@inertiajs/vue3';
 import createServer from '@inertiajs/vue3/server';
 import { renderToString } from '@vue/server-renderer';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
 import type { DefineComponent } from 'vue';
-import { createSSRApp, h, defineComponent } from 'vue';
+import { createSSRApp, h } from 'vue';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
