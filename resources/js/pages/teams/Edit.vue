@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, router, useForm } from '@inertiajs/vue3';
+import { Form, Head, router } from '@inertiajs/vue3';
 import { ChevronDown, Mail, UserPlus, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import CancelInvitationModal from '@/components/CancelInvitationModal.vue';
@@ -11,7 +11,6 @@ import RemoveMemberModal from '@/components/RemoveMemberModal.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
     DropdownMenuContent,

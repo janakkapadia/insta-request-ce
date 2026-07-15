@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { router, usePage } from '@inertiajs/vue3';
-import { Search, Database, Terminal, Clock, Settings, FilePlus, Play, X, SlidersHorizontal, LayoutGrid, Sparkles, Github } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
+import { Search, Database, Terminal, Clock, Play, X, SlidersHorizontal, LayoutGrid, Sparkles, Github } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,8 +9,6 @@ const isOpen = ref(false);
 const isMounted = ref(false);
 const query = ref('');
 const activeIndex = ref(0);
-const store = useWorkspaceStore();
-const page = usePage();
 
 const inputRef = ref<any>(null);
 
@@ -145,8 +143,6 @@ clearTimeout(debounceTimer);
         }
     }, 300);
 });
-import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
-import { useWorkspaceStore } from '@/stores/workspace';
 </script>
 
 <template>
@@ -216,7 +212,7 @@ import { useWorkspaceStore } from '@/stores/workspace';
                                 </div>
                                 
                                 <div 
-                                    v-for="(item, idx) in filteredItems.map((it, absoluteIdx) => ({ ...it, absoluteIdx })).filter(i => i.category === category)" 
+                                    v-for="item in filteredItems.map((it, absoluteIdx) => ({ ...it, absoluteIdx })).filter(i => i.category === category)" 
                                     :key="item.id"
                                     @click="item.action(); isOpen = false;"
                                     @mouseenter="activeIndex = item.absoluteIdx"

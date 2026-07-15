@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Link, usePage, useForm } from '@inertiajs/vue3';
-import { login, register, dashboard } from '@/routes';
+import { Link, usePage } from '@inertiajs/vue3';
 import { Sun, Moon, Menu, X } from 'lucide-vue-next';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
+import { login, register, dashboard } from '@/routes';
 
 const isMenuOpen = ref(false);
 const isDark = ref(true);
@@ -16,8 +16,6 @@ onMounted(() => {
     // Sync with HTML class
     isDark.value = document.documentElement.classList.contains('dark');
 });
-
-import { nextTick } from 'vue';
 
 const toggleDarkMode = (event: MouseEvent) => {
     const isDarkNext = !isDark.value;
@@ -36,7 +34,6 @@ const toggleDarkMode = (event: MouseEvent) => {
         }
     };
 
-    // @ts-ignore
     if (!document.startViewTransition) {
         applyTheme();
 
@@ -50,7 +47,6 @@ const toggleDarkMode = (event: MouseEvent) => {
         Math.max(y, window.innerHeight - y)
     );
 
-    // @ts-ignore
     const transition = document.startViewTransition(async () => {
         applyTheme();
         await nextTick();
@@ -82,9 +78,7 @@ const dashboardUrl = computed(() => {
 return '#';
 }
 
-    const currentTeam = page.props.currentTeam as any;
-
-    return currentTeam ? dashboard(currentTeam.slug).url : '/dashboard';
+    return dashboard().url;
 });
 </script>
 

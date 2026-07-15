@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor';
-import { usePage, router } from '@inertiajs/vue3';
-import { useWorkspaceStore } from '@/stores/workspace';
 import axios from 'axios';
 import {
     Save,
-    ShieldAlert,
     Sparkles,
     Terminal,
     Trash2,
-
-    AlertCircle,
-    X,
     Loader2,
     Edit3,
     Eye,
@@ -26,18 +20,8 @@ import {
     onUnmounted,
 } from 'vue';
 import { toast } from 'vue-sonner';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter,
-} from '@/components/ui/dialog';
 import {
     HoverCard,
     HoverCardContent,
@@ -49,7 +33,6 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -58,17 +41,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import VariableInput from '@/components/VariableInput.vue';
 import { parseMarkdown } from '@/lib/markdown';
+import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
+import { useWorkspaceStore } from '@/stores/workspace';
 
 const store = useWorkspaceStore();
-const page = usePage();
 
 // ── Monaco theme: track the `dark` class on <html> ──────────────────────────
 const isDark = ref(false);
@@ -105,7 +83,6 @@ isHtmlContentType = true;
 });
 
 let themeObserver: MutationObserver | null = null;
-const removeBeforeListener: (() => void) | null = null;
 
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
     if (Object.keys(store.requestDrafts).length > 0) {
@@ -133,12 +110,7 @@ onMounted(() => {
 onUnmounted(() => {
     themeObserver?.disconnect();
     window.removeEventListener('beforeunload', handleBeforeUnload);
-
-    if (removeBeforeListener) {
-removeBeforeListener();
-}
 });
-const currentUser = computed(() => page.props.auth.user);
 
 const method = ref('GET');
 const activeRequestTab = ref('params');
@@ -235,13 +207,10 @@ watch(method, (newMethod) => {
     }
 });
 
-import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
-
-const props = defineProps<{
+defineProps<{
     requestId?: string;
 }>();
 const url = ref('');
-const requestBody = ref('');
 const editorRef = shallowRef();
 const responseBody = ref('');
 const responseMeta = ref<{
@@ -345,7 +314,6 @@ const syncPathVariablesFromUrl = (newVal: string) => {
     }
 
     // Add new variables that appeared in the URL
-    let added = false;
     matches.forEach((key) => {
         if (!pathVariables.value.find((v) => v.key === key)) {
             pathVariables.value.push({
@@ -354,7 +322,6 @@ const syncPathVariablesFromUrl = (newVal: string) => {
                 enabled: true,
                 description: '',
             });
-            added = true;
         }
     });
 };
@@ -674,7 +641,7 @@ watch(
                     ? (() => {
                           try {
                               return JSON.parse(newReq.body);
-                          } catch (e) {
+                          } catch {
                               return null;
                           }
                       })()
@@ -1131,9 +1098,6 @@ return;
     isExecuting.value = true;
 
     try {
-        const page = usePage();
-        const team = page.props.currentTeam as any;
-
         let targetUrl = url.value;
 
         if (!/^https?:\/\//i.test(targetUrl) && !targetUrl.includes('{')) {
@@ -1143,8 +1107,6 @@ return;
         const cleanParams = queryParams.value.filter((p) => p.key || p.value);
         const cleanHeaders = headersList.value.filter((h) => h.key || h.value);
 
-
-        let data;
 
         const res = await axios.post(`/requests/execute`, {
             request_id: store.selectedRequest?.id,
@@ -1157,7 +1119,7 @@ return;
             auth: authConfig.value,
             environment_id: store.activeEnvironment?.id,
         });
-        data = res.data;
+        const data = res.data;
 
         responseMeta.value = {
             status: data.status,
@@ -1174,7 +1136,7 @@ return;
                     null,
                     2,
                 );
-            } catch (e) {
+            } catch {
                 responseBody.value = data.body;
             }
         } else {

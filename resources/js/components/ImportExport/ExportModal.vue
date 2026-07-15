@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/select';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { ExportFormat } from '@/types';
-import FormatBadge from './FormatBadge.vue';
 
 const props = defineProps<{
     open: boolean;

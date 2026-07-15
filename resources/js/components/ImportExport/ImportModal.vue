@@ -50,11 +50,8 @@ import type {
     ImportRecord,
     MergeStrategy,
     ConflictItem,
-    ValidationMessage,
     ParsedFolder,
-    ParsedRequest,
 } from '@/types';
-import { FORMAT_LABELS } from '@/types';
 import FormatBadge from './FormatBadge.vue';
 import ValidationReport from './ValidationReport.vue';
 

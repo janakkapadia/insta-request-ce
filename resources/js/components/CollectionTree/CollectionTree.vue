@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import type { RequestItem } from '@/stores/workspace';
+import { router } from '@inertiajs/vue3';
+import { ChevronDown, Folder, Plus, FolderPlus, FilePlus, Trash2 } from 'lucide-vue-next';
+import { ref, nextTick } from 'vue';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
 import { useWorkspaceStore } from '@/stores/workspace';
-import { usePage, router } from '@inertiajs/vue3';
-import { ChevronRight, ChevronDown, Folder, FileJson, Plus, FolderPlus, FilePlus, Trash2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import type { RequestItem } from '@/stores/workspace';
 
 const store = useWorkspaceStore();
-const page = usePage();
 
 const newCollectionName = ref('');
 const showNewCollection = ref(false);
@@ -115,19 +125,7 @@ const handleDeleteRequest = (requestId: string) => {
     );
 };
 
-import { nextTick } from 'vue';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
-import collections from '@/routes/collections';
+
 
 const vFocus = {
     mounted: (el: HTMLElement) => {

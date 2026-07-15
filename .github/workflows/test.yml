@@ -45,6 +45,11 @@ jobs:
       - name: Install Node Dependencies
         run: npm i
 
+      - name: Prepare Storage and Cache Directories
+        run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+          chmod -R 777 storage bootstrap/cache
+
       - name: Install Dependencies
         run: composer update --no-interaction --prefer-dist --optimize-autoloader
 
@@ -57,8 +62,11 @@ jobs:
       - name: Build Assets
         run: npm run build
 
+      - name: Run Linting
+        run: npm run lint:check
+
       - name: Run Type Analysis
-        run: composer types:check
+        run: npm run types:check
 
       - name: Tests
         run: php artisan test

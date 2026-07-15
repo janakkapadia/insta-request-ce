@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { usePage, router } from '@inertiajs/vue3';
-import { ChevronRight, ChevronDown, FileJson, Plus, FolderPlus, FilePlus, Trash2, Pencil, MoreVertical, Copy, ArrowRight, Folder, CheckSquare, Loader2 } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
+import { FilePlus, Trash2, Pencil, MoreVertical, Copy, ArrowRight, Loader2 } from 'lucide-vue-next';
 import { ref, watch, computed, nextTick } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,8 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
-import collections from '@/routes/collections';
-import type { RequestItem } from '@/stores/workspace';
+import type { CollectionItem, RequestItem } from '@/stores/workspace';
 import { useWorkspaceStore } from '@/stores/workspace';
 import CollectionFolderNode from './CollectionFolderNode.vue';
 import MoveRequestModal from './MoveRequestModal.vue';
@@ -39,7 +38,6 @@ input.focus();
 };
 
 const store = useWorkspaceStore();
-const page = usePage();
 
 const props = defineProps<{
     collection: CollectionItem;
@@ -120,14 +118,6 @@ watch(() => props.collection.id, () => {
     exitSelectionMode();
 });
 
-const toggle = async (item: any) => {
-    item.expanded = !item.expanded;
-
-    if (item.expanded && item.team_id && !item.has_loaded_details) {
-        await store.fetchCollectionDetails(item.id);
-    }
-};
-
 const handleSelectRequest = (req: RequestItem, forceNewTab = false) => {
     store.selectRequest(req, forceNewTab);
     router.get(`/collections/${req.collection_id}/requests/${req.id}`, {}, {
@@ -165,18 +155,6 @@ const handleCreateRequest = async (collectionId: string, folderId: string | null
     newRequestName.value = '';
 };
 
-const handleDeleteFolder = (folder: any) => {
-    const hasRequests = folder.requests && folder.requests.length > 0;
-    const msg = hasRequests
-        ? `Are you sure you want to delete "${folder.name}" and all of its requests? This action cannot be undone.`
-        : `Are you sure you want to delete "${folder.name}"? This action cannot be undone.`;
-    confirmDelete(
-        'Delete Folder',
-        msg,
-        () => store.deleteFolder(folder.id)
-    );
-};
-
 const handleDeleteRequest = (requestId: string) => {
     confirmDelete(
         'Delete Request',
@@ -185,31 +163,8 @@ const handleDeleteRequest = (requestId: string) => {
     );
 };
 
-
-const editingFolderId = ref<string | null>(null);
-const editingFolderName = ref('');
 const editingRequestId = ref<string | null>(null);
 const editingRequestName = ref('');
-
-const startRenameFolder = (folder: any, e?: Event) => {
-    e?.stopPropagation();
-    editingFolderId.value = folder.id;
-    editingFolderName.value = folder.name;
-};
-
-const commitRenameFolder = async (folder: any) => {
-    const trimmed = editingFolderName.value.trim();
-
-    if (trimmed && trimmed !== folder.name) {
-        await store.renameFolder(folder.id, trimmed);
-    }
-
-    editingFolderId.value = null;
-};
-
-const cancelRenameFolder = () => {
- editingFolderId.value = null; 
-};
 
 const startRenameRequest = (req: any, e?: Event) => {
     e?.stopPropagation();
@@ -259,38 +214,6 @@ const handleDragOver = (e: DragEvent) => {
     }
 };
 
-const handleDropOnFolder = async (e: DragEvent, folderId: string) => {
-    try {
-        let requestId = store.draggedRequestId;
-
-        if (!requestId) {
-            const data = e.dataTransfer?.getData('text/plain');
-
-            if (data) {
-                const parsed = JSON.parse(data);
-
-                if (parsed.type === 'jackman-request') {
-requestId = parsed.id;
-}
-            }
-        }
-
-        if (!requestId) {
-return;
-}
-        
-        if (props.collection) {
-            const req = getRequestById(requestId);
-
-            if (!req || req.folder_id !== folderId) {
-                await store.moveRequest(requestId, props.collection.id, folderId);
-            }
-        }
-    } catch (err) {} finally {
-        store.draggedRequestId = null;
-    }
-};
-
 const handleDropOnCollection = async (e: DragEvent) => {
     try {
         let requestId = store.draggedRequestId;
@@ -306,7 +229,7 @@ requestId = parsed.id;
 } else if (parsed.type === 'jackman-folder') {
 folderId = parsed.id;
 }
-            } catch (e) {}
+            } catch {}
         }
         
         if (requestId && props.collection) {
@@ -324,7 +247,7 @@ folderId = parsed.id;
 
             await store.moveFolder(folderId, props.collection.id, null);
         }
-    } catch (err) {} finally {
+    } catch {} finally {
         store.draggedRequestId = null;
         store.draggedFolderId = null;
     }
@@ -433,7 +356,7 @@ return found;
 
                 <!-- Direct Requests of Collection -->
                 <div 
-                    v-for="req in props.collection.requests?.filter(r => !r.folder_id)" 
+                    v-for="req in props.collection.requests?.filter((r: any) => !r.folder_id)" 
                     :key="req.id"
                     class="group/req flex items-center justify-between rounded-md px-2 py-0.5 text-xs hover:bg-muted/50 cursor-pointer select-none"
                     :class="{'bg-muted text-foreground': store.selectedRequest?.id === req.id}"
@@ -451,7 +374,7 @@ return found;
                     <div class="flex items-center gap-2 flex-1 min-w-0">
                         <div v-if="isSelectionMode" @click.stop class="flex items-center shrink-0">
                             <Checkbox 
-                                :model-value="selectedRequestIds.includes(req.id)"
+                                :model-value="store.selectedRequestIds.includes(req.id)"
                                 @update:model-value="toggleSelectRequest(req.id)"
                                 class="h-3.5 w-3.5 rounded border-muted-foreground/30 shrink-0"
                             />
@@ -521,23 +444,6 @@ return found;
             </DialogContent>
         </Dialog>
 
-        <!-- Delete Selected Requests Confirmation Dialog -->
-        <Dialog v-model:open="showDeleteRequestsConfirm">
-            <DialogContent class="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Delete Selected Requests</DialogTitle>
-                    <DialogDescription>
-                        Are you sure you want to delete the {{ selectedRequestIds.length }} selected requests? This action cannot be undone.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter class="flex gap-2 justify-end mt-4">
-                    <Button variant="outline" @click="showDeleteRequestsConfirm = false">Cancel</Button>
-                    <Button variant="destructive" @click="confirmDeleteSelectedRequests">
-                        Delete Selected
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
 
         <!-- Move Request Modal -->
         <MoveRequestModal 

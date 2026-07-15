@@ -44,7 +44,6 @@ export function updateTheme(value: Appearance, event?: MouseEvent): void {
         Math.max(y, window.innerHeight - y)
     );
 
-    // @ts-ignore
     const transition = document.startViewTransition(async () => {
         applyTheme();
         await nextTick();

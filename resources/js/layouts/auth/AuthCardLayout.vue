@@ -8,7 +8,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { home, login } from '@/routes';
+import { home } from '@/routes';
 
 const logoHref = home();
 
