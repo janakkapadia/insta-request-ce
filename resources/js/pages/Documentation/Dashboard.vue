@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import {
     BookOpen,
-    Eye,
     Globe,
     Lock,
     Save,
@@ -13,7 +12,6 @@ import {
     Plus,
     Trash2,
     Check,
-    AlertCircle,
     Info,
     Search,
     ExternalLink,
@@ -57,6 +55,7 @@ const props = defineProps<{
             query_params: any;
             body: any;
         }>;
+        folders?: Array<any>;
     }>;
     selectedCollectionId?: string;
     documentation?: any;
@@ -139,6 +138,7 @@ const fallbackCopy = (text: string, onSuccess: () => void) => {
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
+
     try {
         document.execCommand('copy');
         onSuccess();
@@ -183,12 +183,12 @@ const docSettings = ref<any>({});
 const environmentId = ref<string>('');
 
 // Requests of selected collection with descriptions and mock response examples
-const requestsList = ref<Array<any>>([]);
+const editableRequestsList = ref<Array<any>>([]);
 const selectedRequestId = ref<string>('');
 
 // Selected request details
 const selectedRequest = computed(() => {
-    return requestsList.value.find(r => r.id === selectedRequestId.value) || null;
+    return editableRequestsList.value.find(r => r.id === selectedRequestId.value) || null;
 });
 
 const activeCollectionFolders = computed(() => {
@@ -202,11 +202,11 @@ return [];
 });
 
 const rootFolders = computed(() => {
-    return activeCollectionFolders.value.filter(f => !f.parent_id);
+    return activeCollectionFolders.value.filter((f: any) => !f.parent_id);
 });
 
 const rootRequests = computed(() => {
-    return requestsList.value.filter(r => !r.folder_id);
+    return editableRequestsList.value.filter(r => !r.folder_id);
 });
 
 // Markdown pre-render computed properties
@@ -230,7 +230,7 @@ const editedRequestDescriptions = ref<Record<string, string>>({});
 watch(selectedCollectionId, (newVal) => {
     if (!newVal) {
         docId.value = '';
-        requestsList.value = [];
+        editableRequestsList.value = [];
 
         return;
     }
@@ -263,12 +263,12 @@ watch(() => props.documentation, (newDoc) => {
 }, { immediate: true });
 
 watch(() => props.requestsList, (newList) => {
-    requestsList.value = newList ? JSON.parse(JSON.stringify(newList)) : [];
+    editableRequestsList.value = newList ? JSON.parse(JSON.stringify(newList)) : [];
     editedRequestDescriptions.value = {};
 
-    if (requestsList.value.length > 0) {
-        if (!requestsList.value.find(r => r.id === selectedRequestId.value)) {
-            selectedRequestId.value = requestsList.value[0].id;
+    if (editableRequestsList.value.length > 0) {
+        if (!editableRequestsList.value.find(r => r.id === selectedRequestId.value)) {
+            selectedRequestId.value = editableRequestsList.value[0].id;
         }
     } else {
         selectedRequestId.value = '';
@@ -353,7 +353,7 @@ return;
     editedRequestDescriptions.value[selectedRequestId.value] = desc;
     
     // Also keep local reactive object updated
-    const req = requestsList.value.find(r => r.id === selectedRequestId.value);
+    const req = editableRequestsList.value.find(r => r.id === selectedRequestId.value);
 
     if (req) {
         req.description = desc;
@@ -826,7 +826,7 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                     <div class="md:col-span-1 bg-card rounded-xl p-3 border border-border flex flex-col gap-2 max-h-[calc(100vh-220px)] sticky top-6">
                         <div class="flex items-center justify-between px-2 mb-1 shrink-0">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Requests list</h4>
-                            <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded font-bold">{{ requestsList.length }} items</span>
+                            <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded font-bold">{{ editableRequestsList.length }} items</span>
                         </div>
                         <div class="overflow-y-auto pr-1 space-y-1.5 max-h-[calc(100vh-260px)] min-h-[200px]">
                             <!-- Root Folders -->
@@ -835,7 +835,7 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                                 :key="folder.id"
                                 :folder="folder"
                                 :folders="activeCollectionFolders"
-                                :requests="requestsList"
+                                :requests="editableRequestsList"
                                 :selected-request-id="selectedRequestId"
                                 :get-method-color="getMethodColor"
                                 @select-request="id => selectedRequestId = id"
@@ -859,7 +859,7 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                                 <ChevronRight class="h-3 w-3 opacity-50 shrink-0 group-hover:opacity-100 transition-opacity" />
                             </button>
 
-                            <div v-if="requestsList.length === 0 && rootFolders.length === 0" class="text-xs text-muted-foreground text-center py-6">
+                            <div v-if="editableRequestsList.length === 0 && rootFolders.length === 0" class="text-xs text-muted-foreground text-center py-6">
                                 No requests found in this collection.
                             </div>
                         </div>

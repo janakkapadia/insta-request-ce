@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { dashboard } from '@/routes';
 import * as collections from '@/routes/collections';
 import { useWorkspaceStore } from '@/stores/workspace';
-import type { Team } from '@/types';
 
 const page = usePage();
 
@@ -45,7 +44,7 @@ interface RecentHistory {
     };
 }
 
-const props = defineProps<{
+defineProps<{
     stats: Stats;
     recentCollections: RecentCollection[];
     recentHistory: RecentHistory[];
@@ -54,7 +53,7 @@ const props = defineProps<{
 const store = useWorkspaceStore();
 
 defineOptions({
-    layout: (props: { currentTeam?: Team | null }) => ({
+    layout: () => ({
         breadcrumbs: [
             {
                 title: 'Dashboard',

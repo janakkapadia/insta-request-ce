@@ -12,12 +12,7 @@ import {
     Sparkles,
     Terminal,
     Sun,
-    Moon,
-    ArrowRight,
-    CheckCircle,
-    Info,
-    ExternalLink,
-    AlertCircle
+    Moon
 } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
@@ -28,7 +23,7 @@ import {
 } from '@/components/ui/resizable';
 import { parseMarkdown } from '@/lib/markdown';
 
-defineOptions({ layout: null });
+defineOptions({ layout: null as any });
 
 // Props
 const props = defineProps<{
@@ -292,7 +287,7 @@ return '';
     if (typeof body === 'string') {
         try {
             parsed = JSON.parse(body);
-        } catch (_) {
+        } catch {
             return body;
         }
     } else {
@@ -336,7 +331,7 @@ return '';
                 if (gql.variables) {
                     try {
                         vars = typeof gql.variables === 'string' ? JSON.parse(gql.variables) : gql.variables;
-                    } catch (_) {}
+                    } catch {}
                 }
 
                 return JSON.stringify({
@@ -348,7 +343,7 @@ return '';
         
         try {
             return JSON.stringify(parsed, null, 2);
-        } catch (_) {
+        } catch {
             return String(parsed);
         }
     }

@@ -2,7 +2,6 @@ import { usePage, router } from '@inertiajs/vue3';
 import { defineStore } from 'pinia';
 import { ref, watch, onUnmounted, computed } from 'vue';
 import { toast } from 'vue-sonner';
-import collectionsRoute from '@/routes/collections';
 
 
 const apiFetch = async (url: string, options: RequestInit = {}) => {
@@ -390,7 +389,7 @@ return false;
             router.reload({
                 only: ['collections'],
                 data,
-                // @ts-ignore - Inertia types might complain, but this works
+                // @ts-expect-error - Inertia types might complain, but this works
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: (page: any) => {
@@ -537,14 +536,16 @@ return;
             showSaveRequestModal.value = false;
             pendingSaveRequestData.value = null;
 
-            router.visit(
-                `/collections/${selectedRequest.value.collection_id}/requests/${selectedRequest.value.id}`,
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ['activeCollectionId', 'activeRequestId'],
-                },
-            );
+            if (selectedRequest.value) {
+                router.visit(
+                    `/collections/${selectedRequest.value.collection_id}/requests/${selectedRequest.value.id}`,
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['activeCollectionId', 'activeRequestId'],
+                    },
+                );
+            }
         } catch (error) {
             console.error('Failed to save new request:', error);
         }

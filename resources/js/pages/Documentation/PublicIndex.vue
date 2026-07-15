@@ -16,7 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 
-defineOptions({ layout: null });
+defineOptions({ layout: null as any });
 
 // Props
 const props = defineProps<{

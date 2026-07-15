@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { onMounted, watch } from 'vue';
 import { watchEffect } from 'vue';
 import RequestEditor from '@/components/RequestEditor/RequestEditor.vue';
@@ -67,7 +67,7 @@ return;
     }
 };
 
-watch(() => props.collections, (newCols) => {
+watch(() => props.collections, () => {
     if (props.activeCollectionId && store.selectedCollection?.id !== props.activeCollectionId) {
         selectCollectionFromId(props.activeCollectionId);
     }
@@ -129,7 +129,7 @@ watchEffect(() => {
 });
 
 defineOptions({
-    layout: (props: { currentTeam?: Team | null }) => {
+    layout: () => {
         return {
             managed: true, // Tell layoutState.ts to not overwrite breadcrumbs
             breadcrumbs: [],

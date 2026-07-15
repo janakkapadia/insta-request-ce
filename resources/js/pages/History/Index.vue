@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor';
 import { Head, router } from '@inertiajs/vue3';
-import { Trash2, Calendar, Clock, Database, User, ArrowRight, ExternalLink, Loader2 } from 'lucide-vue-next';
+import { Trash2, Calendar, Clock, Database, User, ArrowRight, Loader2 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import history from '@/routes/history';
+import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
+import historyRoutes from '@/routes/history';
 import type { Team } from '@/types';
 
 interface HistoryRecord {
@@ -71,7 +72,7 @@ const loadingMore = ref(false);
 const selectedRecord = ref<HistoryRecord | null>(null);
 
 defineOptions({
-    layout: (props: { currentTeam?: Team | null }) => {
+    layout: () => {
         return {
             breadcrumbs: [
                 {
@@ -90,7 +91,7 @@ const handleClearHistory = () => {
 };
 
 const confirmClearHistory = () => {
-    router.delete(history.destroy().url, {
+    router.delete(historyRoutes.destroy().url, {
         onFinish: () => {
             showClearConfirm.value = false;
             records.value = [];
@@ -108,9 +109,7 @@ const isAllSelected = computed(() => {
     return records.value.length > 0 && selectedIds.value.length === records.value.length;
 });
 
-const isPartiallySelected = computed(() => {
-    return selectedIds.value.length > 0 && selectedIds.value.length < records.value.length;
-});
+
 
 const toggleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -135,7 +134,7 @@ const handleDeleteSelected = () => {
 };
 
 const confirmDeleteSelected = () => {
-    router.delete(history.destroy().url, {
+    router.delete(historyRoutes.destroy().url, {
         data: {
             ids: selectedIds.value
         },
@@ -154,7 +153,7 @@ return;
 
     loadingMore.value = true;
     const nextPage = currentPage.value + 1;
-    router.visit(history.index({ query: { page: nextPage } }).url, {
+    router.visit(historyRoutes.index({ query: { page: nextPage } }).url, {
         preserveState: true,
         preserveScroll: true,
         only: ['history'],
@@ -171,7 +170,6 @@ return;
     });
 };
 
-import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
 
 const getStatusColor = (status: number) => {
     if (status === 0) {
@@ -210,7 +208,7 @@ return '';
     if (typeof bodyStr === 'string') {
         try {
             bodyObj = JSON.parse(bodyStr);
-        } catch (e) {
+        } catch {
             return bodyStr;
         }
     } else {
@@ -260,16 +258,7 @@ return '';
 });
 
 // Format payload headers/params as formatted JSON for editor if they're complex
-const formattedRequestDetails = computed(() => {
-    if (!selectedRecord.value) {
-return '';
-}
 
-    return JSON.stringify({
-        headers: selectedRecord.value.request_payload.headers || [],
-        query_params: selectedRecord.value.request_payload.query_params || [],
-    }, null, 2);
-});
 
 const formattedResponseBody = computed(() => {
     if (!selectedRecord.value || !selectedRecord.value.response_meta.body) {
@@ -280,7 +269,7 @@ return '';
 
     try {
         return JSON.stringify(JSON.parse(body), null, 2);
-    } catch (e) {
+    } catch {
         return body;
     }
 });
@@ -298,7 +287,7 @@ return false;
     if (headers) {
         for (const key in headers) {
             if (key.toLowerCase() === 'content-type') {
-                const val = headers[key];
+                const val: any = headers[key];
 
                 if (Array.isArray(val) && val.some(v => typeof v === 'string' && v.toLowerCase().includes('text/html'))) {
 isHtmlContentType = true;
@@ -392,7 +381,7 @@ isHtmlContentType = true;
                                 <!-- Checkbox to multi-select -->
                                 <Checkbox 
                                     :checked="selectedIds.includes(record.id)"
-                                    @update:checked="(val) => toggleSelectRecord(record.id)"
+                                    @update:checked="() => toggleSelectRecord(record.id)"
                                     @click.stop
                                     class="h-4 w-4 rounded border-muted-foreground/30 shrink-0"
                                 />

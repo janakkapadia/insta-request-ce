@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { Check, ChevronsUpDown, Plus, Users } from 'lucide-vue-next';
+import { Check, ChevronsUpDown, Users } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,7 +8,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { switchMethod } from '@/routes/teams';
@@ -45,7 +44,7 @@ const teamItemClass = computed(() =>
 const checkIconClass = computed(() =>
     props.inHeader ? 'ml-auto size-4' : 'ml-auto h-4 w-4',
 );
-const plusIconClass = computed(() => (props.inHeader ? 'size-4' : 'h-4 w-4'));
+
 
 const switchTeam = (team: Team) => {
     const previousTeamSlug = currentTeam.value?.slug;

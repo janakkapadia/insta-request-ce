@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import { home, login } from '@/routes';
+import { home } from '@/routes';
 
 const logoHref = home();
 
