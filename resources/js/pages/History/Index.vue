@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor';
 import { Head, router } from '@inertiajs/vue3';
-import { Trash2, Calendar, Clock, Database, User, ArrowRight, Loader2 } from 'lucide-vue-next';
+import {
+    Trash2,
+    Calendar,
+    Clock,
+    Database,
+    User,
+    ArrowRight,
+    Loader2,
+} from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -33,8 +41,8 @@ interface HistoryRecord {
     time_ms: number;
     size_bytes: number;
     request_payload: {
-        headers: Array<{key: string, value: string, enabled?: boolean}>;
-        query_params: Array<{key: string, value: string, enabled?: boolean}>;
+        headers: Array<{ key: string; value: string; enabled?: boolean }>;
+        query_params: Array<{ key: string; value: string; enabled?: boolean }>;
         body: any;
     };
     response_meta: {
@@ -98,7 +106,7 @@ const confirmClearHistory = () => {
             currentPage.value = 1;
             lastPage.value = 1;
             selectedIds.value = [];
-        }
+        },
     });
 };
 
@@ -106,14 +114,15 @@ const selectedIds = ref<string[]>([]);
 const showDeleteSelectedConfirm = ref(false);
 
 const isAllSelected = computed(() => {
-    return records.value.length > 0 && selectedIds.value.length === records.value.length;
+    return (
+        records.value.length > 0 &&
+        selectedIds.value.length === records.value.length
+    );
 });
-
-
 
 const toggleSelectAll = (checked: boolean) => {
     if (checked) {
-        selectedIds.value = records.value.map(r => r.id);
+        selectedIds.value = records.value.map((r) => r.id);
     } else {
         selectedIds.value = [];
     }
@@ -136,20 +145,22 @@ const handleDeleteSelected = () => {
 const confirmDeleteSelected = () => {
     router.delete(historyRoutes.destroy().url, {
         data: {
-            ids: selectedIds.value
+            ids: selectedIds.value,
         },
         onFinish: () => {
             showDeleteSelectedConfirm.value = false;
-            records.value = records.value.filter(r => !selectedIds.value.includes(r.id));
+            records.value = records.value.filter(
+                (r) => !selectedIds.value.includes(r.id),
+            );
             selectedIds.value = [];
-        }
+        },
     });
 };
 
 const loadMore = () => {
     if (!hasMore.value || loadingMore.value) {
-return;
-}
+        return;
+    }
 
     loadingMore.value = true;
     const nextPage = currentPage.value + 1;
@@ -170,41 +181,50 @@ return;
     });
 };
 
-
 const getStatusColor = (status: number) => {
     if (status === 0) {
-return 'text-muted-foreground bg-muted';
-}
+        return 'text-muted-foreground bg-muted';
+    }
 
     if (status >= 200 && status < 300) {
-return 'text-emerald-500 bg-emerald-500/10';
-}
+        return 'text-emerald-500 bg-emerald-500/10';
+    }
 
     if (status >= 300 && status < 400) {
-return 'text-amber-500 bg-amber-500/10';
-}
+        return 'text-amber-500 bg-amber-500/10';
+    }
 
     return 'text-rose-500 bg-rose-500/10';
 };
 
 const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
 };
 
 const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
 
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 };
 
 const formattedRequestBody = computed(() => {
     if (!selectedRecord.value || !selectedRecord.value.request_payload.body) {
-return '';
-}
+        return '';
+    }
 
     const bodyStr = selectedRecord.value.request_payload.body;
     let bodyObj;
-    
+
     if (typeof bodyStr === 'string') {
         try {
             bodyObj = JSON.parse(bodyStr);
@@ -222,7 +242,11 @@ return '';
         } else if (bodyObj.mode === 'raw') {
             if (bodyObj.raw?.language === 'json') {
                 try {
-                    return JSON.stringify(JSON.parse(bodyObj.raw.content), null, 2);
+                    return JSON.stringify(
+                        JSON.parse(bodyObj.raw.content),
+                        null,
+                        2,
+                    );
                 } catch {
                     return bodyObj.raw.content || '';
                 }
@@ -232,7 +256,10 @@ return '';
         } else if (bodyObj.mode === 'formdata') {
             const formDataStr = bodyObj.formdata
                 ?.filter((f: any) => f.enabled && f.key)
-                ?.map((f: any) => `${f.key}: ${f.type === 'file' ? '[File]' : f.value}`)
+                ?.map(
+                    (f: any) =>
+                        `${f.key}: ${f.type === 'file' ? '[File]' : f.value}`,
+                )
                 .join('\n');
 
             return formDataStr || '';
@@ -246,7 +273,9 @@ return '';
         } else if (bodyObj.mode === 'graphql') {
             const gqlObj = {
                 query: bodyObj.graphql?.query || '',
-                variables: bodyObj.graphql?.variables ? JSON.parse(bodyObj.graphql.variables) : {}
+                variables: bodyObj.graphql?.variables
+                    ? JSON.parse(bodyObj.graphql.variables)
+                    : {},
             };
 
             return JSON.stringify(gqlObj, null, 2);
@@ -259,11 +288,10 @@ return '';
 
 // Format payload headers/params as formatted JSON for editor if they're complex
 
-
 const formattedResponseBody = computed(() => {
     if (!selectedRecord.value || !selectedRecord.value.response_meta.body) {
-return '';
-}
+        return '';
+    }
 
     const body = selectedRecord.value.response_meta.body;
 
@@ -276,9 +304,9 @@ return '';
 
 const isHtmlResponse = computed(() => {
     if (!selectedRecord.value || !selectedRecord.value.response_meta) {
-return false;
-}
-    
+        return false;
+    }
+
     const body = selectedRecord.value.response_meta.body;
 
     const headers = selectedRecord.value.response_meta.headers;
@@ -289,13 +317,23 @@ return false;
             if (key.toLowerCase() === 'content-type') {
                 const val: any = headers[key];
 
-                if (Array.isArray(val) && val.some(v => typeof v === 'string' && v.toLowerCase().includes('text/html'))) {
-isHtmlContentType = true;
-}
+                if (
+                    Array.isArray(val) &&
+                    val.some(
+                        (v) =>
+                            typeof v === 'string' &&
+                            v.toLowerCase().includes('text/html'),
+                    )
+                ) {
+                    isHtmlContentType = true;
+                }
 
-                if (typeof val === 'string' && val.toLowerCase().includes('text/html')) {
-isHtmlContentType = true;
-}
+                if (
+                    typeof val === 'string' &&
+                    val.toLowerCase().includes('text/html')
+                ) {
+                    isHtmlContentType = true;
+                }
             }
         }
     }
@@ -304,65 +342,79 @@ isHtmlContentType = true;
         const trimmed = body.trim();
 
         // If content type says HTML, or body strongly looks like HTML and not JSON
-        if (isHtmlContentType || trimmed.toLowerCase().startsWith('<!doctype html>') || trimmed.toLowerCase().startsWith('<html')) {
+        if (
+            isHtmlContentType ||
+            trimmed.toLowerCase().startsWith('<!doctype html>') ||
+            trimmed.toLowerCase().startsWith('<html')
+        ) {
             return true;
         }
     }
-    
+
     return isHtmlContentType;
 });
 </script>
 
 <template>
     <Head title="Request History" />
-    <div class="flex flex-1 h-full flex-col min-h-0 overflow-hidden p-6 gap-6">
+    <div class="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div class="space-y-1">
-                <h1 class="text-xl font-bold tracking-tight">Request History</h1>
+                <h1 class="text-xl font-bold tracking-tight">
+                    Request History
+                </h1>
                 <p class="text-xs text-muted-foreground">
-                    Logs of all API execution requests performed within the <strong>{{ currentTeam?.name || 'Workspace' }}</strong> team.
+                    Logs of all API execution requests performed within the
+                    <strong>{{ currentTeam?.name || 'Workspace' }}</strong>
+                    team.
                 </p>
             </div>
-            <Button 
-                v-if="records.length" 
-                variant="destructive" 
-                size="sm" 
-                class="gap-2 text-xs" 
+            <Button
+                v-if="records.length"
+                variant="destructive"
+                size="sm"
+                class="gap-2 text-xs"
                 @click="handleClearHistory"
             >
-                <Trash2 class="w-3.5 h-3.5" />
+                <Trash2 class="h-3.5 w-3.5" />
                 Clear Logs
             </Button>
         </div>
 
         <!-- Main Logs Content -->
-        <div class="flex-1 min-h-0 border rounded-xl bg-background flex flex-col overflow-hidden">
+        <div
+            class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background"
+        >
             <!-- Header/Batch action bar -->
-            <div v-if="records.length" class="flex items-center justify-between px-4 py-3 border-b bg-muted/20 shrink-0 text-xs text-muted-foreground">
+            <div
+                v-if="records.length"
+                class="flex shrink-0 items-center justify-between border-b bg-muted/20 px-4 py-3 text-xs text-muted-foreground"
+            >
                 <div class="flex items-center gap-3">
                     <Checkbox
                         :checked="isAllSelected"
                         @update:checked="toggleSelectAll"
-                        class="h-4 w-4 rounded border-muted-foreground/30 shrink-0"
+                        class="h-4 w-4 shrink-0 rounded border-muted-foreground/30"
                     />
-                    <span v-if="selectedIds.length > 0" class="font-medium text-foreground">
+                    <span
+                        v-if="selectedIds.length > 0"
+                        class="font-medium text-foreground"
+                    >
                         {{ selectedIds.length }} items selected
                     </span>
-                    <span v-else>
-                        Select execution logs to delete
-                    </span>
+                    <span v-else> Select execution logs to delete </span>
                 </div>
-                
+
                 <div class="flex items-center gap-2">
                     <Button
                         v-if="selectedIds.length > 0"
                         variant="destructive"
                         size="sm"
-                        class="h-7 text-[11px] gap-1 px-2.5"
+                        class="h-7 gap-1 px-2.5 text-[11px]"
                         @click="handleDeleteSelected"
                     >
-                        <Trash2 class="w-3.5 h-3.5" />
+                        <Trash2 class="h-3.5 w-3.5" />
                         Delete Selected
                     </Button>
                 </div>
@@ -371,93 +423,136 @@ isHtmlContentType = true;
             <ScrollArea class="flex-1">
                 <template v-if="records.length">
                     <div class="divide-y divide-border/60">
-                        <div 
-                            v-for="record in records" 
+                        <div
+                            v-for="record in records"
                             :key="record.id"
-                            class="group flex items-center justify-between p-4 hover:bg-muted/40 transition-colors cursor-pointer"
+                            class="group flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-muted/40"
                             @click="selectedRecord = record"
                         >
-                            <div class="flex items-center gap-4 min-w-0 flex-1">
+                            <div class="flex min-w-0 flex-1 items-center gap-4">
                                 <!-- Checkbox to multi-select -->
-                                <Checkbox 
+                                <Checkbox
                                     :checked="selectedIds.includes(record.id)"
-                                    @update:checked="() => toggleSelectRecord(record.id)"
+                                    @update:checked="
+                                        () => toggleSelectRecord(record.id)
+                                    "
                                     @click.stop
-                                    class="h-4 w-4 rounded border-muted-foreground/30 shrink-0"
+                                    class="h-4 w-4 shrink-0 rounded border-muted-foreground/30"
                                 />
 
                                 <!-- Status Code -->
-                                <span :class="['text-[11px] font-bold px-2 py-0.5 rounded font-mono shrink-0', getStatusColor(record.status)]">
+                                <span
+                                    :class="[
+                                        'shrink-0 rounded px-2 py-0.5 font-mono text-[11px] font-bold',
+                                        getStatusColor(record.status),
+                                    ]"
+                                >
                                     {{ record.status || 'ERR' }}
                                 </span>
-                                
+
                                 <!-- Method -->
-                                <span :class="['text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 font-mono', getMethodColor(record.method)]">
+                                <span
+                                    :class="[
+                                        'shrink-0 rounded border px-2 py-0.5 font-mono text-[10px] font-bold',
+                                        getMethodColor(record.method),
+                                    ]"
+                                >
                                     {{ record.method }}
                                 </span>
 
                                 <!-- URL Path -->
-                                <span class="text-xs font-mono font-medium truncate text-foreground/90 max-w-[40vw]">
+                                <span
+                                    class="max-w-[40vw] truncate font-mono text-xs font-medium text-foreground/90"
+                                >
                                     {{ record.url }}
                                 </span>
                             </div>
 
                             <!-- Meta Details & Operator -->
-                            <div class="flex items-center gap-6 text-[11px] text-muted-foreground shrink-0">
+                            <div
+                                class="flex shrink-0 items-center gap-6 text-[11px] text-muted-foreground"
+                            >
                                 <!-- Latency -->
                                 <span class="flex items-center gap-1 font-mono">
-                                    <Clock class="w-3.5 h-3.5" />
+                                    <Clock class="h-3.5 w-3.5" />
                                     {{ record.time_ms }} ms
                                 </span>
 
                                 <!-- Payload Size -->
                                 <span class="flex items-center gap-1 font-mono">
-                                    <Database class="w-3.5 h-3.5" />
-                                    {{ (record.size_bytes / 1024).toFixed(2) }} KB
+                                    <Database class="h-3.5 w-3.5" />
+                                    {{ (record.size_bytes / 1024).toFixed(2) }}
+                                    KB
                                 </span>
 
                                 <!-- Time badge -->
                                 <span class="flex items-center gap-1">
-                                    <Calendar class="w-3.5 h-3.5" />
+                                    <Calendar class="h-3.5 w-3.5" />
                                     {{ formatDate(record.created_at) }}
                                 </span>
 
                                 <!-- Team User Initials -->
-                                <div class="flex items-center gap-2 border-l pl-4">
-                                    <Avatar class="w-5 h-5" :title="record.user.name">
-                                        <AvatarFallback class="text-[9px] font-bold bg-muted-foreground/15 text-muted-foreground">
+                                <div
+                                    class="flex items-center gap-2 border-l pl-4"
+                                >
+                                    <Avatar
+                                        class="h-5 w-5"
+                                        :title="record.user.name"
+                                    >
+                                        <AvatarFallback
+                                            class="bg-muted-foreground/15 text-[9px] font-bold text-muted-foreground"
+                                        >
                                             {{ getInitials(record.user.name) }}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <span class="max-w-[80px] truncate text-xs">{{ record.user.name.split(' ')[0] }}</span>
+                                    <span
+                                        class="max-w-[80px] truncate text-xs"
+                                        >{{
+                                            record.user.name.split(' ')[0]
+                                        }}</span
+                                    >
                                 </div>
 
-                                <ArrowRight class="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <ArrowRight
+                                    class="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                                />
                             </div>
                         </div>
                     </div>
 
                     <!-- Load More Button -->
-                    <div v-if="hasMore" class="flex justify-center py-4 border-t border-border/40">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            class="gap-2 text-xs" 
+                    <div
+                        v-if="hasMore"
+                        class="flex justify-center border-t border-border/40 py-4"
+                    >
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="gap-2 text-xs"
                             :disabled="loadingMore"
                             @click="loadMore"
                         >
-                            <Loader2 v-if="loadingMore" class="w-3.5 h-3.5 animate-spin" />
+                            <Loader2
+                                v-if="loadingMore"
+                                class="h-3.5 w-3.5 animate-spin"
+                            />
                             {{ loadingMore ? 'Loading...' : 'Load More' }}
                         </Button>
                     </div>
                 </template>
-                <div v-else class="h-[50vh] flex flex-col items-center justify-center text-center p-8">
-                    <div class="w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center text-muted-foreground mb-4">
-                        <Trash2 class="w-6 h-6" />
+                <div
+                    v-else
+                    class="flex h-[50vh] flex-col items-center justify-center p-8 text-center"
+                >
+                    <div
+                        class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/40 text-muted-foreground"
+                    >
+                        <Trash2 class="h-6 w-6" />
                     </div>
                     <h3 class="text-sm font-semibold">No Execution Logs Yet</h3>
-                    <p class="text-xs text-muted-foreground max-w-sm mt-1">
-                        Any API requests sent from the Collections editor will be safely recorded here for auditing and fast reviews.
+                    <p class="mt-1 max-w-sm text-xs text-muted-foreground">
+                        Any API requests sent from the Collections editor will
+                        be safely recorded here for auditing and fast reviews.
                     </p>
                 </div>
             </ScrollArea>
@@ -465,86 +560,209 @@ isHtmlContentType = true;
 
         <!-- Detail Sheet / Sidebar Panel -->
         <Sheet :open="!!selectedRecord" @update:open="selectedRecord = null">
-            <SheetContent side="right" class="w-[85vw] sm:w-[500px] md:w-[650px] p-0 flex flex-col h-full bg-background border-l">
-                <div v-if="selectedRecord" class="flex-1 flex flex-col h-full overflow-hidden">
+            <SheetContent
+                side="right"
+                class="flex h-full w-[85vw] flex-col border-l bg-background p-0 sm:w-[500px] md:w-[650px]"
+            >
+                <div
+                    v-if="selectedRecord"
+                    class="flex h-full flex-1 flex-col overflow-hidden"
+                >
                     <!-- Sheet Header -->
-                    <div class="p-6 border-b space-y-3">
+                    <div class="space-y-3 border-b p-6">
                         <div class="flex items-center justify-between">
-                            <span :class="['text-xs font-bold px-2 py-0.5 rounded font-mono', getStatusColor(selectedRecord.status)]">
-                                STATUS: {{ selectedRecord.status || 'ERROR' }} {{ selectedRecord.response_meta.status_text }}
+                            <span
+                                :class="[
+                                    'rounded px-2 py-0.5 font-mono text-xs font-bold',
+                                    getStatusColor(selectedRecord.status),
+                                ]"
+                            >
+                                STATUS: {{ selectedRecord.status || 'ERROR' }}
+                                {{ selectedRecord.response_meta.status_text }}
                             </span>
-                            <span class="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
-                                <Clock class="w-3.5 h-3.5" /> {{ selectedRecord.time_ms }} ms
+                            <span
+                                class="flex items-center gap-1.5 font-mono text-xs text-muted-foreground"
+                            >
+                                <Clock class="h-3.5 w-3.5" />
+                                {{ selectedRecord.time_ms }} ms
                             </span>
                         </div>
-                        
+
                         <div class="space-y-1">
                             <div class="flex items-center gap-2">
-                                <span :class="['text-[11px] font-bold px-2 py-0.5 rounded border font-mono', getMethodColor(selectedRecord.method)]">
+                                <span
+                                    :class="[
+                                        'rounded border px-2 py-0.5 font-mono text-[11px] font-bold',
+                                        getMethodColor(selectedRecord.method),
+                                    ]"
+                                >
                                     {{ selectedRecord.method }}
                                 </span>
-                                <span class="text-xs font-mono font-semibold truncate flex-1">{{ selectedRecord.url }}</span>
+                                <span
+                                    class="flex-1 truncate font-mono text-xs font-semibold"
+                                    >{{ selectedRecord.url }}</span
+                                >
                             </div>
-                            <p class="text-[10px] text-muted-foreground flex items-center gap-1 pt-1">
-                                <User class="w-3 h-3 text-primary" /> Executed by {{ selectedRecord.user.name }} ({{ selectedRecord.user.email }}) on {{ formatDate(selectedRecord.created_at) }}
+                            <p
+                                class="flex items-center gap-1 pt-1 text-[10px] text-muted-foreground"
+                            >
+                                <User class="h-3 w-3 text-primary" /> Executed
+                                by {{ selectedRecord.user.name }} ({{
+                                    selectedRecord.user.email
+                                }}) on
+                                {{ formatDate(selectedRecord.created_at) }}
                             </p>
                         </div>
                     </div>
 
                     <!-- Details Tabs -->
-                    <div class="flex-1 flex flex-col min-h-0">
-                        <Tabs default-value="request" class="flex-1 flex flex-col h-full min-h-0">
+                    <div class="flex min-h-0 flex-1 flex-col">
+                        <Tabs
+                            default-value="request"
+                            class="flex h-full min-h-0 flex-1 flex-col"
+                        >
                             <div class="px-6 pt-2 pb-0">
-                                <TabsList class="w-full h-auto flex-wrap justify-start bg-muted/50">
-                                    <TabsTrigger value="request" class="text-xs flex-1 whitespace-nowrap">Req Headers</TabsTrigger>
-                                    <TabsTrigger value="req_body" class="text-xs flex-1 whitespace-nowrap">Req Body</TabsTrigger>
-                                    <TabsTrigger value="res_headers" class="text-xs flex-1 whitespace-nowrap">Res Headers</TabsTrigger>
-                                    <TabsTrigger value="res_body" class="text-xs flex-1 whitespace-nowrap">Res Body</TabsTrigger>
+                                <TabsList
+                                    class="h-auto w-full flex-wrap justify-start bg-muted/50"
+                                >
+                                    <TabsTrigger
+                                        value="request"
+                                        class="flex-1 text-xs whitespace-nowrap"
+                                        >Req Headers</TabsTrigger
+                                    >
+                                    <TabsTrigger
+                                        value="req_body"
+                                        class="flex-1 text-xs whitespace-nowrap"
+                                        >Req Body</TabsTrigger
+                                    >
+                                    <TabsTrigger
+                                        value="res_headers"
+                                        class="flex-1 text-xs whitespace-nowrap"
+                                        >Res Headers</TabsTrigger
+                                    >
+                                    <TabsTrigger
+                                        value="res_body"
+                                        class="flex-1 text-xs whitespace-nowrap"
+                                        >Res Body</TabsTrigger
+                                    >
                                 </TabsList>
                             </div>
 
-                            <div class="flex-1 min-h-0 relative p-4 bg-muted/5">
+                            <div class="relative min-h-0 flex-1 bg-muted/5 p-4">
                                 <TabsContent value="request" class="m-0 h-full">
-                                    <div class="h-full border rounded-md overflow-hidden bg-background">
+                                    <div
+                                        class="h-full overflow-hidden rounded-md border bg-background"
+                                    >
                                         <ScrollArea class="h-full p-4">
                                             <!-- Headers -->
-                                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Headers</div>
-                                            <div v-if="selectedRecord.request_payload.headers?.length" class="space-y-3 font-mono text-[11px]">
-                                                <div 
-                                                    v-for="(header, idx) in selectedRecord.request_payload.headers" 
-                                                    :key="idx"
-                                                    class="pb-2 border-b border-border/50 last:border-0"
-                                                >
-                                                    <div class="font-semibold text-primary truncate">{{ header.key }}</div>
-                                                    <div class="text-muted-foreground break-all mt-0.5">{{ header.value }}</div>
-                                                </div>
+                                            <div
+                                                class="mb-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
+                                            >
+                                                Headers
                                             </div>
-                                            <div v-else class="text-xs text-muted-foreground italic">No headers sent.</div>
-
-                                            <!-- Query Params -->
-                                            <div class="mt-5 pt-4 border-t border-border/50">
-                                                <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Query Parameters</div>
-                                                <div v-if="selectedRecord.request_payload.query_params?.length" class="space-y-3 font-mono text-[11px]">
-                                                    <div 
-                                                        v-for="(param, idx) in selectedRecord.request_payload.query_params" 
-                                                        :key="idx"
-                                                        class="pb-2 border-b border-border/50 last:border-0"
+                                            <div
+                                                v-if="
+                                                    selectedRecord
+                                                        .request_payload.headers
+                                                        ?.length
+                                                "
+                                                class="space-y-3 font-mono text-[11px]"
+                                            >
+                                                <div
+                                                    v-for="(
+                                                        header, idx
+                                                    ) in selectedRecord
+                                                        .request_payload
+                                                        .headers"
+                                                    :key="idx"
+                                                    class="border-b border-border/50 pb-2 last:border-0"
+                                                >
+                                                    <div
+                                                        class="truncate font-semibold text-primary"
                                                     >
-                                                        <div class="font-semibold text-primary truncate">{{ param.key }}</div>
-                                                        <div class="text-muted-foreground break-all mt-0.5">{{ param.value }}</div>
+                                                        {{ header.key }}
+                                                    </div>
+                                                    <div
+                                                        class="mt-0.5 break-all text-muted-foreground"
+                                                    >
+                                                        {{ header.value }}
                                                     </div>
                                                 </div>
-                                                <div v-else class="text-xs text-muted-foreground italic">No query parameters sent.</div>
+                                            </div>
+                                            <div
+                                                v-else
+                                                class="text-xs text-muted-foreground italic"
+                                            >
+                                                No headers sent.
+                                            </div>
+
+                                            <!-- Query Params -->
+                                            <div
+                                                class="mt-5 border-t border-border/50 pt-4"
+                                            >
+                                                <div
+                                                    class="mb-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
+                                                >
+                                                    Query Parameters
+                                                </div>
+                                                <div
+                                                    v-if="
+                                                        selectedRecord
+                                                            .request_payload
+                                                            .query_params
+                                                            ?.length
+                                                    "
+                                                    class="space-y-3 font-mono text-[11px]"
+                                                >
+                                                    <div
+                                                        v-for="(
+                                                            param, idx
+                                                        ) in selectedRecord
+                                                            .request_payload
+                                                            .query_params"
+                                                        :key="idx"
+                                                        class="border-b border-border/50 pb-2 last:border-0"
+                                                    >
+                                                        <div
+                                                            class="truncate font-semibold text-primary"
+                                                        >
+                                                            {{ param.key }}
+                                                        </div>
+                                                        <div
+                                                            class="mt-0.5 break-all text-muted-foreground"
+                                                        >
+                                                            {{ param.value }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    v-else
+                                                    class="text-xs text-muted-foreground italic"
+                                                >
+                                                    No query parameters sent.
+                                                </div>
                                             </div>
                                         </ScrollArea>
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="req_body" class="m-0 h-full flex flex-col overflow-hidden border rounded-md">
-                                    <div v-if="!formattedRequestBody" class="flex-1 flex items-center justify-center bg-background">
-                                        <span class="text-xs text-muted-foreground italic">No request body sent.</span>
+                                <TabsContent
+                                    value="req_body"
+                                    class="m-0 flex h-full flex-col overflow-hidden rounded-md border"
+                                >
+                                    <div
+                                        v-if="!formattedRequestBody"
+                                        class="flex flex-1 items-center justify-center bg-background"
+                                    >
+                                        <span
+                                            class="text-xs text-muted-foreground italic"
+                                            >No request body sent.</span
+                                        >
                                     </div>
-                                    <div v-else class="flex-1 relative min-h-0 bg-background">
+                                    <div
+                                        v-else
+                                        class="relative min-h-0 flex-1 bg-background"
+                                    >
                                         <VueMonacoEditor
                                             :value="formattedRequestBody"
                                             theme="vs-dark"
@@ -559,37 +777,89 @@ isHtmlContentType = true;
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="res_headers" class="m-0 h-full">
-                                    <div class="h-full border rounded-md overflow-hidden bg-background">
+                                <TabsContent
+                                    value="res_headers"
+                                    class="m-0 h-full"
+                                >
+                                    <div
+                                        class="h-full overflow-hidden rounded-md border bg-background"
+                                    >
                                         <ScrollArea class="h-full p-4">
-                                            <div v-if="selectedRecord.response_meta.headers && Object.keys(selectedRecord.response_meta.headers).length" class="space-y-3 font-mono text-[11px]">
-                                                <div 
-                                                    v-for="(vals, key) in selectedRecord.response_meta.headers" 
+                                            <div
+                                                v-if="
+                                                    selectedRecord.response_meta
+                                                        .headers &&
+                                                    Object.keys(
+                                                        selectedRecord
+                                                            .response_meta
+                                                            .headers,
+                                                    ).length
+                                                "
+                                                class="space-y-3 font-mono text-[11px]"
+                                            >
+                                                <div
+                                                    v-for="(
+                                                        vals, key
+                                                    ) in selectedRecord
+                                                        .response_meta.headers"
                                                     :key="key"
-                                                    class="pb-2 border-b border-border/50 last:border-0"
+                                                    class="border-b border-border/50 pb-2 last:border-0"
                                                 >
-                                                    <div class="font-semibold text-primary truncate">{{ key }}</div>
-                                                    <div class="text-muted-foreground break-all mt-0.5">{{ vals.join(', ') }}</div>
+                                                    <div
+                                                        class="truncate font-semibold text-primary"
+                                                    >
+                                                        {{ key }}
+                                                    </div>
+                                                    <div
+                                                        class="mt-0.5 break-all text-muted-foreground"
+                                                    >
+                                                        {{ vals.join(', ') }}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div v-else class="text-xs text-muted-foreground italic">No headers present.</div>
+                                            <div
+                                                v-else
+                                                class="text-xs text-muted-foreground italic"
+                                            >
+                                                No headers present.
+                                            </div>
                                         </ScrollArea>
                                     </div>
                                 </TabsContent>
-                                
-                                <TabsContent value="res_body" class="m-0 h-full flex flex-col overflow-hidden border rounded-md">
-                                    <div v-if="!selectedRecord.response_meta.body" class="flex-1 flex items-center justify-center bg-background">
-                                        <span class="text-xs text-muted-foreground italic">No response body captured.</span>
+
+                                <TabsContent
+                                    value="res_body"
+                                    class="m-0 flex h-full flex-col overflow-hidden rounded-md border"
+                                >
+                                    <div
+                                        v-if="
+                                            !selectedRecord.response_meta.body
+                                        "
+                                        class="flex flex-1 items-center justify-center bg-background"
+                                    >
+                                        <span
+                                            class="text-xs text-muted-foreground italic"
+                                            >No response body captured.</span
+                                        >
                                     </div>
-                                    <div v-else-if="isHtmlResponse" class="flex-1 relative min-h-0 bg-white">
+                                    <div
+                                        v-else-if="isHtmlResponse"
+                                        class="relative min-h-0 flex-1 bg-white"
+                                    >
                                         <iframe
                                             :key="selectedRecord.id"
-                                            class="w-full h-full border-none"
-                                            :srcdoc="selectedRecord.response_meta.body"
+                                            class="h-full w-full border-none"
+                                            :srcdoc="
+                                                selectedRecord.response_meta
+                                                    .body
+                                            "
                                             sandbox="allow-same-origin"
                                         ></iframe>
                                     </div>
-                                    <div v-else class="flex-1 relative min-h-0 bg-background">
+                                    <div
+                                        v-else
+                                        class="relative min-h-0 flex-1 bg-background"
+                                    >
                                         <VueMonacoEditor
                                             :value="formattedResponseBody"
                                             theme="vs-dark"
@@ -599,7 +869,7 @@ isHtmlContentType = true;
                                                 minimap: { enabled: false },
                                                 automaticLayout: true,
                                                 scrollBeyondLastLine: false,
-                                                wordWrap: 'on'
+                                                wordWrap: 'on',
                                             }"
                                         />
                                     </div>
@@ -609,8 +879,13 @@ isHtmlContentType = true;
                     </div>
 
                     <!-- Footer Action -->
-                    <div class="p-4 border-t bg-muted/15 flex justify-end">
-                        <Button size="sm" variant="outline" class="gap-1.5 text-xs" @click="selectedRecord = null">
+                    <div class="flex justify-end border-t bg-muted/15 p-4">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            class="gap-1.5 text-xs"
+                            @click="selectedRecord = null"
+                        >
                             Close Details
                         </Button>
                     </div>
@@ -619,19 +894,27 @@ isHtmlContentType = true;
         </Sheet>
 
         <!-- Clear History Confirmation Dialog -->
-        <Dialog :open="showClearConfirm" @update:open="showClearConfirm = $event">
+        <Dialog
+            :open="showClearConfirm"
+            @update:open="showClearConfirm = $event"
+        >
             <DialogContent class="sm:max-w-[420px]">
                 <DialogHeader>
                     <DialogTitle>Clear Execution Logs</DialogTitle>
                     <DialogDescription class="text-xs">
-                        Are you sure you want to clear all request execution history? This action is permanent and cannot be undone.
+                        Are you sure you want to clear all request execution
+                        history? This action is permanent and cannot be undone.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="flex gap-2 sm:justify-end mt-4">
+                <DialogFooter class="mt-4 flex gap-2 sm:justify-end">
                     <DialogClose as-child>
                         <Button variant="secondary" size="sm">Cancel</Button>
                     </DialogClose>
-                    <Button variant="destructive" size="sm" @click="confirmClearHistory">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        @click="confirmClearHistory"
+                    >
                         Clear Logs
                     </Button>
                 </DialogFooter>
@@ -639,19 +922,29 @@ isHtmlContentType = true;
         </Dialog>
 
         <!-- Delete Selected Confirmation Dialog -->
-        <Dialog :open="showDeleteSelectedConfirm" @update:open="showDeleteSelectedConfirm = $event">
+        <Dialog
+            :open="showDeleteSelectedConfirm"
+            @update:open="showDeleteSelectedConfirm = $event"
+        >
             <DialogContent class="sm:max-w-[420px]">
                 <DialogHeader>
                     <DialogTitle>Delete Selected Logs</DialogTitle>
                     <DialogDescription class="text-xs">
-                        Are you sure you want to delete the {{ selectedIds.length }} selected request execution history items? This action is permanent and cannot be undone.
+                        Are you sure you want to delete the
+                        {{ selectedIds.length }} selected request execution
+                        history items? This action is permanent and cannot be
+                        undone.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="flex gap-2 sm:justify-end mt-4">
+                <DialogFooter class="mt-4 flex gap-2 sm:justify-end">
                     <DialogClose as-child>
                         <Button variant="secondary" size="sm">Cancel</Button>
                     </DialogClose>
-                    <Button variant="destructive" size="sm" @click="confirmDeleteSelected">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        @click="confirmDeleteSelected"
+                    >
                         Delete Selected
                     </Button>
                 </DialogFooter>

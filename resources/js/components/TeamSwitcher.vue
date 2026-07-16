@@ -45,7 +45,6 @@ const checkIconClass = computed(() =>
     props.inHeader ? 'ml-auto size-4' : 'ml-auto h-4 w-4',
 );
 
-
 const switchTeam = (team: Team) => {
     const previousTeamSlug = currentTeam.value?.slug;
 

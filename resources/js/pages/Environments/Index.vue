@@ -139,7 +139,9 @@ onMounted(() => {
     }
 
     if (props.activeEnvironmentId) {
-        const found = store.environments.find((e) => e.id === props.activeEnvironmentId);
+        const found = store.environments.find(
+            (e) => e.id === props.activeEnvironmentId,
+        );
 
         if (found) {
             selectEnv(found, false);
@@ -153,27 +155,39 @@ onMounted(() => {
     }
 });
 
-watch(() => props.activeEnvironmentId, (newId) => {
-    if (newId && newId !== selectedEnvId.value) {
-        const found = store.environments.find((e) => e.id === newId);
+watch(
+    () => props.activeEnvironmentId,
+    (newId) => {
+        if (newId && newId !== selectedEnvId.value) {
+            const found = store.environments.find((e) => e.id === newId);
 
-        if (found) {
-            selectEnv(found, false);
+            if (found) {
+                selectEnv(found, false);
+            }
         }
-    }
-});
+    },
+);
 
-watch(() => props.environments, (newEnvs) => {
-    store.setEnvironments(newEnvs);
+watch(
+    () => props.environments,
+    (newEnvs) => {
+        store.setEnvironments(newEnvs);
 
-    if (props.activeEnvironmentId && selectedEnvId.value !== props.activeEnvironmentId) {
-        const found = store.environments.find((e) => e.id === props.activeEnvironmentId);
+        if (
+            props.activeEnvironmentId &&
+            selectedEnvId.value !== props.activeEnvironmentId
+        ) {
+            const found = store.environments.find(
+                (e) => e.id === props.activeEnvironmentId,
+            );
 
-        if (found) {
-            selectEnv(found, false);
+            if (found) {
+                selectEnv(found, false);
+            }
         }
-    }
-}, { deep: true });
+    },
+    { deep: true },
+);
 
 const filteredEnvironments = computed(() => {
     if (!searchQuery.value) {
@@ -200,11 +214,15 @@ const selectEnv = (env: EnvironmentItem, updateRoute = true) => {
     ensureEmptyRow();
 
     if (updateRoute) {
-        router.get(`/environments/${env.id}`, {}, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['activeEnvironmentId'],
-        });
+        router.get(
+            `/environments/${env.id}`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['activeEnvironmentId'],
+            },
+        );
     }
 };
 
@@ -461,8 +479,10 @@ const executeReplace = async () => {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                class="h-6 w-6 rounded text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                                :class="{ 'opacity-100': selectedEnvId === env.id }"
+                                class="h-6 w-6 rounded text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                                :class="{
+                                    'opacity-100': selectedEnvId === env.id,
+                                }"
                                 @click.stop="promptDeleteEnvironment(env)"
                                 title="Delete Environment"
                             >
@@ -583,9 +603,7 @@ const executeReplace = async () => {
                             <span
                                 class="rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary"
                             >
-                                {{
-                                    localVariables.filter((v) => v.key).length
-                                }}
+                                {{ localVariables.filter((v) => v.key).length }}
                                 Active
                             </span>
                         </div>
@@ -953,21 +971,43 @@ const executeReplace = async () => {
         </DialogContent>
     </Dialog>
 
-    <Dialog :open="!!environmentToDelete" @update:open="(val) => { if (!val) environmentToDelete = null; }">
+    <Dialog
+        :open="!!environmentToDelete"
+        @update:open="
+            (val) => {
+                if (!val) environmentToDelete = null;
+            }
+        "
+    >
         <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle>Delete Environment</DialogTitle>
                 <DialogDescription>
-                    Are you sure you want to delete the environment <strong class="font-semibold text-foreground">{{ environmentToDelete?.name }}</strong>? This action cannot be undone.
+                    Are you sure you want to delete the environment
+                    <strong class="font-semibold text-foreground">{{
+                        environmentToDelete?.name
+                    }}</strong
+                    >? This action cannot be undone.
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter class="mt-4 gap-2 sm:gap-2">
-                <Button variant="outline" :disabled="isDeleting" @click="environmentToDelete = null">
+                <Button
+                    variant="outline"
+                    :disabled="isDeleting"
+                    @click="environmentToDelete = null"
+                >
                     Cancel
                 </Button>
-                <Button variant="destructive" :disabled="isDeleting" @click="confirmDeleteEnvironment">
+                <Button
+                    variant="destructive"
+                    :disabled="isDeleting"
+                    @click="confirmDeleteEnvironment"
+                >
                     <Trash2 class="mr-2 h-4 w-4" v-if="!isDeleting" />
-                    <span v-else class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                    <span
+                        v-else
+                        class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"
+                    />
                     Delete
                 </Button>
             </DialogFooter>

@@ -13,15 +13,17 @@ const color = FORMAT_COLORS[props.format] ?? '#888';
 
 <template>
     <span
-        class="inline-flex items-center gap-1 rounded-full font-semibold border select-none"
-        :class="size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'"
+        class="inline-flex items-center gap-1 rounded-full border font-semibold select-none"
+        :class="
+            size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
+        "
         :style="{
             background: color + '18',
             color: color,
             borderColor: color + '40',
         }"
     >
-        <span class="w-1.5 h-1.5 rounded-full" :style="{ background: color }" />
+        <span class="h-1.5 w-1.5 rounded-full" :style="{ background: color }" />
         {{ label }}
     </span>
 </template>

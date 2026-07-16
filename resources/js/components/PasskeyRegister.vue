@@ -28,14 +28,18 @@ const getDefaultPasskeyName = () => {
 const name = ref(getDefaultPasskeyName());
 const showForm = ref(false);
 
-const { register, isLoading, error, isSupported: baseIsSupported } = usePasskeyRegister({
+const {
+    register,
+    isLoading,
+    error,
+    isSupported: baseIsSupported,
+} = usePasskeyRegister({
     onSuccess: () => {
         name.value = '';
         showForm.value = false;
         emit('success');
     },
 });
-
 
 const isSupported = computed(() => {
     return baseIsSupported.value;

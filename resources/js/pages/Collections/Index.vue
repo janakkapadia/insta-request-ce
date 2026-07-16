@@ -18,14 +18,14 @@ const props = defineProps<{
 const store = useWorkspaceStore();
 const selectCollectionFromId = (colId: string | null | undefined) => {
     if (!colId) {
-return;
-}
+        return;
+    }
 
     if (store.selectedCollection?.id === colId) {
-return;
-}
+        return;
+    }
 
-    const col = store.collections.find(c => c.id === colId);
+    const col = store.collections.find((c) => c.id === colId);
 
     if (col) {
         store.selectCollection(col);
@@ -34,16 +34,16 @@ return;
 
 const selectRequestFromId = (reqId: string | null | undefined) => {
     if (!reqId) {
-return;
-}
+        return;
+    }
 
     if (store.selectedRequest?.id === reqId) {
-return;
-}
-    
+        return;
+    }
+
     for (const col of store.collections) {
         // Check direct requests
-        const req = col.requests.find(r => r.id === reqId);
+        const req = col.requests.find((r) => r.id === reqId);
 
         if (req) {
             store.selectCollection(col);
@@ -54,7 +54,7 @@ return;
 
         // Check requests in folders
         for (const folder of col.folders) {
-            const freq = folder.requests?.find(r => r.id === reqId);
+            const freq = folder.requests?.find((r) => r.id === reqId);
 
             if (freq) {
                 folder.expanded = true;
@@ -67,27 +67,43 @@ return;
     }
 };
 
-watch(() => props.collections, () => {
-    if (props.activeCollectionId && store.selectedCollection?.id !== props.activeCollectionId) {
-        selectCollectionFromId(props.activeCollectionId);
-    }
+watch(
+    () => props.collections,
+    () => {
+        if (
+            props.activeCollectionId &&
+            store.selectedCollection?.id !== props.activeCollectionId
+        ) {
+            selectCollectionFromId(props.activeCollectionId);
+        }
 
-    if (props.activeRequestId && store.selectedRequest?.id !== props.activeRequestId) {
-        selectRequestFromId(props.activeRequestId);
-    }
-}, { deep: true });
+        if (
+            props.activeRequestId &&
+            store.selectedRequest?.id !== props.activeRequestId
+        ) {
+            selectRequestFromId(props.activeRequestId);
+        }
+    },
+    { deep: true },
+);
 
-watch(() => props.activeCollectionId, (newId) => {
-    if (newId) {
-        selectCollectionFromId(newId);
-    }
-});
+watch(
+    () => props.activeCollectionId,
+    (newId) => {
+        if (newId) {
+            selectCollectionFromId(newId);
+        }
+    },
+);
 
-watch(() => props.activeRequestId, (newId) => {
-    if (newId) {
-        selectRequestFromId(newId);
-    }
-});
+watch(
+    () => props.activeRequestId,
+    (newId) => {
+        if (newId) {
+            selectRequestFromId(newId);
+        }
+    },
+);
 
 onMounted(() => {
     if (props.activeCollectionId) {
@@ -97,31 +113,37 @@ onMounted(() => {
     if (props.activeRequestId) {
         selectRequestFromId(props.activeRequestId);
     }
-    
+
     if (store.collections.length > 0 && !store.selectedCollection) {
         store.selectCollection(store.collections[0]);
     }
 });
 
 watchEffect(() => {
-    const crumbs = [
-        { title: 'Collections', href: '/collections' }
-    ];
+    const crumbs = [{ title: 'Collections', href: '/collections' }];
 
     if (store.selectedCollection) {
-        crumbs.push({ title: store.selectedCollection.name, href: `/collections/${store.selectedCollection.id}` });
+        crumbs.push({
+            title: store.selectedCollection.name,
+            href: `/collections/${store.selectedCollection.id}`,
+        });
     }
 
     if (store.selectedRequest) {
         if (store.selectedRequest.folder_id && store.selectedCollection) {
-            const folder = store.selectedCollection.folders?.find(f => f.id === store.selectedRequest?.folder_id);
+            const folder = store.selectedCollection.folders?.find(
+                (f) => f.id === store.selectedRequest?.folder_id,
+            );
 
             if (folder) {
                 crumbs.push({ title: folder.name, href: '#' });
             }
         }
 
-        crumbs.push({ title: store.selectedRequest.name, href: `/collections/${store.selectedRequest.collection_id}/requests/${store.selectedRequest.id}` });
+        crumbs.push({
+            title: store.selectedRequest.name,
+            href: `/collections/${store.selectedRequest.collection_id}/requests/${store.selectedRequest.id}`,
+        });
     }
 
     // Reactively update layoutState breadcrumbs for the AppSidebarHeader
@@ -140,7 +162,9 @@ defineOptions({
 
 <template>
     <Head title="Collections" />
-    <div class="flex flex-1 h-full flex-col min-h-0 overflow-hidden bg-background">
+    <div
+        class="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background"
+    >
         <RequestEditor />
     </div>
 </template>

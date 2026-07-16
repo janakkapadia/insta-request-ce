@@ -35,16 +35,23 @@ const targetCollectionId = ref<string>('');
 const targetFolderId = ref<string>('root');
 const isSubmitting = ref(false);
 
-watch(() => props.request, (req) => {
-    if (req) {
-        targetCollectionId.value = req.collection_id;
-        targetFolderId.value = req.folder_id || 'root';
-    }
-}, { immediate: true });
+watch(
+    () => props.request,
+    (req) => {
+        if (req) {
+            targetCollectionId.value = req.collection_id;
+            targetFolderId.value = req.folder_id || 'root';
+        }
+    },
+    { immediate: true },
+);
 
 watch(targetCollectionId, () => {
     // If the selected collection changes, default the folder to root, UNLESS it's the original collection.
-    if (props.request && props.request.collection_id === targetCollectionId.value) {
+    if (
+        props.request &&
+        props.request.collection_id === targetCollectionId.value
+    ) {
         targetFolderId.value = props.request.folder_id || 'root';
     } else {
         targetFolderId.value = 'root';
@@ -52,17 +59,19 @@ watch(targetCollectionId, () => {
 });
 
 const collectionOptions = computed(() =>
-    store.collections.map((c) => ({ label: c.name, value: c.id }))
+    store.collections.map((c) => ({ label: c.name, value: c.id })),
 );
 
 const folderOptions = computed(() => {
     if (!targetCollectionId.value) {
-return [];
-}
+        return [];
+    }
 
-    const col = store.collections.find(c => c.id === targetCollectionId.value);
+    const col = store.collections.find(
+        (c) => c.id === targetCollectionId.value,
+    );
 
-    return col?.folders?.map(f => ({ label: f.name, value: f.id })) || [];
+    return col?.folders?.map((f) => ({ label: f.name, value: f.id })) || [];
 });
 
 const close = () => {
@@ -71,27 +80,39 @@ const close = () => {
 
 const handleMove = async () => {
     if (!props.request || !targetCollectionId.value) {
-return;
-}
+        return;
+    }
 
     isSubmitting.value = true;
-    
-    const folderId = targetFolderId.value === 'root' ? null : targetFolderId.value;
-    
-    await store.moveRequest(props.request.id, targetCollectionId.value, folderId);
-    
+
+    const folderId =
+        targetFolderId.value === 'root' ? null : targetFolderId.value;
+
+    await store.moveRequest(
+        props.request.id,
+        targetCollectionId.value,
+        folderId,
+    );
+
     isSubmitting.value = false;
     close();
 };
 </script>
 
 <template>
-    <Dialog :open="open" @update:open="(val: boolean) => emit('update:open', val)">
+    <Dialog
+        :open="open"
+        @update:open="(val: boolean) => emit('update:open', val)"
+    >
         <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle>Move Request</DialogTitle>
                 <DialogDescription v-if="request">
-                    Select a new destination for <strong class="font-medium text-foreground">{{ request.name }}</strong>.
+                    Select a new destination for
+                    <strong class="font-medium text-foreground">{{
+                        request.name
+                    }}</strong
+                    >.
                 </DialogDescription>
             </DialogHeader>
 
@@ -121,7 +142,9 @@ return;
                             <SelectValue placeholder="Root of Collection" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="root">Root of Collection</SelectItem>
+                            <SelectItem value="root"
+                                >Root of Collection</SelectItem
+                            >
                             <SelectItem
                                 v-for="f in folderOptions"
                                 :key="f.value"
@@ -135,9 +158,21 @@ return;
             </div>
 
             <DialogFooter>
-                <Button variant="outline" @click="close" size="sm" class="h-8 text-xs" :disabled="isSubmitting">Cancel</Button>
-                <Button @click="handleMove" size="sm" class="h-8 text-xs" :disabled="isSubmitting || !targetCollectionId">
-                    <ArrowRightIcon class="w-3.5 h-3.5 mr-1" />
+                <Button
+                    variant="outline"
+                    @click="close"
+                    size="sm"
+                    class="h-8 text-xs"
+                    :disabled="isSubmitting"
+                    >Cancel</Button
+                >
+                <Button
+                    @click="handleMove"
+                    size="sm"
+                    class="h-8 text-xs"
+                    :disabled="isSubmitting || !targetCollectionId"
+                >
+                    <ArrowRightIcon class="mr-1 h-3.5 w-3.5" />
                     Move Request
                 </Button>
             </DialogFooter>

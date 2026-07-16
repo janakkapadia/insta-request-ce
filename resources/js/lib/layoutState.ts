@@ -17,8 +17,11 @@ export function updateLayoutForPage(name: string, props: any) {
 
     if (layoutConfig) {
         hasConfig = true;
-        const resolved = typeof layoutConfig === 'function' ? layoutConfig(props) : layoutConfig;
-        
+        const resolved =
+            typeof layoutConfig === 'function'
+                ? layoutConfig(props)
+                : layoutConfig;
+
         if (resolved && resolved.managed) {
             return; // Component manages breadcrumbs dynamically
         }
@@ -54,7 +57,10 @@ function generateBreadcrumbs(name: string, props: any) {
             breadcrumbs.push({ title: 'Environments', href: '/environments' });
             break;
         case 'Documentation/Dashboard':
-            breadcrumbs.push({ title: 'Documentation', href: '/documentation' });
+            breadcrumbs.push({
+                title: 'Documentation',
+                href: '/documentation',
+            });
             break;
         case 'teams/Index':
             breadcrumbs.push({ title: 'Teams', href: '/settings/teams' });
@@ -63,7 +69,10 @@ function generateBreadcrumbs(name: string, props: any) {
             breadcrumbs.push({ title: 'Teams', href: '/settings/teams' });
 
             if (props.team) {
-                breadcrumbs.push({ title: props.team.name, href: `/settings/teams/${props.team.slug}` });
+                breadcrumbs.push({
+                    title: props.team.name,
+                    href: `/settings/teams/${props.team.slug}`,
+                });
             }
 
             break;
@@ -73,7 +82,10 @@ function generateBreadcrumbs(name: string, props: any) {
             break;
         case 'settings/Appearance':
             breadcrumbs.push({ title: 'Settings', href: '/settings/profile' });
-            breadcrumbs.push({ title: 'Appearance', href: '/settings/appearance' });
+            breadcrumbs.push({
+                title: 'Appearance',
+                href: '/settings/appearance',
+            });
             break;
         case 'settings/Security':
             breadcrumbs.push({ title: 'Settings', href: '/settings/profile' });
@@ -90,7 +102,10 @@ function generateBreadcrumbs(name: string, props: any) {
                     if (title.toLowerCase() !== 'index') {
                         breadcrumbs.push({
                             title: title,
-                            href: typeof window !== 'undefined' ? window.location.pathname : '/' // fallback href
+                            href:
+                                typeof window !== 'undefined'
+                                    ? window.location.pathname
+                                    : '/', // fallback href
                         });
                     }
                 }

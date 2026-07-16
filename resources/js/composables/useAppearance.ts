@@ -41,7 +41,7 @@ export function updateTheme(value: Appearance, event?: MouseEvent): void {
     const y = event.clientY;
     const endRadius = Math.hypot(
         Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y)
+        Math.max(y, window.innerHeight - y),
     );
 
     const transition = document.startViewTransition(async () => {
@@ -52,9 +52,9 @@ export function updateTheme(value: Appearance, event?: MouseEvent): void {
     transition.ready.then(() => {
         const clipPath = [
             `circle(0px at ${x}px ${y}px)`,
-            `circle(${endRadius}px at ${x}px ${y}px)`
+            `circle(${endRadius}px at ${x}px ${y}px)`,
         ];
-        
+
         document.documentElement.animate(
             {
                 clipPath: clipPath,
@@ -63,7 +63,7 @@ export function updateTheme(value: Appearance, event?: MouseEvent): void {
                 duration: 500,
                 easing: 'ease-out',
                 pseudoElement: '::view-transition-new(root)',
-            }
+            },
         );
     });
 }

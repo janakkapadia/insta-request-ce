@@ -20,27 +20,27 @@ const isExpanded = ref<boolean>(true);
 
 const childFolders = computed(() => {
     if (!props.folders) {
-return [];
-}
+        return [];
+    }
 
-    return props.folders.filter(f => f.parent_id === props.folder.id);
+    return props.folders.filter((f) => f.parent_id === props.folder.id);
 });
 
 const folderRequests = computed(() => {
     if (!props.requests) {
-return [];
-}
+        return [];
+    }
 
-    return props.requests.filter(r => r.folder_id === props.folder.id);
+    return props.requests.filter((r) => r.folder_id === props.folder.id);
 });
 
 const getFolderRequestsCount = (folderId: string): number => {
     if (!props.requests || !props.folders) {
-return 0;
-}
+        return 0;
+    }
 
-    let count = props.requests.filter(r => r.folder_id === folderId).length;
-    const children = props.folders.filter(f => f.parent_id === folderId);
+    let count = props.requests.filter((r) => r.folder_id === folderId).length;
+    const children = props.folders.filter((f) => f.parent_id === folderId);
 
     for (const child of children) {
         count += getFolderRequestsCount(child.id);
@@ -49,29 +49,46 @@ return 0;
     return count;
 };
 
-const folderRequestsCount = computed(() => getFolderRequestsCount(props.folder.id));
+const folderRequestsCount = computed(() =>
+    getFolderRequestsCount(props.folder.id),
+);
 </script>
 
 <template>
-    <div v-if="folderRequestsCount > 0 || childFolders.length > 0 || currentDepth === 0" class="select-none space-y-1">
+    <div
+        v-if="
+            folderRequestsCount > 0 ||
+            childFolders.length > 0 ||
+            currentDepth === 0
+        "
+        class="space-y-1 select-none"
+    >
         <div
             @click="isExpanded = !isExpanded"
-            class="flex items-center justify-between p-1.5 rounded-md hover:bg-muted/70 cursor-pointer text-muted-foreground hover:text-foreground transition-colors group"
+            class="group flex cursor-pointer items-center justify-between rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
         >
-            <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                <div class="w-4 h-4 flex items-center justify-center shrink-0">
+            <div class="flex min-w-0 flex-1 items-center gap-1.5">
+                <div class="flex h-4 w-4 shrink-0 items-center justify-center">
                     <ChevronDown
-                        class="h-3.5 w-3.5 shrink-0 transition-transform duration-150 text-muted-foreground"
+                        class="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-150"
                         :class="{ 'rotate-[-90deg]': !isExpanded }"
                     />
                 </div>
-                <Folder class="h-3.5 w-3.5 text-blue-500/80 shrink-0" />
-                <span class="text-xs font-semibold truncate">{{ folder.name }}</span>
+                <Folder class="h-3.5 w-3.5 shrink-0 text-blue-500/80" />
+                <span class="truncate text-xs font-semibold">{{
+                    folder.name
+                }}</span>
             </div>
-            <span class="text-[10px] text-muted-foreground/70 bg-muted/60 px-1.5 py-0.5 rounded font-mono shrink-0">{{ folderRequestsCount }}</span>
+            <span
+                class="shrink-0 rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/70"
+                >{{ folderRequestsCount }}</span
+            >
         </div>
 
-        <div v-if="isExpanded" class="pl-2 border-l ml-2 border-border/60 space-y-1 mt-0.5">
+        <div
+            v-if="isExpanded"
+            class="mt-0.5 ml-2 space-y-1 border-l border-border/60 pl-2"
+        >
             <!-- Nested child folders -->
             <DocFolderNode
                 v-for="child in childFolders"
@@ -90,21 +107,30 @@ const folderRequestsCount = computed(() => getFolderRequestsCount(props.folder.i
                 v-for="req in folderRequests"
                 :key="req.id"
                 @click="emit('selectRequest', req.id)"
-                class="w-full flex items-center gap-2 p-1.5 rounded-md transition-colors text-left group/btn"
-                :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground border border-border/50 shadow-sm' : 'hover:bg-muted text-foreground'"
+                class="group/btn flex w-full items-center gap-2 rounded-md p-1.5 text-left transition-colors"
+                :class="
+                    selectedRequestId === req.id
+                        ? 'border border-border/50 bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm'
+                        : 'text-foreground hover:bg-muted'
+                "
             >
                 <span
-                    class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
+                    class="inline-flex w-10 shrink-0 items-center justify-center rounded border px-1 py-0.5 text-center text-[8px] leading-none font-bold uppercase select-none"
                     :class="getMethodColor(req.method)"
                 >
                     {{ req.method }}
                 </span>
-                <span class="text-xs truncate flex-1">{{ req.name }}</span>
-                <ChevronRight class="h-3 w-3 opacity-50 shrink-0 group-hover/btn:opacity-100 transition-opacity" />
+                <span class="flex-1 truncate text-xs">{{ req.name }}</span>
+                <ChevronRight
+                    class="h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/btn:opacity-100"
+                />
             </button>
 
             <!-- Empty indicator if both childFolders and folderRequests are empty -->
-            <div v-if="childFolders.length === 0 && folderRequests.length === 0" class="py-1 px-2 text-[10px] text-muted-foreground italic">
+            <div
+                v-if="childFolders.length === 0 && folderRequests.length === 0"
+                class="px-2 py-1 text-[10px] text-muted-foreground italic"
+            >
                 Empty folder
             </div>
         </div>

@@ -84,6 +84,8 @@ class DocumentationController extends Controller
                 Rule::unique('collection_documentations', 'public_slug')->ignore($collection->id, 'collection_id'),
             ],
             'environment_id' => 'nullable|uuid|exists:environments,id',
+            'logo' => 'nullable|image|max:5120',
+            'favicon' => 'nullable|mimes:ico,png,svg,jpeg,jpg,webp,gif|max:5120',
         ]);
 
         $doc = CollectionDocumentation::updateOrCreate(
@@ -99,6 +101,34 @@ class DocumentationController extends Controller
                 'settings' => $request->input('settings', []),
             ]
         );
+
+        $settings = $doc->settings ?? [];
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('documentations/logos', 'public');
+            $settings['logo_path'] = $path;
+        } elseif ($request->boolean('remove_logo')) {
+            if (isset($settings['logo_path'])) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($settings['logo_path']);
+                unset($settings['logo_path']);
+            }
+        }
+
+        if ($request->hasFile('favicon')) {
+            $path = $request->file('favicon')->store('documentations/favicons', 'public');
+            $settings['favicon_path'] = $path;
+        } elseif ($request->boolean('remove_favicon')) {
+            if (isset($settings['favicon_path'])) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($settings['favicon_path']);
+                unset($settings['favicon_path']);
+            }
+        }
+
+        if ($request->hasFile('logo') || $request->hasFile('favicon') || $request->boolean('remove_logo') || $request->boolean('remove_favicon')) {
+            $doc->settings = $settings;
+            $doc->save();
+        }
+
 
         // Update individual request descriptions if passed
         if ($request->has('requests_descriptions')) {

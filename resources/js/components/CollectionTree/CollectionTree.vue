@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { ChevronDown, Folder, Plus, FolderPlus, FilePlus, Trash2 } from 'lucide-vue-next';
+import {
+    ChevronDown,
+    Folder,
+    Plus,
+    FolderPlus,
+    FilePlus,
+    Trash2,
+} from 'lucide-vue-next';
 import { ref, nextTick } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,7 +42,11 @@ const confirmDialog = ref({
     onConfirm: () => {},
 });
 
-const confirmDelete = (title: string, description: string, onConfirm: () => void) => {
+const confirmDelete = (
+    title: string,
+    description: string,
+    onConfirm: () => void,
+) => {
     confirmDialog.value = {
         isOpen: true,
         title,
@@ -44,7 +55,7 @@ const confirmDelete = (title: string, description: string, onConfirm: () => void
         onConfirm: () => {
             onConfirm();
             confirmDialog.value.isOpen = false;
-        }
+        },
     };
 };
 
@@ -58,24 +69,31 @@ const toggle = async (item: any) => {
 
 const handleSelectRequest = (req: RequestItem) => {
     store.selectRequest(req);
-    router.get(`/collections/${req.collection_id}/requests/${req.id}`, {}, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['activeCollectionId', 'activeRequestId']
-    });
+    router.get(
+        `/collections/${req.collection_id}/requests/${req.id}`,
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['activeCollectionId', 'activeRequestId'],
+        },
+    );
 };
 
 const handleCreateCollection = async () => {
     if (!newCollectionName.value.trim()) {
-return;
-}
+        return;
+    }
 
     await store.createCollection(newCollectionName.value);
     newCollectionName.value = '';
     showNewCollection.value = false;
 };
 
-const handleCreateFolder = async (collectionId: string, parentId: string | null = null) => {
+const handleCreateFolder = async (
+    collectionId: string,
+    parentId: string | null = null,
+) => {
     if (!newFolderName.value.trim()) {
         activeNewFolder.value = null;
 
@@ -88,7 +106,10 @@ const handleCreateFolder = async (collectionId: string, parentId: string | null 
     await store.createFolder(collectionId, name, parentId);
 };
 
-const handleCreateRequest = async (collectionId: string, folderId: string | null = null) => {
+const handleCreateRequest = async (
+    collectionId: string,
+    folderId: string | null = null,
+) => {
     if (!newRequestName.value.trim()) {
         activeNewRequest.value = null;
 
@@ -105,7 +126,7 @@ const handleDeleteCollection = (collectionId: string) => {
     confirmDelete(
         'Delete Collection',
         'Are you sure you want to delete this collection? This action cannot be undone.',
-        () => store.deleteCollection(collectionId)
+        () => store.deleteCollection(collectionId),
     );
 };
 
@@ -113,7 +134,7 @@ const handleDeleteFolder = (folderId: string) => {
     confirmDelete(
         'Delete Folder',
         'Are you sure you want to delete this folder? This action cannot be undone.',
-        () => store.deleteFolder(folderId)
+        () => store.deleteFolder(folderId),
     );
 };
 
@@ -121,22 +142,21 @@ const handleDeleteRequest = (requestId: string) => {
     confirmDelete(
         'Delete Request',
         'Are you sure you want to delete this request? This action cannot be undone.',
-        () => store.deleteRequest(requestId)
+        () => store.deleteRequest(requestId),
     );
 };
-
-
 
 const vFocus = {
     mounted: (el: HTMLElement) => {
         nextTick(() => {
-            const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
+            const input =
+                el.tagName === 'INPUT' ? el : el.querySelector('input');
 
             if (input) {
-input.focus();
-}
+                input.focus();
+            }
         });
-    }
+    },
 };
 </script>
 
@@ -144,134 +164,275 @@ input.focus();
     <div class="space-y-4">
         <!-- New Collection Action -->
         <div class="px-2">
-            <Button 
+            <Button
                 v-if="!showNewCollection"
-                variant="outline" 
-                size="sm" 
-                class="w-full justify-start gap-2 text-xs" 
+                variant="outline"
+                size="sm"
+                class="w-full justify-start gap-2 text-xs"
                 @click.prevent.stop="showNewCollection = true"
             >
-                <Plus class="w-3.5 h-3.5" />
+                <Plus class="h-3.5 w-3.5" />
                 New Collection
             </Button>
-            <div v-else class="space-y-2 border p-2 rounded bg-muted/20">
-                <Input 
-                    v-model="newCollectionName" 
-                    placeholder="Collection Name" 
-                    class="h-8 text-xs" 
-                    @keyup.enter="handleCreateCollection" 
+            <div v-else class="space-y-2 rounded border bg-muted/20 p-2">
+                <Input
+                    v-model="newCollectionName"
+                    placeholder="Collection Name"
+                    class="h-8 text-xs"
+                    @keyup.enter="handleCreateCollection"
                     v-focus
                 />
-                <div class="flex gap-2 justify-end">
-                    <Button size="sm" variant="ghost" class="text-xs h-7 px-2" @click="showNewCollection = false">Cancel</Button>
-                    <Button size="sm" class="text-xs h-7 px-2" @click="handleCreateCollection">Create</Button>
+                <div class="flex justify-end gap-2">
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        class="h-7 px-2 text-xs"
+                        @click="showNewCollection = false"
+                        >Cancel</Button
+                    >
+                    <Button
+                        size="sm"
+                        class="h-7 px-2 text-xs"
+                        @click="handleCreateCollection"
+                        >Create</Button
+                    >
                 </div>
             </div>
         </div>
 
         <div class="space-y-1">
-            <template v-for="collection in store.collections" :key="collection.id">
+            <template
+                v-for="collection in store.collections"
+                :key="collection.id"
+            >
                 <!-- Collection Header -->
-                <div class="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 cursor-pointer">
-                    <div class="flex items-center gap-2 flex-1 min-w-0" @click="toggle(collection)">
-                        <div class="w-4 h-4 flex items-center justify-center shrink-0">
-                            <ChevronDown v-if="collection.folders?.length || collection.requests?.length" class="w-3.5 h-3.5 text-muted-foreground transition-transform" :class="{'rotate-[-90deg]': !collection.expanded}" />
+                <div
+                    class="group flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                >
+                    <div
+                        class="flex min-w-0 flex-1 items-center gap-2"
+                        @click="toggle(collection)"
+                    >
+                        <div
+                            class="flex h-4 w-4 shrink-0 items-center justify-center"
+                        >
+                            <ChevronDown
+                                v-if="
+                                    collection.folders?.length ||
+                                    collection.requests?.length
+                                "
+                                class="h-3.5 w-3.5 text-muted-foreground transition-transform"
+                                :class="{
+                                    'rotate-[-90deg]': !collection.expanded,
+                                }"
+                            />
                         </div>
-                        <Folder class="w-4 h-4 text-amber-500/80 shrink-0" />
-                        <span class="font-medium truncate">{{ collection.name }}</span>
+                        <Folder class="h-4 w-4 shrink-0 text-amber-500/80" />
+                        <span class="truncate font-medium">{{
+                            collection.name
+                        }}</span>
                     </div>
 
-                    <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                        <button class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Add Folder" @click.prevent.stop="activeNewFolder = collection.id">
-                            <FolderPlus class="w-3.5 h-3.5" />
+                    <div
+                        class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                        <button
+                            class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            title="Add Folder"
+                            @click.prevent.stop="
+                                activeNewFolder = collection.id
+                            "
+                        >
+                            <FolderPlus class="h-3.5 w-3.5" />
                         </button>
-                        <button class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Add Request" @click.prevent.stop="activeNewRequest = collection.id">
-                            <FilePlus class="w-3.5 h-3.5" />
+                        <button
+                            class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            title="Add Request"
+                            @click.prevent.stop="
+                                activeNewRequest = collection.id
+                            "
+                        >
+                            <FilePlus class="h-3.5 w-3.5" />
                         </button>
-                        <button v-if="!collection.folders?.length && !collection.requests?.length" class="p-1 rounded hover:bg-muted text-red-500 hover:text-red-600" title="Delete Collection" @click.stop="handleDeleteCollection(collection.id)">
-                            <Trash2 class="w-3.5 h-3.5" />
+                        <button
+                            v-if="
+                                !collection.folders?.length &&
+                                !collection.requests?.length
+                            "
+                            class="rounded p-1 text-red-500 hover:bg-muted hover:text-red-600"
+                            title="Delete Collection"
+                            @click.stop="handleDeleteCollection(collection.id)"
+                        >
+                            <Trash2 class="h-3.5 w-3.5" />
                         </button>
                     </div>
                 </div>
 
                 <!-- Create Folder Input Inline -->
-                <div v-if="activeNewFolder === collection.id" class="pl-6 pr-2 py-1">
-                    <Input 
-                        v-model="newFolderName" 
-                        placeholder="Folder name..." 
-                        class="h-7 text-xs" 
-                        @keyup.enter="($event.target as HTMLInputElement).blur()"
+                <div
+                    v-if="activeNewFolder === collection.id"
+                    class="py-1 pr-2 pl-6"
+                >
+                    <Input
+                        v-model="newFolderName"
+                        placeholder="Folder name..."
+                        class="h-7 text-xs"
+                        @keyup.enter="
+                            ($event.target as HTMLInputElement).blur()
+                        "
                         @blur="handleCreateFolder(collection.id)"
                         v-focus
                     />
                 </div>
 
                 <!-- Create Request Input Inline -->
-                <div v-if="activeNewRequest === collection.id" class="pl-6 pr-2 py-1">
-                    <Input 
-                        v-model="newRequestName" 
-                        placeholder="Request name..." 
-                        class="h-7 text-xs" 
-                        @keyup.enter="($event.target as HTMLInputElement).blur()"
+                <div
+                    v-if="activeNewRequest === collection.id"
+                    class="py-1 pr-2 pl-6"
+                >
+                    <Input
+                        v-model="newRequestName"
+                        placeholder="Request name..."
+                        class="h-7 text-xs"
+                        @keyup.enter="
+                            ($event.target as HTMLInputElement).blur()
+                        "
                         @blur="handleCreateRequest(collection.id)"
                         v-focus
                     />
                 </div>
 
                 <!-- Folders and Requests inside Collection -->
-                <div v-if="collection.expanded" class="pl-4 border-l ml-4 border-sidebar-border/50 space-y-0.5">
+                <div
+                    v-if="collection.expanded"
+                    class="ml-4 space-y-0.5 border-l border-sidebar-border/50 pl-4"
+                >
                     <!-- Folders -->
-                    <template v-for="folder in collection.folders" :key="folder.id">
-                        <div class="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 cursor-pointer"
-                            :class="{'bg-muted text-foreground': store.selectedRequest?.folder_id === folder.id}">
-                            <div class="flex items-center gap-2 flex-1 min-w-0" @click="toggle(folder)">
-                                <div class="w-4 h-4 flex items-center justify-center shrink-0">
-                                    <ChevronDown v-if="folder.requests?.length" class="w-3.5 h-3.5 text-muted-foreground transition-transform" :class="{'rotate-[-90deg]': !folder.expanded}" />
+                    <template
+                        v-for="folder in collection.folders"
+                        :key="folder.id"
+                    >
+                        <div
+                            class="group flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                            :class="{
+                                'bg-muted text-foreground':
+                                    store.selectedRequest?.folder_id ===
+                                    folder.id,
+                            }"
+                        >
+                            <div
+                                class="flex min-w-0 flex-1 items-center gap-2"
+                                @click="toggle(folder)"
+                            >
+                                <div
+                                    class="flex h-4 w-4 shrink-0 items-center justify-center"
+                                >
+                                    <ChevronDown
+                                        v-if="folder.requests?.length"
+                                        class="h-3.5 w-3.5 text-muted-foreground transition-transform"
+                                        :class="{
+                                            'rotate-[-90deg]': !folder.expanded,
+                                        }"
+                                    />
                                 </div>
-                                <Folder class="w-4 h-4 text-blue-500/80 shrink-0" />
-                                <span class="truncate" :class="{'font-medium': store.selectedRequest?.folder_id === folder.id}">{{ folder.name }}</span>
+                                <Folder
+                                    class="h-4 w-4 shrink-0 text-blue-500/80"
+                                />
+                                <span
+                                    class="truncate"
+                                    :class="{
+                                        'font-medium':
+                                            store.selectedRequest?.folder_id ===
+                                            folder.id,
+                                    }"
+                                    >{{ folder.name }}</span
+                                >
                             </div>
 
-                            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                                <button class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Add Request" @click.prevent.stop="activeNewRequest = folder.id">
-                                    <FilePlus class="w-3.5 h-3.5" />
+                            <div
+                                class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                            >
+                                <button
+                                    class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    title="Add Request"
+                                    @click.prevent.stop="
+                                        activeNewRequest = folder.id
+                                    "
+                                >
+                                    <FilePlus class="h-3.5 w-3.5" />
                                 </button>
-                                <button v-if="!folder.requests?.length" class="p-1 rounded hover:bg-muted text-red-500 hover:text-red-600" title="Delete Folder" @click.stop="handleDeleteFolder(folder.id)">
-                                    <Trash2 class="w-3.5 h-3.5" />
+                                <button
+                                    v-if="!folder.requests?.length"
+                                    class="rounded p-1 text-red-500 hover:bg-muted hover:text-red-600"
+                                    title="Delete Folder"
+                                    @click.stop="handleDeleteFolder(folder.id)"
+                                >
+                                    <Trash2 class="h-3.5 w-3.5" />
                                 </button>
                             </div>
                         </div>
 
                         <!-- Create Request Input Inline under Folder -->
-                        <div v-if="activeNewRequest === folder.id" class="pl-6 pr-2 py-1">
-                            <Input 
-                                v-model="newRequestName" 
-                                placeholder="Request name..." 
-                                class="h-7 text-xs" 
-                                @keyup.enter="($event.target as HTMLInputElement).blur()"
-                                @blur="handleCreateRequest(collection.id, folder.id)"
+                        <div
+                            v-if="activeNewRequest === folder.id"
+                            class="py-1 pr-2 pl-6"
+                        >
+                            <Input
+                                v-model="newRequestName"
+                                placeholder="Request name..."
+                                class="h-7 text-xs"
+                                @keyup.enter="
+                                    ($event.target as HTMLInputElement).blur()
+                                "
+                                @blur="
+                                    handleCreateRequest(
+                                        collection.id,
+                                        folder.id,
+                                    )
+                                "
                                 v-focus
                             />
                         </div>
 
                         <!-- Requests inside Folder -->
-                        <div v-if="folder.expanded" class="pl-4 border-l ml-4 border-sidebar-border/50">
-                            <div 
-                                v-for="req in folder.requests" 
+                        <div
+                            v-if="folder.expanded"
+                            class="ml-4 border-l border-sidebar-border/50 pl-4"
+                        >
+                            <div
+                                v-for="req in folder.requests"
                                 :key="req.id"
-                                class="group/req flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 cursor-pointer"
-                                :class="{'bg-muted text-foreground': store.selectedRequest?.id === req.id}"
+                                class="group/req flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                                :class="{
+                                    'bg-muted text-foreground':
+                                        store.selectedRequest?.id === req.id,
+                                }"
                                 @click="handleSelectRequest(req)"
                             >
-                                <div class="flex items-center gap-2 flex-1 min-w-0">
-                                    <span :class="['text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0', getMethodColor(req.method)]">
+                                <div
+                                    class="flex min-w-0 flex-1 items-center gap-2"
+                                >
+                                    <span
+                                        :class="[
+                                            'shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold',
+                                            getMethodColor(req.method),
+                                        ]"
+                                    >
                                         {{ req.method }}
                                     </span>
                                     <span class="truncate">{{ req.name }}</span>
                                 </div>
-                                <div class="opacity-0 group-hover/req:opacity-100 flex items-center gap-1 transition-opacity">
-                                    <button class="p-1 rounded hover:bg-muted text-red-500 hover:text-red-600" title="Delete Request" @click.stop="handleDeleteRequest(req.id)">
-                                        <Trash2 class="w-3.5 h-3.5" />
+                                <div
+                                    class="flex items-center gap-1 opacity-0 transition-opacity group-hover/req:opacity-100"
+                                >
+                                    <button
+                                        class="rounded p-1 text-red-500 hover:bg-muted hover:text-red-600"
+                                        title="Delete Request"
+                                        @click.stop="
+                                            handleDeleteRequest(req.id)
+                                        "
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
                                     </button>
                                 </div>
                             </div>
@@ -279,22 +440,38 @@ input.focus();
                     </template>
 
                     <!-- Direct Requests of Collection -->
-                    <div 
-                        v-for="req in collection.requests.filter(r => !r.folder_id)" 
+                    <div
+                        v-for="req in collection.requests.filter(
+                            (r) => !r.folder_id,
+                        )"
                         :key="req.id"
-                        class="group/req flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50 cursor-pointer"
-                        :class="{'bg-muted text-foreground': store.selectedRequest?.id === req.id}"
+                        class="group/req flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                        :class="{
+                            'bg-muted text-foreground':
+                                store.selectedRequest?.id === req.id,
+                        }"
                         @click="handleSelectRequest(req)"
                     >
-                        <div class="flex items-center gap-2 flex-1 min-w-0">
-                            <span :class="['text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0', getMethodColor(req.method)]">
+                        <div class="flex min-w-0 flex-1 items-center gap-2">
+                            <span
+                                :class="[
+                                    'shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold',
+                                    getMethodColor(req.method),
+                                ]"
+                            >
                                 {{ req.method }}
                             </span>
                             <span class="truncate">{{ req.name }}</span>
                         </div>
-                        <div class="opacity-0 group-hover/req:opacity-100 flex items-center gap-1 transition-opacity">
-                            <button class="p-1 rounded hover:bg-muted text-red-500 hover:text-red-600" title="Delete Request" @click.stop="handleDeleteRequest(req.id)">
-                                <Trash2 class="w-3.5 h-3.5" />
+                        <div
+                            class="flex items-center gap-1 opacity-0 transition-opacity group-hover/req:opacity-100"
+                        >
+                            <button
+                                class="rounded p-1 text-red-500 hover:bg-muted hover:text-red-600"
+                                title="Delete Request"
+                                @click.stop="handleDeleteRequest(req.id)"
+                            >
+                                <Trash2 class="h-3.5 w-3.5" />
                             </button>
                         </div>
                     </div>
@@ -311,9 +488,16 @@ input.focus();
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="flex gap-2 justify-end mt-4">
-                    <Button variant="outline" @click="confirmDialog.isOpen = false">Cancel</Button>
-                    <Button variant="destructive" @click="confirmDialog.onConfirm">
+                <DialogFooter class="mt-4 flex justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        @click="confirmDialog.isOpen = false"
+                        >Cancel</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        @click="confirmDialog.onConfirm"
+                    >
                         {{ confirmDialog.confirmText }}
                     </Button>
                 </DialogFooter>
