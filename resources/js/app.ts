@@ -20,14 +20,18 @@ createInertiaApp({
     resolve: (name) => {
         const page = resolvePageComponent(
             `./pages/${name}.vue`,
-            import.meta.glob<DefineComponent>('./pages/**/*.vue')
+            import.meta.glob<DefineComponent>('./pages/**/*.vue'),
         );
 
         return page.then((module) => {
             if (module.default) {
                 // Save layout configuration (like dynamic breadcrumbs) to the global registry
                 // Only save if it hasn't been overwritten by our own global layouts yet (for cached modules)
-                if (module.default.layout !== AppLayout && module.default.layout !== AuthLayout && !Array.isArray(module.default.layout)) {
+                if (
+                    module.default.layout !== AppLayout &&
+                    module.default.layout !== AuthLayout &&
+                    !Array.isArray(module.default.layout)
+                ) {
                     breadcrumbsMap.set(name, module.default.layout);
                 }
 
@@ -35,14 +39,17 @@ createInertiaApp({
                     'Documentation/PublicViewer',
                     'Documentation/PublicIndex',
                     'PrivacyPolicy',
-                    'TermsOfService'
+                    'TermsOfService',
                 ];
 
                 if (marketingPages.includes(name)) {
                     module.default.layout = null;
                 } else if (name.startsWith('auth/')) {
                     module.default.layout = AuthLayout;
-                } else if (name.startsWith('settings/') || name.startsWith('teams/')) {
+                } else if (
+                    name.startsWith('settings/') ||
+                    name.startsWith('teams/')
+                ) {
                     module.default.layout = [AppLayout, SettingsLayout];
                 } else {
                     module.default.layout = AppLayout;

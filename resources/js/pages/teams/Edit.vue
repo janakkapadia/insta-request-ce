@@ -92,7 +92,6 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
     invitationToCancel.value = invitation;
     cancelInvitationDialogOpen.value = true;
 };
-
 </script>
 
 <template>

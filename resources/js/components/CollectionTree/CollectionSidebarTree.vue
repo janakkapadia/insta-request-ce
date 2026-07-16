@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { FilePlus, Trash2, Pencil, MoreVertical, Copy, ArrowRight, Loader2 } from 'lucide-vue-next';
+import {
+    FilePlus,
+    Trash2,
+    Pencil,
+    MoreVertical,
+    Copy,
+    ArrowRight,
+    Loader2,
+} from 'lucide-vue-next';
 import { ref, watch, computed, nextTick } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -28,13 +36,14 @@ import MoveRequestModal from './MoveRequestModal.vue';
 const vFocus = {
     mounted: (el: HTMLElement) => {
         nextTick(() => {
-            const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
+            const input =
+                el.tagName === 'INPUT' ? el : el.querySelector('input');
 
             if (input) {
-input.focus();
-}
+                input.focus();
+            }
         });
-    }
+    },
 };
 
 const store = useWorkspaceStore();
@@ -46,12 +55,14 @@ const props = defineProps<{
 const newFolderName = ref('');
 const newRequestName = ref('');
 
-const isSelectionMode = computed(() => store.selectionModeCollectionId === props.collection.id);
+const isSelectionMode = computed(
+    () => store.selectionModeCollectionId === props.collection.id,
+);
 
 const rootFolders = computed(() => {
     if (!props.collection || !props.collection.folders) {
-return [];
-}
+        return [];
+    }
 
     return props.collection.folders.filter((f: any) => !f.parent_id);
 });
@@ -64,7 +75,11 @@ const confirmDialog = ref({
     onConfirm: () => {},
 });
 
-const confirmDelete = (title: string, description: string, onConfirm: () => void) => {
+const confirmDelete = (
+    title: string,
+    description: string,
+    onConfirm: () => void,
+) => {
     confirmDialog.value = {
         isOpen: true,
         title,
@@ -73,7 +88,7 @@ const confirmDelete = (title: string, description: string, onConfirm: () => void
         onConfirm: () => {
             onConfirm();
             confirmDialog.value.isOpen = false;
-        }
+        },
     };
 };
 
@@ -98,9 +113,9 @@ const toggleSelectRequest = (id: string) => {
 
 const handleDeleteSelectedRequests = () => {
     if (store.selectedRequestIds.length === 0) {
-return;
-}
-    
+        return;
+    }
+
     confirmDialog.value = {
         isOpen: true,
         title: 'Delete Requests',
@@ -110,47 +125,68 @@ return;
             await store.deleteRequestsBatch(store.selectedRequestIds);
             exitSelectionMode();
             confirmDialog.value.isOpen = false;
-        }
+        },
     };
 };
 
-watch(() => props.collection.id, () => {
-    exitSelectionMode();
-});
+watch(
+    () => props.collection.id,
+    () => {
+        exitSelectionMode();
+    },
+);
 
 const handleSelectRequest = (req: RequestItem, forceNewTab = false) => {
     store.selectRequest(req, forceNewTab);
-    router.get(`/collections/${req.collection_id}/requests/${req.id}`, {}, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['activeCollectionId', 'activeRequestId']
-    });
+    router.get(
+        `/collections/${req.collection_id}/requests/${req.id}`,
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['activeCollectionId', 'activeRequestId'],
+        },
+    );
 };
 
-const handleCreateFolder = async (collectionId: string, parentId: string | null = null) => {
+const handleCreateFolder = async (
+    collectionId: string,
+    parentId: string | null = null,
+) => {
     if (newFolderName.value.trim() === '') {
         store.activeNewFolder = null;
         newFolderName.value = '';
 
         return;
     }
-    
-    await store.createFolder(collectionId, newFolderName.value.trim(), parentId);
-    
+
+    await store.createFolder(
+        collectionId,
+        newFolderName.value.trim(),
+        parentId,
+    );
+
     store.activeNewFolder = null;
     newFolderName.value = '';
 };
 
-const handleCreateRequest = async (collectionId: string, folderId: string | null = null) => {
+const handleCreateRequest = async (
+    collectionId: string,
+    folderId: string | null = null,
+) => {
     if (newRequestName.value.trim() === '') {
         store.activeNewRequest = null;
         newRequestName.value = '';
 
         return;
     }
-    
-    await store.createRequest(collectionId, newRequestName.value.trim(), folderId);
-    
+
+    await store.createRequest(
+        collectionId,
+        newRequestName.value.trim(),
+        folderId,
+    );
+
     store.activeNewRequest = null;
     newRequestName.value = '';
 };
@@ -159,7 +195,7 @@ const handleDeleteRequest = (requestId: string) => {
     confirmDelete(
         'Delete Request',
         'Are you sure you want to delete this request? This action cannot be undone.',
-        () => store.deleteRequest(requestId)
+        () => store.deleteRequest(requestId),
     );
 };
 
@@ -183,7 +219,7 @@ const commitRenameRequest = async (req: any) => {
 };
 
 const cancelRenameRequest = () => {
- editingRequestId.value = null; 
+    editingRequestId.value = null;
 };
 
 const movingRequest = ref<RequestItem | null>(null);
@@ -199,7 +235,10 @@ const handleDragStart = (e: DragEvent, req: any) => {
     store.draggedRequestId = req.id;
 
     if (e.dataTransfer) {
-        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'jackman-request', id: req.id }));
+        e.dataTransfer.setData(
+            'text/plain',
+            JSON.stringify({ type: 'jackman-request', id: req.id }),
+        );
         e.dataTransfer.effectAllowed = 'move';
     }
 };
@@ -225,13 +264,13 @@ const handleDropOnCollection = async (e: DragEvent) => {
                 const parsed = JSON.parse(dataStr);
 
                 if (parsed.type === 'jackman-request') {
-requestId = parsed.id;
-} else if (parsed.type === 'jackman-folder') {
-folderId = parsed.id;
-}
+                    requestId = parsed.id;
+                } else if (parsed.type === 'jackman-folder') {
+                    folderId = parsed.id;
+                }
             } catch {}
         }
-        
+
         if (requestId && props.collection) {
             const req = getRequestById(requestId);
 
@@ -239,7 +278,9 @@ folderId = parsed.id;
                 await store.moveRequest(requestId, props.collection.id, null);
             }
         } else if (folderId && props.collection) {
-            const folder = props.collection.folders?.find((f: any) => f.id === folderId);
+            const folder = props.collection.folders?.find(
+                (f: any) => f.id === folderId,
+            );
 
             if (folder && folder.parent_id === null) {
                 return;
@@ -247,7 +288,8 @@ folderId = parsed.id;
 
             await store.moveFolder(folderId, props.collection.id, null);
         }
-    } catch {} finally {
+    } catch {
+    } finally {
         store.draggedRequestId = null;
         store.draggedFolderId = null;
     }
@@ -255,21 +297,21 @@ folderId = parsed.id;
 
 const getRequestById = (id: string) => {
     if (!props.collection) {
-return null;
-}
+        return null;
+    }
 
     let found = props.collection.requests.find((r: any) => r.id === id);
 
     if (found) {
-return found;
-}
+        return found;
+    }
 
     for (const f of props.collection.folders || []) {
         found = f.requests?.find((r: any) => r.id === id);
 
         if (found) {
-return found;
-}
+            return found;
+        }
     }
 
     return null;
@@ -277,145 +319,248 @@ return found;
 </script>
 
 <template>
-    <div class="space-y-2" @dragenter.prevent @dragover.prevent @drop.prevent.stop="handleDropOnCollection">
+    <div
+        class="space-y-2"
+        @dragenter.prevent
+        @dragover.prevent
+        @drop.prevent.stop="handleDropOnCollection"
+    >
         <div v-if="!props.collection">
             <div class="px-2 py-1 text-[11px] text-muted-foreground">
                 No collection data.
             </div>
         </div>
 
-        <div v-else class="space-y-1" @dragenter.prevent.stop @dragover.prevent.stop="handleDragOver" @drop.prevent.stop="handleDropOnCollection">
-            <div v-if="isSelectionMode" class="px-2 py-1 flex items-center justify-between border-b border-sidebar-border/40 pb-2 mb-2 group">
-                <div class="flex items-center gap-1 shrink-0">
-                    <span class="text-[9px] font-semibold bg-primary/10 text-primary border border-primary/20 px-1 py-0.5 rounded font-mono mr-1">
+        <div
+            v-else
+            class="space-y-1"
+            @dragenter.prevent.stop
+            @dragover.prevent.stop="handleDragOver"
+            @drop.prevent.stop="handleDropOnCollection"
+        >
+            <div
+                v-if="isSelectionMode"
+                class="group mb-2 flex items-center justify-between border-b border-sidebar-border/40 px-2 py-1 pb-2"
+            >
+                <div class="flex shrink-0 items-center gap-1">
+                    <span
+                        class="mr-1 rounded border border-primary/20 bg-primary/10 px-1 py-0.5 font-mono text-[9px] font-semibold text-primary"
+                    >
                         {{ store.selectedRequestIds.length }} selected
                     </span>
-                    <button 
-                        class="p-1 rounded hover:bg-destructive/10 text-destructive disabled:opacity-50 cursor-pointer" 
-                        title="Delete Selected Requests" 
+                    <button
+                        class="cursor-pointer rounded p-1 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                        title="Delete Selected Requests"
                         :disabled="store.selectedRequestIds.length === 0"
                         @click.stop="handleDeleteSelectedRequests"
                     >
-                        <Trash2 class="w-3.5 h-3.5" />
+                        <Trash2 class="h-3.5 w-3.5" />
                     </button>
-                    <button class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground font-semibold text-xs px-1.5 py-0.5 cursor-pointer" title="Exit Select Mode" @click.stop="exitSelectionMode">
+                    <button
+                        class="cursor-pointer rounded p-1 px-1.5 py-0.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Exit Select Mode"
+                        @click.stop="exitSelectionMode"
+                    >
                         Cancel
                     </button>
                 </div>
             </div>
 
-            <div v-if="store.activeNewFolder === props.collection.id" class="px-2 py-1">
-                <Input 
-                    v-model="newFolderName" 
-                    placeholder="Folder name..." 
-                    class="h-7 text-xs" 
+            <div
+                v-if="store.activeNewFolder === props.collection.id"
+                class="px-2 py-1"
+            >
+                <Input
+                    v-model="newFolderName"
+                    placeholder="Folder name..."
+                    class="h-7 text-xs"
                     @keyup.enter="($event.target as HTMLInputElement).blur()"
                     @blur="handleCreateFolder(props.collection.id)"
                     v-focus
                 />
             </div>
 
-            <div v-if="store.activeNewRequest === props.collection.id" class="px-2 py-1">
-                <Input 
-                    v-model="newRequestName" 
-                    placeholder="Request name..." 
-                    class="h-7 text-xs" 
+            <div
+                v-if="store.activeNewRequest === props.collection.id"
+                class="px-2 py-1"
+            >
+                <Input
+                    v-model="newRequestName"
+                    placeholder="Request name..."
+                    class="h-7 text-xs"
                     @keyup.enter="($event.target as HTMLInputElement).blur()"
                     @blur="handleCreateRequest(props.collection.id)"
                     v-focus
                 />
             </div>
 
-            <div v-if="!props.collection.has_loaded_details" class="px-2 py-1 flex items-center text-[11px] text-muted-foreground">
-                <Loader2 class="w-3.5 h-3.5 animate-spin mr-2 text-primary/50" />
+            <div
+                v-if="!props.collection.has_loaded_details"
+                class="flex items-center px-2 py-1 text-[11px] text-muted-foreground"
+            >
+                <Loader2
+                    class="mr-2 h-3.5 w-3.5 animate-spin text-primary/50"
+                />
                 <span>Loading collection...</span>
             </div>
-            
-            <div v-else-if="(!props.collection.folders || props.collection.folders.length === 0) && (!props.collection.requests || props.collection.requests.length === 0) && store.activeNewRequest !== props.collection.id && store.activeNewFolder !== props.collection.id" class="flex flex-col items-center justify-center py-6 px-4">
-                <p class="text-center text-xs text-muted-foreground mb-4">This collection is empty.</p>
-                <Button 
-                    variant="outline" 
+
+            <div
+                v-else-if="
+                    (!props.collection.folders ||
+                        props.collection.folders.length === 0) &&
+                    (!props.collection.requests ||
+                        props.collection.requests.length === 0) &&
+                    store.activeNewRequest !== props.collection.id &&
+                    store.activeNewFolder !== props.collection.id
+                "
+                class="flex flex-col items-center justify-center px-4 py-6"
+            >
+                <p class="mb-4 text-center text-xs text-muted-foreground">
+                    This collection is empty.
+                </p>
+                <Button
+                    variant="outline"
                     size="sm"
-                    class="h-8 text-[11px]" 
+                    class="h-8 text-[11px]"
                     @click="store.activeNewRequest = props.collection.id"
                 >
-                    <FilePlus class="w-3.5 h-3.5 mr-2" />
+                    <FilePlus class="mr-2 h-3.5 w-3.5" />
                     Create Request
                 </Button>
             </div>
 
-            <div v-else class="space-y-0.5" @dragenter.prevent @dragover.prevent @drop.prevent.stop="handleDropOnCollection">
-                <CollectionFolderNode 
-                    v-for="folder in rootFolders" 
-                    :key="folder.id" 
-                    :folder="folder" 
+            <div
+                v-else
+                class="space-y-0.5"
+                @dragenter.prevent
+                @dragover.prevent
+                @drop.prevent.stop="handleDropOnCollection"
+            >
+                <CollectionFolderNode
+                    v-for="folder in rootFolders"
+                    :key="folder.id"
+                    :folder="folder"
                     :collection="props.collection"
                     @confirmDelete="confirmDelete"
                     @startMoveRequest="startMoveRequest"
                 />
 
                 <!-- Direct Requests of Collection -->
-                <div 
-                    v-for="req in props.collection.requests?.filter((r: any) => !r.folder_id)" 
+                <div
+                    v-for="req in props.collection.requests?.filter(
+                        (r: any) => !r.folder_id,
+                    )"
                     :key="req.id"
-                    class="group/req flex items-center justify-between rounded-md px-2 py-0.5 text-xs hover:bg-muted/50 cursor-pointer select-none"
-                    :class="{'bg-muted text-foreground': store.selectedRequest?.id === req.id}"
+                    class="group/req flex cursor-pointer items-center justify-between rounded-md px-2 py-0.5 text-xs select-none hover:bg-muted/50"
+                    :class="{
+                        'bg-muted text-foreground':
+                            store.selectedRequest?.id === req.id,
+                    }"
                     draggable="true"
-                    style="-webkit-user-drag: element;"
+                    style="-webkit-user-drag: element"
                     @dragstart="handleDragStart($event, req)"
                     @dragend="handleDragEnd"
                     @dragenter.prevent.stop
                     @dragover.prevent.stop="handleDragOver"
                     @drop.prevent.stop="handleDropOnCollection"
                     @pointerdown.middle.stop.prevent
-                    @auxclick.middle.prevent="!isSelectionMode && handleSelectRequest(req, true)"
-                    @click="(e) => isSelectionMode ? toggleSelectRequest(req.id) : handleSelectRequest(req, e.metaKey || e.ctrlKey)"
+                    @auxclick.middle.prevent="
+                        !isSelectionMode && handleSelectRequest(req, true)
+                    "
+                    @click="
+                        (e) =>
+                            isSelectionMode
+                                ? toggleSelectRequest(req.id)
+                                : handleSelectRequest(
+                                      req,
+                                      e.metaKey || e.ctrlKey,
+                                  )
+                    "
                 >
-                    <div class="flex items-center gap-2 flex-1 min-w-0">
-                        <div v-if="isSelectionMode" @click.stop class="flex items-center shrink-0">
-                            <Checkbox 
-                                :model-value="store.selectedRequestIds.includes(req.id)"
-                                @update:model-value="toggleSelectRequest(req.id)"
-                                class="h-3.5 w-3.5 rounded border-muted-foreground/30 shrink-0"
+                    <div class="flex min-w-0 flex-1 items-center gap-2">
+                        <div
+                            v-if="isSelectionMode"
+                            @click.stop
+                            class="flex shrink-0 items-center"
+                        >
+                            <Checkbox
+                                :model-value="
+                                    store.selectedRequestIds.includes(req.id)
+                                "
+                                @update:model-value="
+                                    toggleSelectRequest(req.id)
+                                "
+                                class="h-3.5 w-3.5 shrink-0 rounded border-muted-foreground/30"
                             />
                         </div>
-                        <span v-else :class="['text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0', getMethodColor(req.method)]">
+                        <span
+                            v-else
+                            :class="[
+                                'shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold',
+                                getMethodColor(req.method),
+                            ]"
+                        >
                             {{ req.method }}
                         </span>
                         <!-- Inline rename input -->
                         <input
                             v-if="editingRequestId === req.id"
                             v-model="editingRequestName"
-                            class="flex-1 min-w-0 h-6 text-xs bg-background border border-primary rounded px-1 outline-none focus:ring-1 focus:ring-primary"
+                            class="h-6 min-w-0 flex-1 rounded border border-primary bg-background px-1 text-xs outline-none focus:ring-1 focus:ring-primary"
                             @click.stop
                             @keyup.enter="commitRenameRequest(req)"
                             @keyup.escape="cancelRenameRequest"
                             @blur="commitRenameRequest(req)"
                             v-focus
                         />
-                        <span v-else class="truncate" @dblclick.stop="startRenameRequest(req)">{{ req.name }}</span>
+                        <span
+                            v-else
+                            class="truncate"
+                            @dblclick.stop="startRenameRequest(req)"
+                            >{{ req.name }}</span
+                        >
                     </div>
-                    <div v-if="!isSelectionMode" class="opacity-0 group-hover/req:opacity-100 flex items-center gap-1 transition-opacity">
+                    <div
+                        v-if="!isSelectionMode"
+                        class="flex items-center gap-1 opacity-0 transition-opacity group-hover/req:opacity-100"
+                    >
                         <DropdownMenu>
                             <DropdownMenuTrigger as-child>
-                                <button class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="More Options" @click.stop>
-                                    <MoreVertical class="w-3.5 h-3.5" />
+                                <button
+                                    class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    title="More Options"
+                                    @click.stop
+                                >
+                                    <MoreVertical class="h-3.5 w-3.5" />
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" class="w-48" @close-auto-focus="(e) => e.preventDefault()">
-                                <DropdownMenuItem @click.stop="startRenameRequest(req)">
+                            <DropdownMenuContent
+                                align="end"
+                                class="w-48"
+                                @close-auto-focus="(e) => e.preventDefault()"
+                            >
+                                <DropdownMenuItem
+                                    @click.stop="startRenameRequest(req)"
+                                >
                                     <Pencil class="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem @click.stop="store.cloneRequest(req.id)">
+                                <DropdownMenuItem
+                                    @click.stop="store.cloneRequest(req.id)"
+                                >
                                     <Copy class="mr-2 h-4 w-4" />
                                     <span>Duplicate</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem @click.stop="startMoveRequest(req)">
+                                <DropdownMenuItem
+                                    @click.stop="startMoveRequest(req)"
+                                >
                                     <ArrowRight class="mr-2 h-4 w-4" />
                                     <span>Move...</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem @click.stop="handleDeleteRequest(req.id)" class="text-red-600 focus:text-red-600">
+                                <DropdownMenuItem
+                                    @click.stop="handleDeleteRequest(req.id)"
+                                    class="text-red-600 focus:text-red-600"
+                                >
                                     <Trash2 class="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
@@ -435,20 +580,26 @@ return found;
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="flex gap-2 justify-end mt-4">
-                    <Button variant="outline" @click="confirmDialog.isOpen = false">Cancel</Button>
-                    <Button variant="destructive" @click="confirmDialog.onConfirm">
+                <DialogFooter class="mt-4 flex justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        @click="confirmDialog.isOpen = false"
+                        >Cancel</Button
+                    >
+                    <Button
+                        variant="destructive"
+                        @click="confirmDialog.onConfirm"
+                    >
                         {{ confirmDialog.confirmText }}
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
-
         <!-- Move Request Modal -->
-        <MoveRequestModal 
-            v-model:open="isMoveModalOpen" 
-            :request="movingRequest" 
+        <MoveRequestModal
+            v-model:open="isMoveModalOpen"
+            :request="movingRequest"
         />
     </div>
 </template>

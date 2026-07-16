@@ -3,29 +3,37 @@ import { defineStore } from 'pinia';
 import { ref, watch, onUnmounted, computed } from 'vue';
 import { toast } from 'vue-sonner';
 
-
 const apiFetch = async (url: string, options: RequestInit = {}) => {
-    const xsrfToken = typeof document !== 'undefined' 
-        ? document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || ''
-        : '';
-        
+    const xsrfToken =
+        typeof document !== 'undefined'
+            ? document.cookie
+                  .split('; ')
+                  .find((row) => row.startsWith('XSRF-TOKEN='))
+                  ?.split('=')[1] || ''
+            : '';
+
     const headers = {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
-        ...((options.body || options.method === 'POST' || options.method === 'PATCH' || options.method === 'PUT') ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.body ||
+        options.method === 'POST' ||
+        options.method === 'PATCH' ||
+        options.method === 'PUT'
+            ? { 'Content-Type': 'application/json' }
+            : {}),
         'X-XSRF-TOKEN': decodeURIComponent(xsrfToken),
         ...(options.headers || {}),
     };
 
     const response = await fetch(url, { ...options, headers });
-    
+
     let data;
     const contentType = response.headers.get('content-type');
 
     if (contentType && contentType.includes('application/json')) {
         data = await response.json();
     }
-    
+
     if (!response.ok) {
         const errorMsg = data?.message || response.statusText;
         const error = new Error(errorMsg);
@@ -34,10 +42,9 @@ const apiFetch = async (url: string, options: RequestInit = {}) => {
 
         throw error;
     }
-    
+
     return { data, status: response.status, headers: response.headers };
 };
-
 
 export interface RequestItem {
     id: string;
@@ -89,112 +96,135 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const showNewCollectionModal = ref(false);
     const showSaveRequestModal = ref(false);
     const pendingSaveRequestData = ref<any>(null);
-    
+
     const activeNewFolder = ref<string | null>(null);
     const activeNewRequest = ref<string | null>(null);
     const selectionModeCollectionId = ref<string | null>(null);
     const selectedRequestIds = ref<string[]>([]);
-    
-    const requestDrafts = ref<Record<string, { payloadStr: string, isDirty: boolean }>>({});
-    
-    const setRequestDraft = (requestId: string, payloadStr: string, isDirty: boolean) => {
+
+    const requestDrafts = ref<
+        Record<string, { payloadStr: string; isDirty: boolean }>
+    >({});
+
+    const setRequestDraft = (
+        requestId: string,
+        payloadStr: string,
+        isDirty: boolean,
+    ) => {
         if (isDirty) {
             requestDrafts.value[requestId] = { payloadStr, isDirty };
         } else {
             delete requestDrafts.value[requestId];
         }
     };
-    
+
     const getRequestDraft = (requestId: string) => {
         return requestDrafts.value[requestId]?.payloadStr || null;
     };
-    
+
     const clearRequestDraft = (requestId: string) => {
         delete requestDrafts.value[requestId];
     };
-    
+
     const getIsRequestDirty = (requestId: string) => {
         return requestDrafts.value[requestId]?.isDirty || false;
     };
-    
+
     const isCurrentRequestDirty = computed(() => {
         if (!selectedRequest.value) {
-return false;
-}
+            return false;
+        }
 
         return getIsRequestDirty(selectedRequest.value.id);
     });
 
     const hasDirtyRequests = computed(() => {
-        return Object.values(requestDrafts.value).some(draft => draft.isDirty);
+        return Object.values(requestDrafts.value).some(
+            (draft) => draft.isDirty,
+        );
     });
 
     const page = usePage();
     const currentUser = computed(() => page.props.auth?.user as any);
 
-    watch(() => currentUser.value?.id, (newId, oldId) => {
-        if (oldId && newId !== oldId) {
-            collections.value = [];
-            selectedCollection.value = null;
-            selectedRequest.value = null;
-            openRequests.value = [];
-            environments.value = [];
-            activeEnvironment.value = null;
+    watch(
+        () => currentUser.value?.id,
+        (newId, oldId) => {
+            if (oldId && newId !== oldId) {
+                collections.value = [];
+                selectedCollection.value = null;
+                selectedRequest.value = null;
+                openRequests.value = [];
+                environments.value = [];
+                activeEnvironment.value = null;
 
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('active_environment_id');
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('active_environment_id');
+                }
             }
-        }
-    });
+        },
+    );
 
     const setCollections = (items: CollectionItem[]) => {
         // Build maps of currently expanded folder and collection states
         const expandedFolders = new Set<string>();
         const expandedCollections = new Set<string>();
-        
-        collections.value.forEach(c => {
+
+        collections.value.forEach((c) => {
             if (c.expanded) {
                 expandedCollections.add(c.id);
             }
 
-            c.folders?.forEach(f => {
+            c.folders?.forEach((f) => {
                 if (f.expanded) {
                     expandedFolders.add(f.id);
                 }
             });
         });
-        
-        // Merge with existing collections to preserve lazy-loaded details
-        const merged = items.map(freshCol => {
-            const existingCol = collections.value.find(c => c.id === freshCol.id);
 
-            if (existingCol && existingCol.has_loaded_details && !freshCol.has_loaded_details) {
+        // Merge with existing collections to preserve lazy-loaded details
+        const merged = items.map((freshCol) => {
+            const existingCol = collections.value.find(
+                (c) => c.id === freshCol.id,
+            );
+
+            if (
+                existingCol &&
+                existingCol.has_loaded_details &&
+                !freshCol.has_loaded_details
+            ) {
                 freshCol.requests = existingCol.requests;
                 freshCol.folders = existingCol.folders;
                 freshCol.has_loaded_details = true;
             }
-            
+
             // Restore expanded state
             if (expandedCollections.has(freshCol.id)) {
                 freshCol.expanded = true;
             }
 
-            freshCol.folders?.forEach(f => {
+            freshCol.folders?.forEach((f) => {
                 if (expandedFolders.has(f.id)) {
                     f.expanded = true;
                 }
             });
-            
+
             return freshCol;
         });
 
         collections.value = merged;
-        
+
         // Keep selectedCollection references matched to the fresh list items
         if (selectedCollection.value) {
-            const fresh = merged.find(c => c.id === selectedCollection.value?.id);
+            const fresh = merged.find(
+                (c) => c.id === selectedCollection.value?.id,
+            );
             selectedCollection.value = fresh || merged[0] || null;
-        } else if (merged.length > 0 && typeof window !== 'undefined' && window.location.pathname.includes('/collections')) {
+        } else if (
+            merged.length > 0 &&
+            typeof window !== 'undefined' &&
+            window.location.pathname.includes('/collections')
+        ) {
             selectedCollection.value = merged[0];
         }
 
@@ -202,19 +232,25 @@ return false;
         if (selectedRequest.value) {
             for (const col of merged) {
                 // Check direct requests
-                const directMatch = col.requests.find(r => r.id === selectedRequest.value?.id);
+                const directMatch = col.requests.find(
+                    (r) => r.id === selectedRequest.value?.id,
+                );
 
                 if (directMatch) {
- selectedRequest.value = directMatch; break; 
-}
+                    selectedRequest.value = directMatch;
+                    break;
+                }
 
                 // Check requests inside folders
                 for (const folder of col.folders ?? []) {
-                    const folderMatch = folder.requests?.find(r => r.id === selectedRequest.value?.id);
+                    const folderMatch = folder.requests?.find(
+                        (r) => r.id === selectedRequest.value?.id,
+                    );
 
                     if (folderMatch) {
- selectedRequest.value = folderMatch; break; 
-}
+                        selectedRequest.value = folderMatch;
+                        break;
+                    }
                 }
             }
         }
@@ -237,23 +273,35 @@ return false;
 
     const hasRequestedInitialCollections = ref(false);
 
-    watch(() => page.props.collections, (newCols) => {
-        if (newCols !== null && newCols !== undefined) {
-            hasRequestedInitialCollections.value = true;
-            // Handle cases where Inertia/JSON converts the array to an object (e.g. { "0": {...}, "1": {...} })
-            const colsArray = Array.isArray(newCols) ? newCols : Object.values(newCols);
-            setCollections(colsArray as CollectionItem[]);
-        } else if (!hasRequestedInitialCollections.value && page.props.currentTeam) {
-            hasRequestedInitialCollections.value = true;
-            queueFetchMissingGlobalData('collections');
-        }
-    }, { immediate: true, deep: true });
+    watch(
+        () => page.props.collections,
+        (newCols) => {
+            if (newCols !== null && newCols !== undefined) {
+                hasRequestedInitialCollections.value = true;
+                // Handle cases where Inertia/JSON converts the array to an object (e.g. { "0": {...}, "1": {...} })
+                const colsArray = Array.isArray(newCols)
+                    ? newCols
+                    : Object.values(newCols);
+                setCollections(colsArray as CollectionItem[]);
+            } else if (
+                !hasRequestedInitialCollections.value &&
+                page.props.currentTeam
+            ) {
+                hasRequestedInitialCollections.value = true;
+                queueFetchMissingGlobalData('collections');
+            }
+        },
+        { immediate: true, deep: true },
+    );
 
-    watch(() => page.props.currentTeam?.id, (newTeamId, oldTeamId) => {
-        if (newTeamId && oldTeamId && newTeamId !== oldTeamId) {
-            router.reload({ only: ['collections', 'environments'] });
-        }
-    });
+    watch(
+        () => page.props.currentTeam?.id,
+        (newTeamId, oldTeamId) => {
+            if (newTeamId && oldTeamId && newTeamId !== oldTeamId) {
+                router.reload({ only: ['collections', 'environments'] });
+            }
+        },
+    );
 
     const selectCollection = async (collection: CollectionItem) => {
         selectedCollection.value = collection;
@@ -263,13 +311,17 @@ return false;
         }
     };
 
-
-
     const selectRequest = async (request: RequestItem, forceNewTab = false) => {
         // Add to open requests if not already there
-        if (!openRequests.value.some(r => r.id === request.id)) {
-            if (selectedRequest.value && !isCurrentRequestDirty.value && !forceNewTab) {
-                const currentIdx = openRequests.value.findIndex(r => r.id === selectedRequest.value?.id);
+        if (!openRequests.value.some((r) => r.id === request.id)) {
+            if (
+                selectedRequest.value &&
+                !isCurrentRequestDirty.value &&
+                !forceNewTab
+            ) {
+                const currentIdx = openRequests.value.findIndex(
+                    (r) => r.id === selectedRequest.value?.id,
+                );
 
                 if (currentIdx !== -1) {
                     openRequests.value.splice(currentIdx, 1, request);
@@ -285,7 +337,9 @@ return false;
 
         // Auto-expand folder and collection if this request is inside a collection
         if (request.collection_id) {
-            const col = collections.value.find(c => c.id === request.collection_id);
+            const col = collections.value.find(
+                (c) => c.id === request.collection_id,
+            );
 
             if (col) {
                 if (!col.expanded) {
@@ -297,7 +351,9 @@ return false;
                 }
 
                 if (request.folder_id) {
-                    const folder = col.folders?.find(f => f.id === request.folder_id);
+                    const folder = col.folders?.find(
+                        (f) => f.id === request.folder_id,
+                    );
 
                     if (folder) {
                         folder.expanded = true;
@@ -305,48 +361,55 @@ return false;
                 }
             }
         }
-
-
     };
 
     const closeRequest = (requestId: string) => {
         clearRequestDraft(requestId);
-        
+
         const idx = openRequests.value.findIndex((r) => r.id === requestId);
 
         if (idx !== -1) {
             openRequests.value.splice(idx, 1);
 
             if (selectedRequest.value?.id === requestId) {
-                const newActive = openRequests.value[Math.max(0, idx - 1)] || null;
+                const newActive =
+                    openRequests.value[Math.max(0, idx - 1)] || null;
                 selectedRequest.value = newActive;
 
                 if (newActive) {
                     if (!newActive.id.startsWith('new-')) {
-                        router.visit(`/collections/${newActive.collection_id}/requests/${newActive.id}`, {
-                            preserveState: true,
-                            preserveScroll: true,
-                            only: ['activeCollectionId', 'activeRequestId']
-                        });
+                        router.visit(
+                            `/collections/${newActive.collection_id}/requests/${newActive.id}`,
+                            {
+                                preserveState: true,
+                                preserveScroll: true,
+                                only: ['activeCollectionId', 'activeRequestId'],
+                            },
+                        );
                     }
                 } else if (selectedCollection.value) {
-                    router.visit(`/collections/${selectedCollection.value.id}`, {
-                        preserveState: true,
-                        preserveScroll: true,
-                        only: ['activeCollectionId', 'activeRequestId']
-                    });
+                    router.visit(
+                        `/collections/${selectedCollection.value.id}`,
+                        {
+                            preserveState: true,
+                            preserveScroll: true,
+                            only: ['activeCollectionId', 'activeRequestId'],
+                        },
+                    );
                 } else {
                     router.visit('/collections', {
                         preserveState: true,
                         preserveScroll: true,
-                        only: ['activeCollectionId', 'activeRequestId']
+                        only: ['activeCollectionId', 'activeRequestId'],
                     });
                 }
             }
         }
     };
 
-    const saveRequest = async (data: Partial<RequestItem>): Promise<boolean> => {
+    const saveRequest = async (
+        data: Partial<RequestItem>,
+    ): Promise<boolean> => {
         if (!selectedRequest.value) {
             return false;
         }
@@ -359,10 +422,13 @@ return false;
                 return true;
             }
 
-            const response = await apiFetch(`/requests/${selectedRequest.value.id}`, { method: 'PATCH', body: JSON.stringify(data) });
-            
+            const response = await apiFetch(
+                `/requests/${selectedRequest.value.id}`,
+                { method: 'PATCH', body: JSON.stringify(data) },
+            );
+
             clearRequestDraft(selectedRequest.value.id);
-            
+
             // Update request details in the collections tree
             const updatedReq = response.data.request || response.data;
             updateRequestInTree(updatedReq);
@@ -378,13 +444,15 @@ return false;
 
     const refreshCollections = async () => {
         return new Promise<void>((resolve, reject) => {
-            const loadedIds = collections.value.filter(c => c.has_loaded_details).map(c => c.id);
+            const loadedIds = collections.value
+                .filter((c) => c.has_loaded_details)
+                .map((c) => c.id);
             const data: Record<string, any> = {};
 
             if (loadedIds.length > 0) {
                 data['loaded_ids'] = loadedIds;
             }
-            
+
             let isResolved = false;
             router.reload({
                 only: ['collections'],
@@ -394,10 +462,10 @@ return false;
                 preserveState: true,
                 onSuccess: (page: any) => {
                     if (page.props.collections) {
-                        const colsArray = Array.isArray(page.props.collections) 
-                            ? page.props.collections 
+                        const colsArray = Array.isArray(page.props.collections)
+                            ? page.props.collections
                             : Object.values(page.props.collections);
-                            
+
                         const fresh = (colsArray as any[]).map((c: any) => {
                             if (!c.has_loaded_details) {
                                 c.requests = [];
@@ -422,14 +490,17 @@ return false;
                         isResolved = true;
                         resolve();
                     }
-                }
+                },
             });
         });
     };
 
     const createCollection = async (name: string, description = '') => {
         try {
-            await apiFetch('/collections', { method: 'POST', body: JSON.stringify({ name, description }) });
+            await apiFetch('/collections', {
+                method: 'POST',
+                body: JSON.stringify({ name, description }),
+            });
             await refreshCollections();
         } catch (e) {
             console.error('Failed to create collection', e);
@@ -437,15 +508,17 @@ return false;
     };
 
     const fetchCollectionDetails = async (collectionId: string) => {
-        const col = collections.value.find(c => c.id === collectionId);
+        const col = collections.value.find((c) => c.id === collectionId);
 
         if (col && !col.has_loaded_details) {
             try {
-                const response = await apiFetch(`/collections/${collectionId}/details`);
+                const response = await apiFetch(
+                    `/collections/${collectionId}/details`,
+                );
                 col.requests = response.data.requests;
                 col.folders = response.data.folders;
                 col.has_loaded_details = true;
-                
+
                 // If it's the selected collection, sync it
                 if (selectedCollection.value?.id === col.id) {
                     selectedCollection.value = col;
@@ -456,25 +529,44 @@ return false;
         }
     };
 
-    const updateCollection = async (collectionId: string, name: string, description: string) => {
+    const updateCollection = async (
+        collectionId: string,
+        name: string,
+        description: string,
+    ) => {
         try {
-            await apiFetch(`/collections/${collectionId}`, { method: 'PATCH', body: JSON.stringify({ name, description }) });
+            await apiFetch(`/collections/${collectionId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name, description }),
+            });
             await refreshCollections();
         } catch (e) {
             console.error('Failed to update collection', e);
         }
     };
 
-    const createFolder = async (collectionId: string, name: string, parentId: string | null = null) => {
+    const createFolder = async (
+        collectionId: string,
+        name: string,
+        parentId: string | null = null,
+    ) => {
         try {
-            await apiFetch(`/collections/${collectionId}/folders`, { method: 'POST', body: JSON.stringify({ name, parent_id: parentId }) });
+            await apiFetch(`/collections/${collectionId}/folders`, {
+                method: 'POST',
+                body: JSON.stringify({ name, parent_id: parentId }),
+            });
             await refreshCollections();
         } catch (e) {
             console.error('Failed to create folder', e);
         }
     };
 
-    const createRequest = async (collectionId: string, name: string, folderId: string | null = null, method = 'GET') => {
+    const createRequest = async (
+        collectionId: string,
+        name: string,
+        folderId: string | null = null,
+        method = 'GET',
+    ) => {
         const tempId = `new-${Date.now()}`;
         const req: RequestItem = {
             id: tempId,
@@ -501,24 +593,33 @@ return false;
         selectRequest(req, forceNewTab);
     };
 
-    const confirmSaveNewRequest = async (collectionId: string, folderId: string | null) => {
-        if (!selectedRequest.value || !selectedRequest.value.id.startsWith('new-')) {
-return;
-}
+    const confirmSaveNewRequest = async (
+        collectionId: string,
+        folderId: string | null,
+    ) => {
+        if (
+            !selectedRequest.value ||
+            !selectedRequest.value.id.startsWith('new-')
+        ) {
+            return;
+        }
 
         const draftId = selectedRequest.value.id;
         const data = pendingSaveRequestData.value || {};
 
         try {
-            const response = await apiFetch(`/collections/${collectionId}/requests`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: selectedRequest.value.name,
-                    folder_id: folderId,
-                    method: selectedRequest.value.method,
-                    ...data,
-                })
-            });
+            const response = await apiFetch(
+                `/collections/${collectionId}/requests`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: selectedRequest.value.name,
+                        folder_id: folderId,
+                        method: selectedRequest.value.method,
+                        ...data,
+                    }),
+                },
+            );
 
             await refreshCollections();
             clearRequestDraft(draftId);
@@ -527,12 +628,13 @@ return;
             const idx = openRequests.value.findIndex((r) => r.id === draftId);
 
             if (idx !== -1) {
-                openRequests.value[idx] = response.data.request || response.data;
+                openRequests.value[idx] =
+                    response.data.request || response.data;
             }
 
             // Sync the active selection since we replaced the item in the array
             selectedRequest.value = response.data.request || response.data;
-            
+
             showSaveRequestModal.value = false;
             pendingSaveRequestData.value = null;
 
@@ -553,8 +655,10 @@ return;
 
     const deleteCollection = async (collectionId: string) => {
         try {
-            await apiFetch(`/collections/${collectionId}`, { method: 'DELETE' });
-            
+            await apiFetch(`/collections/${collectionId}`, {
+                method: 'DELETE',
+            });
+
             if (selectedCollection.value?.id === collectionId) {
                 selectedCollection.value = null;
                 selectedRequest.value = null;
@@ -566,7 +670,7 @@ return;
                     only: ['activeCollectionId', 'activeRequestId'],
                     onSuccess: () => {
                         refreshCollections();
-                    }
+                    },
                 });
             } else {
                 await refreshCollections();
@@ -579,28 +683,36 @@ return;
     const deleteFolder = async (folderId: string) => {
         try {
             await apiFetch(`/folders/${folderId}`, { method: 'DELETE' });
-            
-            if (selectedRequest.value && selectedRequest.value.folder_id === folderId) {
+
+            if (
+                selectedRequest.value &&
+                selectedRequest.value.folder_id === folderId
+            ) {
                 const colId = selectedRequest.value.collection_id;
-                
+
                 // Remove all requests from this folder from openRequests
-                openRequests.value = openRequests.value.filter(r => r.folder_id !== folderId);
-                
-                selectedRequest.value = openRequests.value.length > 0 ? openRequests.value[openRequests.value.length - 1] : null;
-                
+                openRequests.value = openRequests.value.filter(
+                    (r) => r.folder_id !== folderId,
+                );
+
+                selectedRequest.value =
+                    openRequests.value.length > 0
+                        ? openRequests.value[openRequests.value.length - 1]
+                        : null;
+
                 cleanupChannels();
-                
-                const url = selectedRequest.value 
+
+                const url = selectedRequest.value
                     ? `/collections/${selectedRequest.value.collection_id}/requests/${selectedRequest.value.id}`
                     : `/collections/${colId}`;
-                    
+
                 router.visit(url, {
                     preserveState: true,
                     preserveScroll: true,
                     only: ['activeCollectionId', 'activeRequestId'],
                     onSuccess: () => {
                         refreshCollections();
-                    }
+                    },
                 });
             } else {
                 await refreshCollections();
@@ -613,26 +725,31 @@ return;
     const deleteRequest = async (requestId: string) => {
         try {
             await apiFetch(`/requests/${requestId}`, { method: 'DELETE' });
-            
+
             // Remove from open requests
-            openRequests.value = openRequests.value.filter(r => r.id !== requestId);
-            
+            openRequests.value = openRequests.value.filter(
+                (r) => r.id !== requestId,
+            );
+
             if (selectedRequest.value?.id === requestId) {
                 const colId = selectedRequest.value.collection_id;
-                selectedRequest.value = openRequests.value.length > 0 ? openRequests.value[openRequests.value.length - 1] : null;
+                selectedRequest.value =
+                    openRequests.value.length > 0
+                        ? openRequests.value[openRequests.value.length - 1]
+                        : null;
                 cleanupChannels();
-                
-                const url = selectedRequest.value 
+
+                const url = selectedRequest.value
                     ? `/collections/${selectedRequest.value.collection_id}/requests/${selectedRequest.value.id}`
                     : `/collections/${colId}`;
-                    
+
                 router.visit(url, {
                     preserveState: true,
                     preserveScroll: true,
                     only: ['activeCollectionId', 'activeRequestId'],
                     onSuccess: () => {
                         refreshCollections();
-                    }
+                    },
                 });
             } else {
                 await refreshCollections();
@@ -644,27 +761,38 @@ return;
 
     const deleteRequestsBatch = async (requestIds: string[]) => {
         try {
-            await apiFetch('/requests-batch', { method: 'DELETE', body: JSON.stringify({ ids: requestIds }) });
-            
+            await apiFetch('/requests-batch', {
+                method: 'DELETE',
+                body: JSON.stringify({ ids: requestIds }),
+            });
+
             // Remove deleted requests from openRequests
-            openRequests.value = openRequests.value.filter(r => !requestIds.includes(r.id));
-            
-            if (selectedRequest.value && requestIds.includes(selectedRequest.value.id)) {
+            openRequests.value = openRequests.value.filter(
+                (r) => !requestIds.includes(r.id),
+            );
+
+            if (
+                selectedRequest.value &&
+                requestIds.includes(selectedRequest.value.id)
+            ) {
                 const colId = selectedRequest.value.collection_id;
-                selectedRequest.value = openRequests.value.length > 0 ? openRequests.value[openRequests.value.length - 1] : null;
+                selectedRequest.value =
+                    openRequests.value.length > 0
+                        ? openRequests.value[openRequests.value.length - 1]
+                        : null;
                 cleanupChannels();
-                
-                const url = selectedRequest.value 
+
+                const url = selectedRequest.value
                     ? `/collections/${selectedRequest.value.collection_id}/requests/${selectedRequest.value.id}`
                     : `/collections/${colId}`;
-                    
+
                 router.visit(url, {
                     preserveState: true,
                     preserveScroll: true,
                     only: ['activeCollectionId', 'activeRequestId'],
                     onSuccess: () => {
                         refreshCollections();
-                    }
+                    },
                 });
             } else {
                 await refreshCollections();
@@ -676,17 +804,22 @@ return;
 
     const cloneRequest = async (requestId: string) => {
         try {
-            const response = await apiFetch(`/requests/${requestId}/clone`, { method: 'POST' });
+            const response = await apiFetch(`/requests/${requestId}/clone`, {
+                method: 'POST',
+            });
             await refreshCollections();
 
             if (response.data && response.data.id) {
                 const req = response.data;
                 selectRequest(req);
-                router.visit(`/collections/${req.collection_id}/requests/${req.id}`, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ['activeCollectionId', 'activeRequestId']
-                });
+                router.visit(
+                    `/collections/${req.collection_id}/requests/${req.id}`,
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['activeCollectionId', 'activeRequestId'],
+                    },
+                );
             }
         } catch (e) {
             console.error('Failed to clone request', e);
@@ -696,15 +829,19 @@ return;
     const renameFolder = async (folderId: string, name: string) => {
         // Optimistic: update in-place immediately so the UI reflects instantly
         for (const col of collections.value) {
-            const folder = col.folders?.find(f => f.id === folderId);
+            const folder = col.folders?.find((f) => f.id === folderId);
 
             if (folder) {
- folder.name = name; break; 
-}
+                folder.name = name;
+                break;
+            }
         }
 
         try {
-            await apiFetch(`/folders/${folderId}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+            await apiFetch(`/folders/${folderId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name }),
+            });
             await refreshCollections(); // confirm with server state
         } catch (e) {
             console.error('Failed to rename folder', e);
@@ -715,40 +852,50 @@ return;
     const renameRequest = async (requestId: string, name: string) => {
         // Optimistic: update in-place immediately so the UI reflects instantly
         for (const col of collections.value) {
-            const direct = col.requests.find(r => r.id === requestId);
+            const direct = col.requests.find((r) => r.id === requestId);
 
             if (direct) {
- direct.name = name; break; 
-}
+                direct.name = name;
+                break;
+            }
 
             let found = false;
 
             for (const folder of col.folders ?? []) {
-                const inFolder = folder.requests?.find(r => r.id === requestId);
+                const inFolder = folder.requests?.find(
+                    (r) => r.id === requestId,
+                );
 
                 if (inFolder) {
- inFolder.name = name; found = true; break; 
-}
+                    inFolder.name = name;
+                    found = true;
+                    break;
+                }
             }
 
             if (found) {
-break;
-}
+                break;
+            }
         }
 
         if (selectedRequest.value?.id === requestId) {
             selectedRequest.value = { ...selectedRequest.value, name };
         }
-        
+
         // Also update in openRequests
-        const openReqIdx = openRequests.value.findIndex(r => r.id === requestId);
+        const openReqIdx = openRequests.value.findIndex(
+            (r) => r.id === requestId,
+        );
 
         if (openReqIdx !== -1) {
             openRequests.value[openReqIdx].name = name;
         }
 
         try {
-            await apiFetch(`/requests/${requestId}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+            await apiFetch(`/requests/${requestId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name }),
+            });
             await refreshCollections(); // confirm with server state
         } catch (e) {
             console.error('Failed to rename request', e);
@@ -756,36 +903,50 @@ break;
         }
     };
 
-    const moveRequest = async (requestId: string, targetCollectionId: string, targetFolderId: string | null) => {
+    const moveRequest = async (
+        requestId: string,
+        targetCollectionId: string,
+        targetFolderId: string | null,
+    ) => {
         // Ensure the target collection has details loaded before moving there (so UI updates properly)
-        const targetCol = collections.value.find(c => c.id === targetCollectionId);
+        const targetCol = collections.value.find(
+            (c) => c.id === targetCollectionId,
+        );
 
         if (targetCol && !targetCol.has_loaded_details) {
             await fetchCollectionDetails(targetCollectionId);
         }
 
         try {
-            await apiFetch(`/requests/${requestId}`, { method: 'PATCH', body: JSON.stringify({
-                collection_id: targetCollectionId,
-                folder_id: targetFolderId,
-            }) });
+            await apiFetch(`/requests/${requestId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    collection_id: targetCollectionId,
+                    folder_id: targetFolderId,
+                }),
+            });
             await refreshCollections();
-            
+
             // If the moved request is the currently selected request, update it
             if (selectedRequest.value?.id === requestId) {
-                selectedRequest.value = { 
-                    ...selectedRequest.value, 
-                    collection_id: targetCollectionId, 
-                    folder_id: targetFolderId 
+                selectedRequest.value = {
+                    ...selectedRequest.value,
+                    collection_id: targetCollectionId,
+                    folder_id: targetFolderId,
                 };
-                
+
                 // If it moved to a completely different collection, we might need to navigate there
-                if (targetCollectionId !== selectedRequest.value.collection_id) {
-                     router.visit(`/collections/${targetCollectionId}/requests/${requestId}`, {
-                         preserveState: true,
-                         preserveScroll: true,
-                         only: ['activeCollectionId', 'activeRequestId']
-                     });
+                if (
+                    targetCollectionId !== selectedRequest.value.collection_id
+                ) {
+                    router.visit(
+                        `/collections/${targetCollectionId}/requests/${requestId}`,
+                        {
+                            preserveState: true,
+                            preserveScroll: true,
+                            only: ['activeCollectionId', 'activeRequestId'],
+                        },
+                    );
                 }
             }
         } catch (e) {
@@ -794,12 +955,19 @@ break;
         }
     };
 
-    const moveFolder = async (folderId: string, targetCollectionId: string, targetParentId: string | null) => {
+    const moveFolder = async (
+        folderId: string,
+        targetCollectionId: string,
+        targetParentId: string | null,
+    ) => {
         try {
-            await apiFetch(`/folders/${folderId}`, { method: 'PATCH', body: JSON.stringify({
-                collection_id: targetCollectionId,
-                parent_id: targetParentId,
-            }) });
+            await apiFetch(`/folders/${folderId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    collection_id: targetCollectionId,
+                    parent_id: targetParentId,
+                }),
+            });
             await refreshCollections();
         } catch (e) {
             console.error('Failed to move folder', e);
@@ -816,31 +984,40 @@ break;
             if (col.id === updatedReq.collection_id) {
                 // If it's a direct child of the collection
                 if (!updatedReq.folder_id) {
-                    const idx = col.requests.findIndex(r => r.id === updatedReq.id);
+                    const idx = col.requests.findIndex(
+                        (r) => r.id === updatedReq.id,
+                    );
 
                     if (idx !== -1) {
-col.requests[idx] = updatedReq;
-}
+                        col.requests[idx] = updatedReq;
+                    }
                 } else {
                     // Check folders
                     for (const folder of col.folders) {
                         if (folder.id === updatedReq.folder_id) {
-                            const idx = folder.requests.findIndex(r => r.id === updatedReq.id);
+                            const idx = folder.requests.findIndex(
+                                (r) => r.id === updatedReq.id,
+                            );
 
                             if (idx !== -1) {
-folder.requests[idx] = updatedReq;
-}
+                                folder.requests[idx] = updatedReq;
+                            }
                         }
                     }
                 }
             }
         }
-        
+
         // Update in openRequests
-        const openReqIdx = openRequests.value.findIndex(r => r.id === updatedReq.id);
+        const openReqIdx = openRequests.value.findIndex(
+            (r) => r.id === updatedReq.id,
+        );
 
         if (openReqIdx !== -1) {
-            openRequests.value[openReqIdx] = { ...openRequests.value[openReqIdx], ...updatedReq };
+            openRequests.value[openReqIdx] = {
+                ...openRequests.value[openReqIdx],
+                ...updatedReq,
+            };
         }
     };
 
@@ -849,13 +1026,13 @@ folder.requests[idx] = updatedReq;
 
     const loadSavedActiveEnvironment = () => {
         if (typeof window === 'undefined') {
-return;
-}
+            return;
+        }
 
         const savedId = localStorage.getItem('active_environment_id');
 
         if (savedId && environments.value.length > 0) {
-            const found = environments.value.find(e => e.id === savedId);
+            const found = environments.value.find((e) => e.id === savedId);
 
             if (found) {
                 activeEnvironment.value = found;
@@ -865,10 +1042,12 @@ return;
 
     const setEnvironments = (envs: any) => {
         environments.value = Array.isArray(envs) ? envs : Object.values(envs);
-        
+
         // Re-sync active environment object if it was selected before
         if (activeEnvironment.value) {
-            const updatedActive = environments.value.find((e: EnvironmentItem) => e.id === activeEnvironment.value?.id);
+            const updatedActive = environments.value.find(
+                (e: EnvironmentItem) => e.id === activeEnvironment.value?.id,
+            );
             activeEnvironment.value = updatedActive || null;
         } else {
             loadSavedActiveEnvironment();
@@ -877,15 +1056,22 @@ return;
 
     const hasRequestedInitialEnvironments = ref(false);
 
-    watch(() => page.props.environments, (newEnvs: any) => {
-        if (newEnvs !== null && newEnvs !== undefined) {
-            hasRequestedInitialEnvironments.value = true;
-            setEnvironments(newEnvs);
-        } else if (!hasRequestedInitialEnvironments.value && page.props.currentTeam) {
-            hasRequestedInitialEnvironments.value = true;
-            queueFetchMissingGlobalData('environments');
-        }
-    }, { immediate: true });
+    watch(
+        () => page.props.environments,
+        (newEnvs: any) => {
+            if (newEnvs !== null && newEnvs !== undefined) {
+                hasRequestedInitialEnvironments.value = true;
+                setEnvironments(newEnvs);
+            } else if (
+                !hasRequestedInitialEnvironments.value &&
+                page.props.currentTeam
+            ) {
+                hasRequestedInitialEnvironments.value = true;
+                queueFetchMissingGlobalData('environments');
+            }
+        },
+        { immediate: true },
+    );
 
     const setActiveEnvironment = (env: EnvironmentItem | null) => {
         activeEnvironment.value = env;
@@ -903,19 +1089,27 @@ return;
 
     const createEnvironment = (name: string) => {
         return new Promise((resolve) => {
-            router.post('/environments', { name, variables: [] }, {
-                preserveState: true,
-                preserveScroll: true,
-                onSuccess: () => resolve(true),
-                onError: (e) => {
-                    console.error('Failed to create environment', e);
-                    resolve(false);
-                }
-            });
+            router.post(
+                '/environments',
+                { name, variables: [] },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => resolve(true),
+                    onError: (e) => {
+                        console.error('Failed to create environment', e);
+                        resolve(false);
+                    },
+                },
+            );
         });
     };
 
-    const updateEnvironment = (envId: string, name: string, variables: EnvironmentVariableItem[]) => {
+    const updateEnvironment = (
+        envId: string,
+        name: string,
+        variables: EnvironmentVariableItem[],
+    ) => {
         return new Promise((resolve) => {
             router.put(`/environments/${envId}`, { name, variables } as any, {
                 preserveState: true,
@@ -924,7 +1118,7 @@ return;
                 onError: (e) => {
                     console.error('Failed to update environment', e);
                     resolve(false);
-                }
+                },
             });
         });
     };
@@ -944,7 +1138,7 @@ return;
                 onError: (e) => {
                     console.error('Failed to delete environment', e);
                     resolve(false);
-                }
+                },
             });
         });
     };
@@ -955,25 +1149,22 @@ return;
 
     const importEnvironment = (data: { file?: File; content?: string }) => {
         return new Promise((resolve) => {
-            router.post(
-                '/environments/import',
-                data as any,
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    forceFormData: !!data.file,
-                    onSuccess: () => {
-                        toast.success('Environment imported successfully');
-                        resolve(true);
-                    },
-                    onError: (e) => {
-                        console.error('Failed to import environment', e);
-                        const msg = (e as any)?.error || 'Failed to import environment';
-                        toast.error(msg);
-                        resolve(false);
-                    },
+            router.post('/environments/import', data as any, {
+                preserveState: true,
+                preserveScroll: true,
+                forceFormData: !!data.file,
+                onSuccess: () => {
+                    toast.success('Environment imported successfully');
+                    resolve(true);
                 },
-            );
+                onError: (e) => {
+                    console.error('Failed to import environment', e);
+                    const msg =
+                        (e as any)?.error || 'Failed to import environment';
+                    toast.error(msg);
+                    resolve(false);
+                },
+            });
         });
     };
 
@@ -981,29 +1172,31 @@ return;
         cleanupChannels();
     });
 
-
     const _navigateToRequest = (newActive: RequestItem | null) => {
         selectedRequest.value = newActive;
 
         if (newActive) {
             if (!newActive.id.startsWith('new-')) {
-                router.visit(`/collections/${newActive.collection_id}/requests/${newActive.id}`, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ['activeCollectionId', 'activeRequestId']
-                });
+                router.visit(
+                    `/collections/${newActive.collection_id}/requests/${newActive.id}`,
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['activeCollectionId', 'activeRequestId'],
+                    },
+                );
             }
         } else if (selectedCollection.value) {
             router.visit(`/collections/${selectedCollection.value.id}`, {
                 preserveState: true,
                 preserveScroll: true,
-                only: ['activeCollectionId', 'activeRequestId']
+                only: ['activeCollectionId', 'activeRequestId'],
             });
         } else {
             router.visit('/collections', {
                 preserveState: true,
                 preserveScroll: true,
-                only: ['activeCollectionId', 'activeRequestId']
+                only: ['activeCollectionId', 'activeRequestId'],
             });
         }
     };
@@ -1012,15 +1205,15 @@ return;
         const reqToKeep = openRequests.value.find((r) => r.id === requestId);
 
         if (!reqToKeep) {
-return;
-}
-        
+            return;
+        }
+
         openRequests.value.forEach((r) => {
             if (r.id !== requestId) {
-clearRequestDraft(r.id);
-}
+                clearRequestDraft(r.id);
+            }
         });
-        
+
         openRequests.value = [reqToKeep];
 
         if (selectedRequest.value?.id !== requestId) {
@@ -1032,41 +1225,53 @@ clearRequestDraft(r.id);
         const idx = openRequests.value.findIndex((r) => r.id === requestId);
 
         if (idx === -1) {
-return;
-}
-        
+            return;
+        }
+
         const requestsToClose = openRequests.value.slice(idx + 1);
         requestsToClose.forEach((r) => clearRequestDraft(r.id));
-        
+
         openRequests.value = openRequests.value.slice(0, idx + 1);
-        
-        if (!openRequests.value.some(r => r.id === selectedRequest.value?.id)) {
+
+        if (
+            !openRequests.value.some((r) => r.id === selectedRequest.value?.id)
+        ) {
             _navigateToRequest(openRequests.value[idx] || null);
         }
     };
 
     const reorderRequests = (oldIndex: number, newIndex: number) => {
-        if (oldIndex < 0 || oldIndex >= openRequests.value.length || newIndex < 0 || newIndex >= openRequests.value.length) {
-return;
-}
-        
+        if (
+            oldIndex < 0 ||
+            oldIndex >= openRequests.value.length ||
+            newIndex < 0 ||
+            newIndex >= openRequests.value.length
+        ) {
+            return;
+        }
+
         const item = openRequests.value.splice(oldIndex, 1)[0];
         openRequests.value.splice(newIndex, 0, item);
     };
 
     const duplicateRequest = async (request: RequestItem) => {
         try {
-            const response = await apiFetch(`/requests/${request.id}/clone`, { method: 'POST' });
+            const response = await apiFetch(`/requests/${request.id}/clone`, {
+                method: 'POST',
+            });
             await refreshCollections();
 
             if (response.data && response.data.id) {
                 const req = response.data;
                 selectRequest(req);
-                router.visit(`/collections/${req.collection_id}/requests/${req.id}`, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ['activeCollectionId', 'activeRequestId']
-                });
+                router.visit(
+                    `/collections/${req.collection_id}/requests/${req.id}`,
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['activeCollectionId', 'activeRequestId'],
+                    },
+                );
             }
         } catch (e) {
             console.error('Failed to duplicate request', e);
@@ -1126,7 +1331,7 @@ return;
         closeOtherRequests,
         closeRequestsToRight,
         reorderRequests,
-        duplicateRequest
+        duplicateRequest,
     };
 });
 

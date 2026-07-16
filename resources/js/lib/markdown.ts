@@ -3,8 +3,8 @@
  */
 export function parseMarkdown(markdown: string | null | undefined): string {
     if (!markdown) {
-return '';
-}
+        return '';
+    }
 
     // Escape HTML to prevent XSS
     let html = markdown
@@ -23,7 +23,9 @@ return '';
             const cleanCode = isBlockquote
                 ? code
                       .split(/\r?\n/)
-                      .map((line: string) => line.replace(/^[ \t]*&gt;[ \t]?/, ''))
+                      .map((line: string) =>
+                          line.replace(/^[ \t]*&gt;[ \t]?/, ''),
+                      )
                       .join('\n')
                       .trim()
                 : code.trim();
@@ -35,7 +37,9 @@ return '';
                 `<pre class="bg-muted p-4 rounded-lg my-4 overflow-x-auto border border-border text-xs font-mono text-foreground not-italic font-normal"><code ${languageClass}>${cleanCode}</code></pre>`,
             );
 
-            return isBlockquote ? `&gt; ${placeholder}\n\n` : `${placeholder}\n\n`;
+            return isBlockquote
+                ? `&gt; ${placeholder}\n\n`
+                : `${placeholder}\n\n`;
         },
     );
 
@@ -47,7 +51,9 @@ return '';
             const cleanCode = isBlockquote
                 ? code
                       .split(/\r?\n/)
-                      .map((line: string) => line.replace(/^[ \t]*&gt;[ \t]?/, ''))
+                      .map((line: string) =>
+                          line.replace(/^[ \t]*&gt;[ \t]?/, ''),
+                      )
                       .join('\n')
                       .trim()
                 : code.trim();
@@ -59,7 +65,9 @@ return '';
                 `<pre class="bg-muted p-4 rounded-lg my-4 overflow-x-auto border border-border text-xs font-mono text-foreground not-italic font-normal"><code ${languageClass}>${cleanCode}</code></pre>`,
             );
 
-            return isBlockquote ? `&gt; ${placeholder}\n\n` : `${placeholder}\n\n`;
+            return isBlockquote
+                ? `&gt; ${placeholder}\n\n`
+                : `${placeholder}\n\n`;
         },
     );
 
@@ -75,47 +83,68 @@ return '';
     });
 
     // 3. Blockquotes: group consecutive lines starting with &gt; into a single blockquote
-    html = html.replace(
-        /^(?:[ \t]*&gt;[^\n]*\r?\n?)+/gm,
-        (blockquoteBlock) => {
-            const innerLines = blockquoteBlock
-                .trim()
-                .split(/\r?\n/)
-                .map((line) => line.replace(/^[ \t]*&gt;[ \t]?/, '').trim())
-                .filter(Boolean);
+    html = html.replace(/^(?:[ \t]*&gt;[^\n]*\r?\n?)+/gm, (blockquoteBlock) => {
+        const innerLines = blockquoteBlock
+            .trim()
+            .split(/\r?\n/)
+            .map((line) => line.replace(/^[ \t]*&gt;[ \t]?/, '').trim())
+            .filter(Boolean);
 
-            if (innerLines.length === 0) {
-                return '';
-            }
+        if (innerLines.length === 0) {
+            return '';
+        }
 
-            const formattedContent = innerLines
-                .map((line) => {
-                    if (/^@@@FENCEDCODEBLOCK\d+@@@$/.test(line) || /^@@@INLINECODE\d+@@@$/.test(line)) {
-                        return line;
-                    }
+        const formattedContent = innerLines
+            .map((line) => {
+                if (
+                    /^@@@FENCEDCODEBLOCK\d+@@@$/.test(line) ||
+                    /^@@@INLINECODE\d+@@@$/.test(line)
+                ) {
+                    return line;
+                }
 
-                    if (/^(<h[1-6]|<ul|<ol|<li|<div|<table|<hr)/.test(line)) {
-                        return line;
-                    }
+                if (/^(<h[1-6]|<ul|<ol|<li|<div|<table|<hr)/.test(line)) {
+                    return line;
+                }
 
-                    return `<p class="my-1">${line}</p>`;
-                })
-                .join('\n');
+                return `<p class="my-1">${line}</p>`;
+            })
+            .join('\n');
 
-            return `<blockquote class="border-l-4 border-primary pl-4 italic text-muted-foreground my-4 space-y-2">\n${formattedContent}\n</blockquote>\n\n`;
-        },
-    );
+        return `<blockquote class="border-l-4 border-primary pl-4 italic text-muted-foreground my-4 space-y-2">\n${formattedContent}\n</blockquote>\n\n`;
+    });
 
     // 4. Headers: # through ######
-    html = html.replace(/^######\s+(.+)$/gm, '<h6 class="text-sm font-semibold mt-4 mb-2 text-foreground">$1</h6>');
-    html = html.replace(/^#####\s+(.+)$/gm, '<h5 class="text-base font-semibold mt-4 mb-2 text-foreground">$1</h5>');
-    html = html.replace(/^####\s+(.+)$/gm, '<h4 class="text-lg font-semibold mt-5 mb-2 text-foreground">$1</h4>');
-    html = html.replace(/^###\s+(.+)$/gm, '<h3 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h3>');
-    html = html.replace(/^##\s+(.+)$/gm, '<h2 class="text-2xl font-bold mt-8 mb-4 border-b border-border pb-1 text-foreground">$1</h2>');
-    html = html.replace(/^#\s+(.+)$/gm, '<h1 class="text-3xl font-extrabold mt-10 mb-6 border-b border-border pb-2 text-foreground">$1</h1>');
+    html = html.replace(
+        /^######\s+(.+)$/gm,
+        '<h6 class="text-sm font-semibold mt-4 mb-2 text-foreground">$1</h6>',
+    );
+    html = html.replace(
+        /^#####\s+(.+)$/gm,
+        '<h5 class="text-base font-semibold mt-4 mb-2 text-foreground">$1</h5>',
+    );
+    html = html.replace(
+        /^####\s+(.+)$/gm,
+        '<h4 class="text-lg font-semibold mt-5 mb-2 text-foreground">$1</h4>',
+    );
+    html = html.replace(
+        /^###\s+(.+)$/gm,
+        '<h3 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h3>',
+    );
+    html = html.replace(
+        /^##\s+(.+)$/gm,
+        '<h2 class="text-2xl font-bold mt-8 mb-4 border-b border-border pb-1 text-foreground">$1</h2>',
+    );
+    html = html.replace(
+        /^#\s+(.+)$/gm,
+        '<h1 class="text-3xl font-extrabold mt-10 mb-6 border-b border-border pb-2 text-foreground">$1</h1>',
+    );
 
     // 5. Horizontal Rules: --- or *** or ___ on their own line
-    html = html.replace(/^[ \t]*([-*_])[ \t]*\1[ \t]*\1+[ \t]*$/gm, '<hr class="my-6 border-t border-border" />');
+    html = html.replace(
+        /^[ \t]*([-*_])[ \t]*\1[ \t]*\1+[ \t]*$/gm,
+        '<hr class="my-6 border-t border-border" />',
+    );
 
     // 6. Bold & Italic
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -124,12 +153,16 @@ return '';
     html = html.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
 
     // 7. Links: [text](url)
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>');
+    html = html.replace(
+        /\[([^\]]+)\]\(([^)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>',
+    );
 
     // 8. Nested Bullet Lists (Unordered & Ordered)
     // Line-by-line scanner that collects list blocks (tolerates blank lines between items)
     {
-        const isListLine = (ln: string) => /^[ \t]*(?:[\*\-]|\d+\.)\s+/.test(ln);
+        const isListLine = (ln: string) =>
+            /^[ \t]*(?:[\*\-]|\d+\.)\s+/.test(ln);
         const allLines = html.split('\n');
         const outputLines: string[] = [];
         let i = 0;
@@ -148,9 +181,12 @@ return '';
                         // Blank line — peek ahead: if a list item follows, skip blanks
                         let j = i + 1;
 
-                        while (j < allLines.length && /^\s*$/.test(allLines[j])) {
-j++;
-}
+                        while (
+                            j < allLines.length &&
+                            /^\s*$/.test(allLines[j])
+                        ) {
+                            j++;
+                        }
 
                         if (j < allLines.length && isListLine(allLines[j])) {
                             i = j; // skip blank gap, continue collecting
@@ -163,15 +199,20 @@ j++;
                 }
 
                 // --- build nested tree from collected lines ---
-                type LI = { indent: number; ordered: boolean; content: string; children: LI[] };
+                type LI = {
+                    indent: number;
+                    ordered: boolean;
+                    content: string;
+                    children: LI[];
+                };
                 const items: LI[] = [];
 
                 for (const ln of listItemLines) {
                     const m = ln.match(/^([ \t]*)([\*\-]|\d+\.)\s+(.*)/);
 
                     if (!m) {
-continue;
-}
+                        continue;
+                    }
 
                     items.push({
                         indent: m[1].replace(/\t/g, '    ').length,
@@ -182,19 +223,25 @@ continue;
                 }
 
                 if (items.length === 0) {
-continue;
-}
+                    continue;
+                }
 
                 const buildTree = (flat: LI[]): LI[] => {
                     const roots: LI[] = [];
                     const stack: LI[] = [];
 
                     for (const item of flat) {
-                        while (stack.length > 0 && stack[stack.length - 1].indent >= item.indent) {
-stack.pop();
-}
+                        while (
+                            stack.length > 0 &&
+                            stack[stack.length - 1].indent >= item.indent
+                        ) {
+                            stack.pop();
+                        }
 
-                        (stack.length === 0 ? roots : stack[stack.length - 1].children).push(item);
+                        (stack.length === 0
+                            ? roots
+                            : stack[stack.length - 1].children
+                        ).push(item);
                         stack.push(item);
                     }
 
@@ -203,16 +250,19 @@ stack.pop();
 
                 const render = (nodes: LI[], depth: number): string => {
                     if (nodes.length === 0) {
-return '';
-}
+                        return '';
+                    }
 
                     const ordered = nodes[0].ordered;
                     const tag = ordered ? 'ol' : 'ul';
                     const style = ordered ? 'list-decimal' : 'list-disc';
                     const margin = depth === 0 ? 'my-2' : 'mt-1';
-                    const inner = nodes.map(n =>
-                        `<li class="ml-4 ${style} text-muted-foreground">${n.content}${render(n.children, depth + 1)}</li>`
-                    ).join('');
+                    const inner = nodes
+                        .map(
+                            (n) =>
+                                `<li class="ml-4 ${style} text-muted-foreground">${n.content}${render(n.children, depth + 1)}</li>`,
+                        )
+                        .join('');
 
                     return `<${tag} class="${margin} space-y-1">${inner}</${tag}>`;
                 };
@@ -238,7 +288,11 @@ return '';
                 return tableBlock;
             }
 
-            if (!/^[ \t]*\|?[ \t]*:?[-=]+:?[ \t]*(\|([ \t]*:?[-=]+:?[ \t]*\|?)+)?$/.test(lines[1])) {
+            if (
+                !/^[ \t]*\|?[ \t]*:?[-=]+:?[ \t]*(\|([ \t]*:?[-=]+:?[ \t]*\|?)+)?$/.test(
+                    lines[1],
+                )
+            ) {
                 return tableBlock;
             }
 
@@ -263,7 +317,10 @@ return '';
             };
 
             const headerHtml = parseRow(lines[0], true);
-            const bodyRowsHtml = lines.slice(2).map((r) => parseRow(r, false)).join('');
+            const bodyRowsHtml = lines
+                .slice(2)
+                .map((r) => parseRow(r, false))
+                .join('');
 
             return `<div class="overflow-x-auto my-6 border border-border rounded-lg shadow-sm"><table class="w-full border-collapse text-xs md:text-sm"><thead>${headerHtml}</thead><tbody>${bodyRowsHtml}</tbody></table></div>\n\n`;
         },
@@ -280,7 +337,11 @@ return '';
             }
 
             // If it starts with block-level tags or code block placeholder, don't wrap in <p>
-            if (/^(<pre|<h[1-6]|<blockquote|<ul|<ol|<li|<div|<table|<hr|@@@FENCEDCODEBLOCK)/.test(trimmed)) {
+            if (
+                /^(<pre|<h[1-6]|<blockquote|<ul|<ol|<li|<div|<table|<hr|@@@FENCEDCODEBLOCK)/.test(
+                    trimmed,
+                )
+            ) {
                 return trimmed;
             }
 
@@ -291,19 +352,13 @@ return '';
 
     // Restore inline code blocks
     inlineCodeBlocks.forEach((blockHtml, idx) => {
-        const placeholderRegex = new RegExp(
-            `@@@INLINECODE${idx}@@@`,
-            'g',
-        );
+        const placeholderRegex = new RegExp(`@@@INLINECODE${idx}@@@`, 'g');
         html = html.replace(placeholderRegex, blockHtml);
     });
 
     // Restore fenced code blocks
     codeBlocks.forEach((blockHtml, idx) => {
-        const placeholderRegex = new RegExp(
-            `@@@FENCEDCODEBLOCK${idx}@@@`,
-            'g',
-        );
+        const placeholderRegex = new RegExp(`@@@FENCEDCODEBLOCK${idx}@@@`, 'g');
         html = html.replace(placeholderRegex, blockHtml);
     });
 

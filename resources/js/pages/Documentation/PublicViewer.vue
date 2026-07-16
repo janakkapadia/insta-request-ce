@@ -12,7 +12,7 @@ import {
     Sparkles,
     Terminal,
     Sun,
-    Moon
+    Moon,
 } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
@@ -87,23 +87,23 @@ const props = defineProps<{
 
 const activeEnvVariables = computed(() => {
     if (!props.environment || !props.environment.variables) {
-return [];
-}
+        return [];
+    }
 
-    return props.environment.variables.filter(v => v.enabled !== false);
+    return props.environment.variables.filter((v) => v.enabled !== false);
 });
 
 const substituteEnvVariables = (text: string | null | undefined): string => {
     if (!text || typeof text !== 'string') {
-return text || '';
-}
+        return text || '';
+    }
 
     if (!activeEnvVariables.value.length) {
-return text;
-}
+        return text;
+    }
 
     let result = text;
-    activeEnvVariables.value.forEach(v => {
+    activeEnvVariables.value.forEach((v) => {
         const regex1 = new RegExp(`\\{\\{${v.key}\\}\\}`, 'g');
         const regex2 = new RegExp(`\\{${v.key}\\}`, 'g');
         result = result.replace(regex1, v.value).replace(regex2, v.value);
@@ -132,7 +132,13 @@ const searchQuery = ref('');
 const selectedRequestId = ref<string | null>(null);
 const showDocsDropdown = ref(false);
 
-const switchCollection = (docItem: { id: string; collection_id: string; public_slug?: string; version: string; name: string }) => {
+const switchCollection = (docItem: {
+    id: string;
+    collection_id: string;
+    public_slug?: string;
+    version: string;
+    name: string;
+}) => {
     showDocsDropdown.value = false;
 
     if (docItem.public_slug) {
@@ -143,7 +149,16 @@ const switchCollection = (docItem: { id: string; collection_id: string; public_s
 };
 
 // Code Generation State
-const selectedLang = ref<'curl' | 'fetch' | 'axios' | 'python' | 'go' | 'php-guzzle' | 'php-curl' | 'java'>('curl');
+const selectedLang = ref<
+    | 'curl'
+    | 'fetch'
+    | 'axios'
+    | 'python'
+    | 'go'
+    | 'php-guzzle'
+    | 'php-curl'
+    | 'java'
+>('curl');
 const copiedState = ref(false);
 const pathCopied = ref(false);
 
@@ -153,8 +168,8 @@ const activeExampleIndex = ref<Record<string, number>>({});
 // Filtered Requests
 const filteredRequests = computed(() => {
     if (!props.requests) {
-return [];
-}
+        return [];
+    }
 
     if (!searchQuery.value.trim()) {
         return props.requests;
@@ -163,27 +178,29 @@ return [];
     const query = searchQuery.value.toLowerCase();
 
     return props.requests.filter(
-        (r) => r.name.toLowerCase().includes(query) || r.url.toLowerCase().includes(query)
+        (r) =>
+            r.name.toLowerCase().includes(query) ||
+            r.url.toLowerCase().includes(query),
     );
 });
 
 const rootFolders = computed(() => {
     if (!props.collection || !props.collection.folders) {
-return [];
-}
+        return [];
+    }
 
-    return props.collection.folders.filter(f => !f.parent_id);
+    return props.collection.folders.filter((f) => !f.parent_id);
 });
 
 const rootRequests = computed(() => {
-    return filteredRequests.value.filter(r => !r.folder_id);
+    return filteredRequests.value.filter((r) => !r.folder_id);
 });
 
 // Currently viewed request
 const activeRequest = computed(() => {
     if (!selectedRequestId.value) {
-return null;
-}
+        return null;
+    }
 
     return props.requests.find((r) => r.id === selectedRequestId.value) || null;
 });
@@ -193,23 +210,32 @@ const parsedHeaders = computed(() => {
     const req = activeRequest.value;
 
     if (!req || !req.headers) {
-return [];
-}
-    
+        return [];
+    }
+
     // If it's an array (which holds structured objects key/value/enabled/description)
     if (Array.isArray(req.headers)) {
         return req.headers
-            .filter(h => h && typeof h === 'object' && h.key && h.enabled !== false)
-            .map(h => ({ ...h, value: substituteEnvVariables(String(h.value || '')) }));
+            .filter(
+                (h) =>
+                    h && typeof h === 'object' && h.key && h.enabled !== false,
+            )
+            .map((h) => ({
+                ...h,
+                value: substituteEnvVariables(String(h.value || '')),
+            }));
     }
-    
+
     // If it's stored as a key-value object
     if (typeof req.headers === 'object') {
         return Object.entries(req.headers)
             .filter(([k, v]) => k && v !== undefined && v !== null)
-            .map(([k, v]) => ({ key: k, value: substituteEnvVariables(String(v)) }));
+            .map(([k, v]) => ({
+                key: k,
+                value: substituteEnvVariables(String(v)),
+            }));
     }
-    
+
     return [];
 });
 
@@ -218,23 +244,32 @@ const parsedQueryParams = computed(() => {
     const req = activeRequest.value;
 
     if (!req || !req.query_params) {
-return [];
-}
-    
+        return [];
+    }
+
     // If it's an array
     if (Array.isArray(req.query_params)) {
         return req.query_params
-            .filter(q => q && typeof q === 'object' && q.key && q.enabled !== false)
-            .map(q => ({ ...q, value: substituteEnvVariables(String(q.value || '')) }));
+            .filter(
+                (q) =>
+                    q && typeof q === 'object' && q.key && q.enabled !== false,
+            )
+            .map((q) => ({
+                ...q,
+                value: substituteEnvVariables(String(q.value || '')),
+            }));
     }
-    
+
     // If it's stored as a key-value object
     if (typeof req.query_params === 'object') {
         return Object.entries(req.query_params)
             .filter(([k, v]) => k && v !== undefined && v !== null)
-            .map(([k, v]) => ({ key: k, value: substituteEnvVariables(String(v)) }));
+            .map(([k, v]) => ({
+                key: k,
+                value: substituteEnvVariables(String(v)),
+            }));
     }
-    
+
     return [];
 });
 
@@ -242,27 +277,35 @@ return [];
 
 // Pre-render content
 const introHtml = computed(() => {
-    return parseMarkdown((props.documentation && props.documentation.markdown_intro) || '# API Documentation\nWelcome to our API reference portal.');
+    return parseMarkdown(
+        (props.documentation && props.documentation.markdown_intro) ||
+            '# API Documentation\nWelcome to our API reference portal.',
+    );
 });
 
 const authHtml = computed(() => {
-    return parseMarkdown((props.documentation && props.documentation.auth_info) || '');
+    return parseMarkdown(
+        (props.documentation && props.documentation.auth_info) || '',
+    );
 });
 
 const requestDescHtml = computed(() => {
     if (!activeRequest.value) {
-return '';
-}
+        return '';
+    }
 
-    return parseMarkdown(activeRequest.value.description || '*No detailed documentation provided for this endpoint yet.*');
+    return parseMarkdown(
+        activeRequest.value.description ||
+            '*No detailed documentation provided for this endpoint yet.*',
+    );
 });
 
 // Helper to extract clean raw body content string based on body mode configuration
 const extractBodyContent = (body: any): string => {
     if (!body) {
-return '';
-}
-    
+        return '';
+    }
+
     let parsed: any = null;
 
     if (typeof body === 'string') {
@@ -274,7 +317,7 @@ return '';
     } else {
         parsed = body;
     }
-    
+
     if (parsed && typeof parsed === 'object') {
         if ('mode' in parsed) {
             const mode = parsed.mode;
@@ -289,14 +332,23 @@ return '';
 
             if (mode === 'urlencoded') {
                 const list = parsed.urlencoded || [];
-                const enabled = list.filter((item: any) => item && item.key && item.enabled !== false);
+                const enabled = list.filter(
+                    (item: any) => item && item.key && item.enabled !== false,
+                );
 
-                return enabled.map((item: any) => `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value || '')}`).join('&');
+                return enabled
+                    .map(
+                        (item: any) =>
+                            `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value || '')}`,
+                    )
+                    .join('&');
             }
 
             if (mode === 'formdata') {
                 const list = parsed.formdata || [];
-                const enabled = list.filter((item: any) => item && item.key && item.enabled !== false);
+                const enabled = list.filter(
+                    (item: any) => item && item.key && item.enabled !== false,
+                );
                 const obj: Record<string, string> = {};
                 enabled.forEach((item: any) => {
                     obj[item.key] = item.value || '';
@@ -311,24 +363,31 @@ return '';
 
                 if (gql.variables) {
                     try {
-                        vars = typeof gql.variables === 'string' ? JSON.parse(gql.variables) : gql.variables;
+                        vars =
+                            typeof gql.variables === 'string'
+                                ? JSON.parse(gql.variables)
+                                : gql.variables;
                     } catch {}
                 }
 
-                return JSON.stringify({
-                    query: gql.query || '',
-                    variables: vars
-                }, null, 2);
+                return JSON.stringify(
+                    {
+                        query: gql.query || '',
+                        variables: vars,
+                    },
+                    null,
+                    2,
+                );
             }
         }
-        
+
         try {
             return JSON.stringify(parsed, null, 2);
         } catch {
             return String(parsed);
         }
     }
-    
+
     return String(body);
 };
 
@@ -337,12 +396,14 @@ const generatedCode = computed(() => {
     const req = activeRequest.value;
 
     if (!req) {
-return '';
-}
+        return '';
+    }
 
     const method = req.method.toUpperCase();
-    const url = substituteEnvVariables(req.url || 'https://api.example.com/endpoint');
-    
+    const url = substituteEnvVariables(
+        req.url || 'https://api.example.com/endpoint',
+    );
+
     // Parse body using extractBodyContent helper (only for methods that support request bodies, e.g. POST, PUT, PATCH)
     const hasRequestBody = ['POST', 'PUT', 'PATCH'].includes(method);
     const rawBody = hasRequestBody ? extractBodyContent(req.body) : '';
@@ -350,7 +411,9 @@ return '';
 
     // De-duplicate headers, adding Content-Type if missing and if a body is present
     const rawHeaders = parsedHeaders.value;
-    const hasContentType = rawHeaders.some(h => h.key.toLowerCase() === 'content-type');
+    const hasContentType = rawHeaders.some(
+        (h) => h.key.toLowerCase() === 'content-type',
+    );
     const headersList = [...rawHeaders];
 
     if (!hasContentType && bodyStr) {
@@ -362,7 +425,7 @@ return '';
             return `fetch("${url}", {
   method: "${method}",
   headers: {
-    ${headersList.map(h => `"${h.key}": "${h.value}"`).join(',\n    ')}
+    ${headersList.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ')}
   }${bodyStr ? `,\n  body: JSON.stringify(${bodyStr.split('\n').join('\n  ')})` : ''}
 })
 .then(response => response.json())
@@ -374,7 +437,7 @@ return '';
 
 axios({
   method: '${method.toLowerCase()}',
-  url: '${url}'${bodyStr ? `,\n  data: ${bodyStr.split('\n').join('\n  ')}` : ''}${headersList.length ? `,\n  headers: {\n    ` + headersList.map(h => `'${h.key}': '${h.value}'`).join(',\n    ') + `\n  }` : ''}
+  url: '${url}'${bodyStr ? `,\n  data: ${bodyStr.split('\n').join('\n  ')}` : ''}${headersList.length ? `,\n  headers: {\n    ` + headersList.map((h) => `'${h.key}': '${h.value}'`).join(',\n    ') + `\n  }` : ''}
 })
 .then(response => {
   console.log(response.data);
@@ -387,7 +450,7 @@ axios({
             return `import requests
 
 url = "${url}"
-${headersList.length ? `headers = {\n    ` + headersList.map(h => `"${h.key}": "${h.value}"`).join(',\n    ') + `\n}\n` : ''}${bodyStr ? `payload = ${JSON.stringify(bodyStr)}\n` : ''}
+${headersList.length ? `headers = {\n    ` + headersList.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ') + `\n}\n` : ''}${bodyStr ? `payload = ${JSON.stringify(bodyStr)}\n` : ''}
 response = requests.${method.toLowerCase()}(
     url${headersList.length ? ', headers=headers' : ''}${bodyStr ? ', data=payload' : ''}
 )
@@ -409,7 +472,7 @@ func main() {
 	url := "${url}"
 	${bodyStr ? `var jsonStr = []byte(\`${bodyStr}\`)\n\treq, _ := http.NewRequest("${method}", url, bytes.NewBuffer(jsonStr))` : `req, _ := http.NewRequest("${method}", url, nil)`}
 
-	${headersList.map(h => `req.Header.Set("${h.key}", "${h.value}")`).join('\n\t')}
+	${headersList.map((h) => `req.Header.Set("${h.key}", "${h.value}")`).join('\n\t')}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -423,11 +486,12 @@ func main() {
 	fmt.Println("response Body:", string(body))
 }`;
 
-        case 'php-guzzle':
-            {
-                const headersObjStr = headersList.map(h => `'${h.key}' => '${h.value}'`).join(',\n        ');
+        case 'php-guzzle': {
+            const headersObjStr = headersList
+                .map((h) => `'${h.key}' => '${h.value}'`)
+                .join(',\n        ');
 
-                return `<?php
+            return `<?php
 require 'vendor/autoload.php';
 
 use GuzzleHttp\\Client;
@@ -438,15 +502,18 @@ $response = $client->request('${method}', '${url}', [
 ]);
 
 echo $response->getBody();`;
-            }
+        }
 
-        case 'php-curl':
-            {
-                const headersArrStr = headersList.length 
-                    ? `[\n        ` + headersList.map(h => `'${h.key}: ${h.value}'`).join(',\n        ') + `\n    ]`
-                    : '[]';
+        case 'php-curl': {
+            const headersArrStr = headersList.length
+                ? `[\n        ` +
+                  headersList
+                      .map((h) => `'${h.key}: ${h.value}'`)
+                      .join(',\n        ') +
+                  `\n    ]`
+                : '[]';
 
-                return `<?php
+            return `<?php
 
 $curl = curl_init();
 
@@ -466,16 +533,17 @@ $response = curl_exec($curl);
 
 curl_close($curl);
 echo $response;`;
-            }
+        }
 
-        case 'java':
-            {
-                const javaHeaders = headersList.map(h => `.header("${h.key}", "${h.value}")`).join('\n            ');
-                const javaBodyPublisher = bodyStr 
-                    ? `HttpRequest.BodyPublishers.ofString("""\n${bodyStr.replace(/"""/g, '\\"\\"\\"')}\n""")`
-                    : `HttpRequest.BodyPublishers.noBody()`;
+        case 'java': {
+            const javaHeaders = headersList
+                .map((h) => `.header("${h.key}", "${h.value}")`)
+                .join('\n            ');
+            const javaBodyPublisher = bodyStr
+                ? `HttpRequest.BodyPublishers.ofString("""\n${bodyStr.replace(/"""/g, '\\"\\"\\"')}\n""")`
+                : `HttpRequest.BodyPublishers.noBody()`;
 
-                return `import java.net.URI;
+            return `import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -495,12 +563,14 @@ public class Main {
         System.out.println("Response: " + response.body());
     }
 }`;
-            }
+        }
 
         case 'curl':
         default:
             const headersCurl = headersList.length
-                ? headersList.map(h => `-H "${h.key}: ${h.value}"`).join(' \\\n  ')
+                ? headersList
+                      .map((h) => `-H "${h.key}: ${h.value}"`)
+                      .join(' \\\n  ')
                 : '';
 
             return `curl -X ${method} "${url}"${headersCurl ? ` \\\n  ${headersCurl}` : ''}${bodyStr ? ` \\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'` : ''}`;
@@ -512,11 +582,11 @@ const copyTextToClipboard = (text: string) => {
     if (navigator.clipboard && window.isSecureContext) {
         return navigator.clipboard.writeText(text);
     } else {
-        const textArea = document.createElement("textarea");
+        const textArea = document.createElement('textarea');
         textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
@@ -545,8 +615,8 @@ const copySnippet = () => {
 // Custom Regex-based syntax highlighter for API request snippets
 const highlightCode = (code: string, lang: string): string => {
     if (!code) {
-return '';
-}
+        return '';
+    }
 
     // 1. Escape HTML
     let escaped = code
@@ -565,47 +635,132 @@ return '';
 
     // a. Extract comments (ensure we don't match double slashes inside URLs like http://)
     if (lang === 'python') {
-        escaped = escaped.replace(/(#[^\n]*)/g, (_, comment) => addPlaceholder(comment, 'text-zinc-500 dark:text-zinc-400 italic'));
+        escaped = escaped.replace(/(#[^\n]*)/g, (_, comment) =>
+            addPlaceholder(comment, 'text-zinc-500 dark:text-zinc-400 italic'),
+        );
     } else {
-        escaped = escaped.replace(/((?<!:)\/\/[^\n]*)/g, (_, comment) => addPlaceholder(comment, 'text-zinc-500 dark:text-zinc-400 italic'));
+        escaped = escaped.replace(/((?<!:)\/\/[^\n]*)/g, (_, comment) =>
+            addPlaceholder(comment, 'text-zinc-500 dark:text-zinc-400 italic'),
+        );
     }
 
     // b. Extract strings
-    escaped = escaped.replace(/("(\\.|[^"\\])*")/g, (_, str) => addPlaceholder(str, 'text-emerald-600 dark:text-emerald-400 font-medium'));
-    escaped = escaped.replace(/('(\\.|[^'\\])*')/g, (_, str) => addPlaceholder(str, 'text-emerald-600 dark:text-emerald-400 font-medium'));
-    escaped = escaped.replace(/(`(\\.|[^`\\])*`)/g, (_, str) => addPlaceholder(str, 'text-emerald-600 dark:text-emerald-400 font-medium'));
+    escaped = escaped.replace(/("(\\.|[^"\\])*")/g, (_, str) =>
+        addPlaceholder(
+            str,
+            'text-emerald-600 dark:text-emerald-400 font-medium',
+        ),
+    );
+    escaped = escaped.replace(/('(\\.|[^'\\])*')/g, (_, str) =>
+        addPlaceholder(
+            str,
+            'text-emerald-600 dark:text-emerald-400 font-medium',
+        ),
+    );
+    escaped = escaped.replace(/(`(\\.|[^`\\])*`)/g, (_, str) =>
+        addPlaceholder(
+            str,
+            'text-emerald-600 dark:text-emerald-400 font-medium',
+        ),
+    );
 
     // 3. Highlight core language terms
     // Keywords
     const keywords = [
-        'const', 'let', 'var', 'import', 'from', 'return', 'function', 'func',
-        'use', 'require', 'new', 'def', 'package', 'case', 'switch', 'default',
-        'nil', 'err', 'if', 'panic', 'defer', 'class', 'PHP', 'GuzzleHttp',
-        'public', 'static', 'void', 'throws'
+        'const',
+        'let',
+        'var',
+        'import',
+        'from',
+        'return',
+        'function',
+        'func',
+        'use',
+        'require',
+        'new',
+        'def',
+        'package',
+        'case',
+        'switch',
+        'default',
+        'nil',
+        'err',
+        'if',
+        'panic',
+        'defer',
+        'class',
+        'PHP',
+        'GuzzleHttp',
+        'public',
+        'static',
+        'void',
+        'throws',
     ];
     const keywordRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
-    escaped = escaped.replace(keywordRegex, '<span class="text-pink-600 dark:text-pink-400 font-semibold">$1</span>');
+    escaped = escaped.replace(
+        keywordRegex,
+        '<span class="text-pink-600 dark:text-pink-400 font-semibold">$1</span>',
+    );
 
     // Built-ins and common APIs
     const builtins = [
-        'fetch', 'axios', 'requests', 'Client', 'NewRequest', 'curl_init',
-        'curl_setopt_array', 'curl_exec', 'curl_close', 'echo', 'print',
-        'response', 'Header', 'Set', 'Do', 'ReadAll', 'Println', 'then', 'catch',
-        'HttpClient', 'HttpRequest', 'HttpResponse', 'URI', 'System', 'out', 'println',
-        'BodyPublishers', 'BodyHandlers', 'newHttpClient', 'newBuilder', 'ofString',
-        'noBody', 'send'
+        'fetch',
+        'axios',
+        'requests',
+        'Client',
+        'NewRequest',
+        'curl_init',
+        'curl_setopt_array',
+        'curl_exec',
+        'curl_close',
+        'echo',
+        'print',
+        'response',
+        'Header',
+        'Set',
+        'Do',
+        'ReadAll',
+        'Println',
+        'then',
+        'catch',
+        'HttpClient',
+        'HttpRequest',
+        'HttpResponse',
+        'URI',
+        'System',
+        'out',
+        'println',
+        'BodyPublishers',
+        'BodyHandlers',
+        'newHttpClient',
+        'newBuilder',
+        'ofString',
+        'noBody',
+        'send',
     ];
     const builtinRegex = new RegExp(`\\b(${builtins.join('|')})\\b`, 'g');
-    escaped = escaped.replace(builtinRegex, '<span class="text-sky-600 dark:text-sky-400">$1</span>');
+    escaped = escaped.replace(
+        builtinRegex,
+        '<span class="text-sky-600 dark:text-sky-400">$1</span>',
+    );
 
     // Numbers & Booleans
-    escaped = escaped.replace(/\b(true|false|null|0|10|CURLOPT_[A-Z_]+)\b/g, '<span class="text-orange-600 dark:text-orange-400">$1</span>');
+    escaped = escaped.replace(
+        /\b(true|false|null|0|10|CURLOPT_[A-Z_]+)\b/g,
+        '<span class="text-orange-600 dark:text-orange-400">$1</span>',
+    );
 
     // HTTP Methods
-    escaped = escaped.replace(/\b(GET|POST|PUT|DELETE|PATCH)\b/g, '<span class="text-amber-600 dark:text-amber-400 font-bold">$1</span>');
+    escaped = escaped.replace(
+        /\b(GET|POST|PUT|DELETE|PATCH)\b/g,
+        '<span class="text-amber-600 dark:text-amber-400 font-bold">$1</span>',
+    );
 
     // Variables / properties
-    escaped = escaped.replace(/(\$[a-zA-Z_][a-zA-Z0-9_]*)/g, '<span class="text-indigo-600 dark:text-indigo-300 font-semibold">$1</span>');
+    escaped = escaped.replace(
+        /(\$[a-zA-Z_][a-zA-Z0-9_]*)/g,
+        '<span class="text-indigo-600 dark:text-indigo-300 font-semibold">$1</span>',
+    );
 
     // 4. Restore strings and comments in order (reverse order handles nested string placeholders perfectly!)
     for (let i = placeholders.length - 1; i >= 0; i--) {
@@ -646,7 +801,11 @@ watch(selectedRequestId, (newId) => {
     if (newId) {
         window.history.replaceState(null, '', `#${newId}`);
     } else {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search,
+        );
     }
 });
 
@@ -654,7 +813,11 @@ watch(selectedRequestId, (newId) => {
 onMounted(() => {
     const savedTheme = localStorage.getItem('theme');
 
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (
+        savedTheme === 'dark' ||
+        (!savedTheme &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
         isDark.value = true;
         document.documentElement.classList.add('dark');
     } else {
@@ -668,65 +831,128 @@ onMounted(() => {
         links.forEach((link: any) => {
             link.href = customFavicon;
         });
+    }
+
     // Read initial hash for permalink
     if (window.location.hash) {
         const hashId = window.location.hash.substring(1);
 
-        if (hashId && props.requests && props.requests.some(r => r.id === hashId)) {
+        if (
+            hashId &&
+            props.requests &&
+            props.requests.some((r) => r.id === hashId)
+        ) {
             selectedRequestId.value = hashId;
         }
     }
 });
-
 </script>
 
 <template>
-    <Head :title="((props.collection && props.collection.name) || 'API Documentation') + ' - API Reference'">
+    <Head
+        :title="
+            ((props.collection && props.collection.name) ||
+                'API Documentation') + ' - API Reference'
+        "
+    >
     </Head>
 
-    <div class="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col font-sans">
+    <div
+        class="flex h-screen w-screen flex-col overflow-hidden bg-background font-sans text-foreground"
+    >
         <!-- Gorgeous Top Bar Banner -->
-        <header class="h-[69px] shrink-0 sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none gap-4">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div v-if="props.documentation?.settings?.logo_path" class="h-9 w-9 shrink-0 flex items-center justify-center overflow-hidden">
-                    <img :src="`/storage/${props.documentation.settings.logo_path}`" class="h-full w-full object-contain" />
+        <header
+            class="sticky top-0 z-40 flex h-[69px] w-full shrink-0 items-center justify-between gap-4 border-b border-border bg-background/90 px-6 py-4 backdrop-blur-md select-none"
+        >
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+                <div
+                    v-if="props.documentation?.settings?.logo_path"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden"
+                >
+                    <img
+                        :src="`/storage/${props.documentation.settings.logo_path}`"
+                        class="h-full w-full object-contain"
+                    />
                 </div>
-                <div v-else class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xs shrink-0">
+                <div
+                    v-else
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 shadow-xs"
+                >
                     <BookOpen class="h-5 w-5 text-primary" />
                 </div>
-                <div v-if="props.collection && props.documentation" class="relative shrink-0 max-w-[calc(100%-48px)]">
-                    <div v-if="props.publicDocsList && props.publicDocsList.length > 0" class="relative max-w-full">
+                <div
+                    v-if="props.collection && props.documentation"
+                    class="relative max-w-[calc(100%-48px)] shrink-0"
+                >
+                    <div
+                        v-if="
+                            props.publicDocsList &&
+                            props.publicDocsList.length > 0
+                        "
+                        class="relative max-w-full"
+                    >
                         <button
                             @click="showDocsDropdown = !showDocsDropdown"
-                            class="flex items-center gap-2.5 font-extrabold text-base tracking-tight text-foreground hover:text-primary transition-colors py-1.5 px-3 -ml-1 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/50 shadow-2xs cursor-pointer text-left"
+                            class="-ml-1 flex cursor-pointer items-center gap-2.5 rounded-xl border border-border/60 bg-muted/20 px-3 py-1.5 text-left text-base font-extrabold tracking-tight text-foreground shadow-2xs transition-colors hover:bg-muted/50 hover:text-primary"
                         >
-                            <span class="whitespace-nowrap">{{ props.collection.name }}</span>
-                            <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap">
+                            <span class="whitespace-nowrap">{{
+                                props.collection.name
+                            }}</span>
+                            <span
+                                class="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-primary"
+                            >
                                 v{{ props.documentation.version }}
                             </span>
-                            <ChevronDown v-if="props.publicDocsList.length > 1" class="h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0" :class="{ 'rotate-180': showDocsDropdown }" />
+                            <ChevronDown
+                                v-if="props.publicDocsList.length > 1"
+                                class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                                :class="{ 'rotate-180': showDocsDropdown }"
+                            />
                         </button>
 
-                        <div v-if="showDocsDropdown && props.publicDocsList.length > 1" @click="showDocsDropdown = false" class="fixed inset-0 z-40"></div>
+                        <div
+                            v-if="
+                                showDocsDropdown &&
+                                props.publicDocsList.length > 1
+                            "
+                            @click="showDocsDropdown = false"
+                            class="fixed inset-0 z-40"
+                        ></div>
 
                         <!-- Dropdown Menu -->
                         <div
-                            v-if="showDocsDropdown && props.publicDocsList.length > 1"
-                            class="absolute left-0 top-full mt-2 min-w-[260px] max-w-[90vw] rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl py-1.5 z-50 backdrop-blur-xl"
+                            v-if="
+                                showDocsDropdown &&
+                                props.publicDocsList.length > 1
+                            "
+                            class="absolute top-full left-0 z-50 mt-2 max-w-[90vw] min-w-[260px] rounded-2xl border border-border bg-popover py-1.5 text-popover-foreground shadow-xl backdrop-blur-xl"
                         >
-                            <div class="px-3.5 py-2 border-b border-border/60 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            <div
+                                class="border-b border-border/60 px-3.5 py-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+                            >
                                 Switch API Collection
                             </div>
-                            <div class="max-h-80 overflow-y-auto py-1 space-y-0.5 px-1">
+                            <div
+                                class="max-h-80 space-y-0.5 overflow-y-auto px-1 py-1"
+                            >
                                 <button
                                     v-for="docItem in props.publicDocsList"
                                     :key="docItem.id"
                                     @click="switchCollection(docItem)"
-                                    class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl text-left transition-all cursor-pointer"
-                                    :class="docItem.collection_id === props.collection?.id ? 'bg-primary/15 text-primary font-bold shadow-2xs' : 'hover:bg-muted/50 text-foreground'"
+                                    class="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold transition-all"
+                                    :class="
+                                        docItem.collection_id ===
+                                        props.collection?.id
+                                            ? 'bg-primary/15 font-bold text-primary shadow-2xs'
+                                            : 'text-foreground hover:bg-muted/50'
+                                    "
                                 >
-                                    <span class="truncate pr-2">{{ docItem.name }}</span>
-                                    <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded-md font-mono border border-border shrink-0">
+                                    <span class="truncate pr-2">{{
+                                        docItem.name
+                                    }}</span>
+                                    <span
+                                        class="shrink-0 rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]"
+                                    >
                                         v{{ docItem.version }}
                                     </span>
                                 </button>
@@ -734,24 +960,33 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <h1 v-else class="font-extrabold text-base tracking-tight text-foreground flex items-center gap-2">
-                        <span class="whitespace-nowrap">{{ props.collection.name }}</span>
-                        <span class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap">
+                    <h1
+                        v-else
+                        class="flex items-center gap-2 text-base font-extrabold tracking-tight text-foreground"
+                    >
+                        <span class="whitespace-nowrap">{{
+                            props.collection.name
+                        }}</span>
+                        <span
+                            class="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-primary"
+                        >
                             v{{ props.documentation.version }}
                         </span>
                     </h1>
                 </div>
                 <div v-else>
-                    <h1 class="font-extrabold text-base tracking-tight text-foreground">
+                    <h1
+                        class="text-base font-extrabold tracking-tight text-foreground"
+                    >
                         API Documentation Portal
                     </h1>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex shrink-0 items-center gap-3">
                 <button
                     @click="toggleTheme"
-                    class="rounded-lg p-2 border border-border bg-muted/30 text-muted-foreground hover:text-foreground transition-all cursor-pointer shrink-0"
+                    class="shrink-0 cursor-pointer rounded-lg border border-border bg-muted/30 p-2 text-muted-foreground transition-all hover:text-foreground"
                     aria-label="Toggle Night Mode"
                 >
                     <Sun v-if="isDark" class="h-4 w-4" />
@@ -768,300 +1003,583 @@ onMounted(() => {
             id="public-viewer-main-group"
             auto-save-id="public-viewer-main-group"
             direction="horizontal"
-            class="flex-1 min-h-0 w-full max-w-[1920px] mx-auto overflow-hidden"
+            class="mx-auto min-h-0 w-full max-w-[1920px] flex-1 overflow-hidden"
         >
             <!-- Column 1: Left Navigation Sidebar -->
-            <ResizablePanel id="public-viewer-sidebar-panel" :default-size="20" :min-size="15" :max-size="45" class="flex flex-col h-full min-h-0 overflow-hidden min-w-0">
-                <aside class="flex-1 min-h-0 h-full p-5 flex flex-col gap-5 overflow-y-auto min-w-0">
-                <!-- Interactive Search Bar -->
-                <div class="relative w-full">
-                    <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
-                    <input
-                        type="text"
-                        v-model="searchQuery"
-                        placeholder="Search API endpoints..."
-                        class="h-9 w-full rounded-md border border-input bg-muted/20 pl-9 pr-3 py-1.5 text-xs placeholder:text-muted-foreground/70 focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-                    />
-                </div>
-
-                <!-- Navigation List -->
-                <div class="flex flex-col gap-4">
-                    <!-- Home / Overview Link -->
-                    <button
-                        @click="selectedRequestId = null"
-                        class="flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-lg text-left transition-colors"
-                        :class="selectedRequestId === null ? 'bg-primary/10 text-primary border border-primary/10' : 'text-muted-foreground hover:bg-muted/50'"
-                    >
-                        <Globe class="h-4 w-4" />
-                        Overview Guide
-                    </button>
-
-                    <!-- Group Requests by Folder (Collapsible Tree) -->
-                    <div class="space-y-1.5">
-                        <!-- Root Folders -->
-                        <DocFolderNode
-                            v-for="folder in rootFolders"
-                            :key="folder.id"
-                            :folder="folder"
-                            :folders="props.collection.folders || []"
-                            :requests="filteredRequests"
-                            :selected-request-id="selectedRequestId || ''"
-                            :get-method-color="getMethodClass"
-                            @select-request="id => selectedRequestId = id"
+            <ResizablePanel
+                id="public-viewer-sidebar-panel"
+                :default-size="20"
+                :min-size="15"
+                :max-size="45"
+                class="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
+            >
+                <aside
+                    class="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto p-5"
+                >
+                    <!-- Interactive Search Bar -->
+                    <div class="relative w-full">
+                        <Search
+                            class="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground/60"
                         />
+                        <input
+                            type="text"
+                            v-model="searchQuery"
+                            placeholder="Search API endpoints..."
+                            class="h-9 w-full rounded-md border border-input bg-muted/20 py-1.5 pr-3 pl-9 text-xs transition-all placeholder:text-muted-foreground/70 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        />
+                    </div>
 
-                        <!-- Root Endpoints (Not inside any folder) -->
-                        <div v-if="rootRequests.length > 0" class="space-y-0.5" :class="{ 'pt-2 border-t border-border/50 mt-2': rootFolders.length > 0 }">
-                            <h4 v-if="rootFolders.length > 0" class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-1">
-                                Root Endpoints
-                            </h4>
-                            <button
-                                v-for="req in rootRequests"
-                                :key="req.id"
-                                @click="selectedRequestId = req.id"
-                                class="w-full flex items-center gap-2 p-1.5 rounded-md text-left text-xs transition-colors group"
-                                :class="selectedRequestId === req.id ? 'bg-sidebar-accent border border-border/50 font-semibold text-sidebar-accent-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'"
+                    <!-- Navigation List -->
+                    <div class="flex flex-col gap-4">
+                        <!-- Home / Overview Link -->
+                        <button
+                            @click="selectedRequestId = null"
+                            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-bold transition-colors"
+                            :class="
+                                selectedRequestId === null
+                                    ? 'border border-primary/10 bg-primary/10 text-primary'
+                                    : 'text-muted-foreground hover:bg-muted/50'
+                            "
+                        >
+                            <Globe class="h-4 w-4" />
+                            Overview Guide
+                        </button>
+
+                        <!-- Group Requests by Folder (Collapsible Tree) -->
+                        <div class="space-y-1.5">
+                            <!-- Root Folders -->
+                            <DocFolderNode
+                                v-for="folder in rootFolders"
+                                :key="folder.id"
+                                :folder="folder"
+                                :folders="props.collection.folders || []"
+                                :requests="filteredRequests"
+                                :selected-request-id="selectedRequestId || ''"
+                                :get-method-color="getMethodClass"
+                                @select-request="
+                                    (id) => (selectedRequestId = id)
+                                "
+                            />
+
+                            <!-- Root Endpoints (Not inside any folder) -->
+                            <div
+                                v-if="rootRequests.length > 0"
+                                class="space-y-0.5"
+                                :class="{
+                                    'mt-2 border-t border-border/50 pt-2':
+                                        rootFolders.length > 0,
+                                }"
                             >
-                                <span
-                                    class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
-                                    :class="getMethodClass(req.method)"
+                                <h4
+                                    v-if="rootFolders.length > 0"
+                                    class="mb-1 px-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
                                 >
-                                    {{ req.method }}
-                                </span>
-                                <span class="truncate flex-1">{{ req.name }}</span>
-                                <ChevronRight class="h-3 w-3 opacity-50 shrink-0 group-hover:opacity-100 transition-opacity" />
-                            </button>
+                                    Root Endpoints
+                                </h4>
+                                <button
+                                    v-for="req in rootRequests"
+                                    :key="req.id"
+                                    @click="selectedRequestId = req.id"
+                                    class="group flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-colors"
+                                    :class="
+                                        selectedRequestId === req.id
+                                            ? 'border border-border/50 bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:bg-muted'
+                                    "
+                                >
+                                    <span
+                                        class="inline-flex w-10 shrink-0 items-center justify-center rounded border px-1 py-0.5 text-center text-[8px] leading-none font-bold uppercase select-none"
+                                        :class="getMethodClass(req.method)"
+                                    >
+                                        {{ req.method }}
+                                    </span>
+                                    <span class="flex-1 truncate">{{
+                                        req.name
+                                    }}</span>
+                                    <ChevronRight
+                                        class="h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover:opacity-100"
+                                    />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </aside>
+                </aside>
             </ResizablePanel>
 
             <ResizableHandle id="public-viewer-handle-1" with-handle />
 
             <!-- Column 2: Center Content & Markdown Reader -->
-            <ResizablePanel id="public-viewer-content-panel" :default-size="50" :min-size="25" class="flex flex-col h-full min-h-0 overflow-hidden min-w-0">
-                <main class="flex-1 min-h-0 h-full p-6 lg:p-8 overflow-y-auto select-text min-w-0">
-                <!-- Overview Guide View -->
-                <div v-if="selectedRequestId === null" class="space-y-8 animate-in fade-in duration-300">
-                    <div class="prose dark:prose-invert max-w-none" v-html="introHtml"></div>
+            <ResizablePanel
+                id="public-viewer-content-panel"
+                :default-size="50"
+                :min-size="25"
+                class="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
+            >
+                <main
+                    class="h-full min-h-0 min-w-0 flex-1 overflow-y-auto p-6 select-text lg:p-8"
+                >
+                    <!-- Overview Guide View -->
+                    <div
+                        v-if="selectedRequestId === null"
+                        class="animate-in space-y-8 duration-300 fade-in"
+                    >
+                        <div
+                            class="prose dark:prose-invert max-w-none"
+                            v-html="introHtml"
+                        ></div>
 
-                    <!-- Global Auth Information (if present) -->
-                    <div v-if="props.documentation.auth_info" class="border rounded-xl p-5 bg-muted/20 border-border mt-8">
-                        <h3 class="text-sm font-extrabold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                            <Sparkles class="h-4 w-4 text-primary" />
-                            Authentication Guide
-                        </h3>
-                        <div class="prose dark:prose-invert max-w-none text-xs" v-html="authHtml"></div>
-                    </div>
-                </div>
-
-                <!-- Endpoint Documentation View -->
-                <div v-else-if="activeRequest" class="space-y-6 animate-in fade-in duration-200">
-                    <!-- Method + Name -->
-                    <div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span
-                                class="inline-flex items-center justify-center rounded border px-2 py-0.5 text-[10px] leading-none font-bold uppercase select-none"
-                                :class="getMethodClass(activeRequest.method)"
+                        <!-- Global Auth Information (if present) -->
+                        <div
+                            v-if="props.documentation.auth_info"
+                            class="mt-8 rounded-xl border border-border bg-muted/20 p-5"
+                        >
+                            <h3
+                                class="mb-3 flex items-center gap-1.5 text-sm font-extrabold tracking-widest text-muted-foreground uppercase"
                             >
-                                {{ activeRequest.method }}
-                            </span>
-                            <span class="text-xs text-muted-foreground uppercase tracking-widest font-bold">API Endpoint</span>
+                                <Sparkles class="h-4 w-4 text-primary" />
+                                Authentication Guide
+                            </h3>
+                            <div
+                                class="prose dark:prose-invert max-w-none text-xs"
+                                v-html="authHtml"
+                            ></div>
                         </div>
-                        <div class="flex items-center justify-between gap-4">
-                            <h2 class="text-xl font-extrabold text-foreground tracking-tight">{{ activeRequest.name }}</h2>
-                            <button
-                                @click="copyPermalink(activeRequest.id)"
-                                class="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shrink-0"
-                                title="Copy documentation permalink"
+                    </div>
+
+                    <!-- Endpoint Documentation View -->
+                    <div
+                        v-else-if="activeRequest"
+                        class="animate-in space-y-6 duration-200 fade-in"
+                    >
+                        <!-- Method + Name -->
+                        <div>
+                            <div class="mb-2 flex items-center gap-2">
+                                <span
+                                    class="inline-flex items-center justify-center rounded border px-2 py-0.5 text-[10px] leading-none font-bold uppercase select-none"
+                                    :class="
+                                        getMethodClass(activeRequest.method)
+                                    "
+                                >
+                                    {{ activeRequest.method }}
+                                </span>
+                                <span
+                                    class="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+                                    >API Endpoint</span
+                                >
+                            </div>
+                            <div
+                                class="flex items-center justify-between gap-4"
                             >
-                                <Check v-if="permalinkCopied" class="h-3.5 w-3.5 text-emerald-500" />
+                                <h2
+                                    class="text-xl font-extrabold tracking-tight text-foreground"
+                                >
+                                    {{ activeRequest.name }}
+                                </h2>
+                                <button
+                                    @click="copyPermalink(activeRequest.id)"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-md border border-border/50 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
+                                    title="Copy documentation permalink"
+                                >
+                                    <Check
+                                        v-if="permalinkCopied"
+                                        class="h-3.5 w-3.5 text-emerald-500"
+                                    />
+                                    <Copy v-else class="h-3.5 w-3.5" />
+                                    <span>Permalink</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- URL Bar with copy -->
+                        <div
+                            class="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 font-mono text-xs break-all text-foreground/80 select-all"
+                        >
+                            <span class="truncate">{{
+                                substituteEnvVariables(
+                                    activeRequest.url || 'No URL configured',
+                                )
+                            }}</span>
+                            <button
+                                @click="
+                                    copyEndpointUrl(
+                                        substituteEnvVariables(
+                                            activeRequest.url || '',
+                                        ),
+                                    )
+                                "
+                                class="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
+                                title="Copy URL Path"
+                            >
+                                <Check
+                                    v-if="pathCopied"
+                                    class="h-3.5 w-3.5 text-emerald-500"
+                                />
                                 <Copy v-else class="h-3.5 w-3.5" />
-                                <span>Permalink</span>
                             </button>
                         </div>
-                    </div>
 
-                    <!-- URL Bar with copy -->
-                    <div class="flex items-center justify-between gap-3 p-3 bg-muted/30 border rounded-lg font-mono text-xs text-foreground/80 break-all select-all">
-                        <span class="truncate">{{ substituteEnvVariables(activeRequest.url || 'No URL configured') }}</span>
-                        <button
-                            @click="copyEndpointUrl(substituteEnvVariables(activeRequest.url || ''))"
-                            class="rounded p-1 text-muted-foreground hover:bg-border hover:text-foreground transition-colors shrink-0"
-                            title="Copy URL Path"
+                        <!-- Markdown Description -->
+                        <div
+                            class="prose dark:prose-invert max-w-none text-sm leading-relaxed"
+                            v-html="requestDescHtml"
+                        ></div>
+
+                        <!-- Request Headers & Query Params Tables (if present) -->
+                        <div v-if="parsedHeaders.length > 0" class="space-y-3">
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Request Headers
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Header key
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Type
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Mock Value
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="header in parsedHeaders"
+                                            :key="header.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ header.key }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                            >
+                                                string
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                            >
+                                                {{ header.value }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Query Parameters -->
+                        <div
+                            v-if="parsedQueryParams.length > 0"
+                            class="space-y-3"
                         >
-                            <Check v-if="pathCopied" class="h-3.5 w-3.5 text-emerald-500" />
-                            <Copy v-else class="h-3.5 w-3.5" />
-                        </button>
-                    </div>
-
-                    <!-- Markdown Description -->
-                    <div class="prose dark:prose-invert max-w-none text-sm leading-relaxed" v-html="requestDescHtml"></div>
-
-                    <!-- Request Headers & Query Params Tables (if present) -->
-                    <div v-if="parsedHeaders.length > 0" class="space-y-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Request Headers</h4>
-                        <div class="border rounded-lg overflow-hidden">
-                            <table class="min-w-full divide-y divide-border text-xs">
-                                <thead class="bg-muted/40">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left font-semibold text-muted-foreground">Header key</th>
-                                        <th class="px-4 py-2 text-left font-semibold text-muted-foreground">Type</th>
-                                        <th class="px-4 py-2 text-left font-semibold text-muted-foreground">Mock Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-border bg-card">
-                                    <tr v-for="header in parsedHeaders" :key="header.key">
-                                        <td class="px-4 py-2 font-mono font-semibold text-foreground">{{ header.key }}</td>
-                                        <td class="px-4 py-2 text-muted-foreground font-mono text-[10px]">string</td>
-                                        <td class="px-4 py-2 font-mono text-muted-foreground/80 select-all">{{ header.value }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Query Parameters
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Parameter
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Type
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Value
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="param in parsedQueryParams"
+                                            :key="param.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ param.key }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                            >
+                                                string
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                            >
+                                                {{ param.value }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Query Parameters -->
-                    <div v-if="parsedQueryParams.length > 0" class="space-y-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Query Parameters</h4>
-                        <div class="border rounded-lg overflow-hidden">
-                            <table class="min-w-full divide-y divide-border text-xs">
-                                <thead class="bg-muted/40">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left font-semibold text-muted-foreground">Parameter</th>
-                                        <th class="px-4 py-2 text-left font-semibold text-muted-foreground">Type</th>
-                                        <th class="px-4 py-2 text-left font-semibold text-muted-foreground">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-border bg-card">
-                                    <tr v-for="param in parsedQueryParams" :key="param.key">
-                                        <td class="px-4 py-2 font-mono font-semibold text-foreground">{{ param.key }}</td>
-                                        <td class="px-4 py-2 text-muted-foreground font-mono text-[10px]">string</td>
-                                        <td class="px-4 py-2 font-mono text-muted-foreground/80 select-all">{{ param.value }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
+                </main>
             </ResizablePanel>
 
             <ResizableHandle id="public-viewer-handle-2" with-handle />
 
             <!-- Column 3: Code Snippets & Response Mock Examples -->
-            <ResizablePanel id="public-viewer-code-panel" :default-size="30" :min-size="20" :max-size="50" class="flex flex-col h-full min-h-0 overflow-hidden min-w-0">
-                <aside class="flex-1 min-h-0 h-full bg-muted/15 p-6 overflow-y-auto flex flex-col gap-6 select-text min-w-0">
-                <!-- If overview guide is selected, show general greeting details -->
-                <div v-if="selectedRequestId === null" class="flex flex-col gap-4 text-center justify-center items-center py-12 px-6 h-full">
-                    <div class="rounded-full bg-primary/10 p-4 border border-primary/20 shadow-xs mb-2">
-                        <Sparkles class="h-7 w-7 text-primary" />
-                    </div>
-                    <h3 class="text-sm font-bold text-foreground">API Reference Interactive Console</h3>
-                    <p class="text-xs text-muted-foreground max-w-[280px]">
-                        Select any request endpoint in the left navigation sidebar to view interactive request code snippets and live response examples instantly.
-                    </p>
-                </div>
-
-                <template v-else-if="activeRequest">
-                    <!-- Code Snippet Box -->
-                    <div class="space-y-2">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                            <Terminal class="h-4 w-4" />
-                            Request Snippet
-                        </h4>
-                        
-                        <div class="border border-border rounded-xl bg-zinc-50 dark:bg-zinc-950 overflow-hidden shadow-md flex flex-col">
-                            <!-- Snippet Language Header Selector -->
-                            <div class="flex items-center justify-between bg-zinc-100 dark:bg-zinc-900 border-b border-border dark:border-zinc-800 px-3 py-1.5 select-none">
-                                <div class="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider">
-                                    <Code class="h-3.5 w-3.5" />
-                                    Languages
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <select
-                                        v-model="selectedLang"
-                                        class="h-7 border-0 bg-transparent text-[11px] font-bold text-zinc-700 dark:text-zinc-300 focus:outline-hidden cursor-pointer"
-                                    >
-                                        <option value="curl" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">cURL</option>
-                                        <option value="fetch" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Javascript Fetch</option>
-                                        <option value="axios" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Axios</option>
-                                        <option value="python" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Python Requests</option>
-                                        <option value="go" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Go http</option>
-                                        <option value="php-guzzle" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">PHP Guzzle</option>
-                                        <option value="php-curl" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">PHP cURL</option>
-                                        <option value="java" class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">Java HttpClient</option>
-                                    </select>
-                                    <button
-                                        @click="copySnippet"
-                                        class="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
-                                        title="Copy Snippet"
-                                    >
-                                        <Check v-if="copiedState" class="h-3.5 w-3.5 text-emerald-400" />
-                                        <Copy v-else class="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Snippet Body -->
-                            <pre class="p-4 text-xs font-mono text-zinc-800 dark:text-zinc-300 overflow-x-auto max-h-[300px] leading-relaxed select-all whitespace-pre"><code v-html="highlightedCode"></code></pre>
+            <ResizablePanel
+                id="public-viewer-code-panel"
+                :default-size="30"
+                :min-size="20"
+                :max-size="50"
+                class="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
+            >
+                <aside
+                    class="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto bg-muted/15 p-6 select-text"
+                >
+                    <!-- If overview guide is selected, show general greeting details -->
+                    <div
+                        v-if="selectedRequestId === null"
+                        class="flex h-full flex-col items-center justify-center gap-4 px-6 py-12 text-center"
+                    >
+                        <div
+                            class="mb-2 rounded-full border border-primary/20 bg-primary/10 p-4 shadow-xs"
+                        >
+                            <Sparkles class="h-7 w-7 text-primary" />
                         </div>
+                        <h3 class="text-sm font-bold text-foreground">
+                            API Reference Interactive Console
+                        </h3>
+                        <p class="max-w-[280px] text-xs text-muted-foreground">
+                            Select any request endpoint in the left navigation
+                            sidebar to view interactive request code snippets
+                            and live response examples instantly.
+                        </p>
                     </div>
 
-                    <!-- Mock response Examples Tab Selector -->
-                    <div v-if="activeRequest.examples && activeRequest.examples.length > 0" class="space-y-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mock response Example</h4>
-                        
-                        <div class="border border-border rounded-xl bg-zinc-50 dark:bg-zinc-950 overflow-hidden shadow-md">
-                            <!-- Example Header Tab Selection -->
-                            <div class="flex items-center justify-between bg-zinc-100 dark:bg-zinc-900 border-b border-border dark:border-zinc-800 px-3 py-1.5 select-none">
-                                <div class="flex items-center gap-1.5">
-                                    <span
-                                        class="h-2 w-2 rounded-full"
-                                        :class="activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.status_code >= 200 && activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.status_code < 300 ? 'bg-emerald-500' : 'bg-rose-500'"
-                                    ></span>
-                                    <select
-                                        :value="activeExampleIndex[activeRequest.id] || 0"
-                                        @change="activeExampleIndex[activeRequest.id] = parseInt(($event.target as HTMLSelectElement).value)"
-                                        class="h-7 border-0 bg-transparent text-[11px] font-bold text-zinc-700 dark:text-zinc-300 focus:outline-hidden cursor-pointer"
+                    <template v-else-if="activeRequest">
+                        <!-- Code Snippet Box -->
+                        <div class="space-y-2">
+                            <h4
+                                class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                <Terminal class="h-4 w-4" />
+                                Request Snippet
+                            </h4>
+
+                            <div
+                                class="flex flex-col overflow-hidden rounded-xl border border-border bg-zinc-50 shadow-md dark:bg-zinc-950"
+                            >
+                                <!-- Snippet Language Header Selector -->
+                                <div
+                                    class="flex items-center justify-between border-b border-border bg-zinc-100 px-3 py-1.5 select-none dark:border-zinc-800 dark:bg-zinc-900"
+                                >
+                                    <div
+                                        class="flex items-center gap-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                                     >
-                                        <option
-                                            v-for="(example, idx) in activeRequest.examples"
-                                            :key="example.id"
-                                            :value="idx"
-                                            class="bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
+                                        <Code class="h-3.5 w-3.5" />
+                                        Languages
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <select
+                                            v-model="selectedLang"
+                                            class="h-7 cursor-pointer border-0 bg-transparent text-[11px] font-bold text-zinc-700 focus:outline-hidden dark:text-zinc-300"
                                         >
-                                            {{ example.status_code }} - {{ example.name }}
-                                        </option>
-                                    </select>
+                                            <option
+                                                value="curl"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                cURL
+                                            </option>
+                                            <option
+                                                value="fetch"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                Javascript Fetch
+                                            </option>
+                                            <option
+                                                value="axios"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                Axios
+                                            </option>
+                                            <option
+                                                value="python"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                Python Requests
+                                            </option>
+                                            <option
+                                                value="go"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                Go http
+                                            </option>
+                                            <option
+                                                value="php-guzzle"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                PHP Guzzle
+                                            </option>
+                                            <option
+                                                value="php-curl"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                PHP cURL
+                                            </option>
+                                            <option
+                                                value="java"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                Java HttpClient
+                                            </option>
+                                        </select>
+                                        <button
+                                            @click="copySnippet"
+                                            class="rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+                                            title="Copy Snippet"
+                                        >
+                                            <Check
+                                                v-if="copiedState"
+                                                class="h-3.5 w-3.5 text-emerald-400"
+                                            />
+                                            <Copy v-else class="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Example Body -->
-                            <pre class="p-4 text-xs font-mono text-zinc-800 dark:text-zinc-300 overflow-x-auto max-h-[350px] leading-relaxed select-all whitespace-pre"><code>{{ activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.body || '{\n  "status": "empty"\n}' }}</code></pre>
+                                <!-- Snippet Body -->
+                                <pre
+                                    class="max-h-[300px] overflow-x-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-zinc-800 select-all dark:text-zinc-300"
+                                ><code v-html="highlightedCode"></code></pre>
+                            </div>
                         </div>
-                    </div>
-                </template>
-            </aside>
+
+                        <!-- Mock response Examples Tab Selector -->
+                        <div
+                            v-if="
+                                activeRequest.examples &&
+                                activeRequest.examples.length > 0
+                            "
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Mock response Example
+                            </h4>
+
+                            <div
+                                class="overflow-hidden rounded-xl border border-border bg-zinc-50 shadow-md dark:bg-zinc-950"
+                            >
+                                <!-- Example Header Tab Selection -->
+                                <div
+                                    class="flex items-center justify-between border-b border-border bg-zinc-100 px-3 py-1.5 select-none dark:border-zinc-800 dark:bg-zinc-900"
+                                >
+                                    <div class="flex items-center gap-1.5">
+                                        <span
+                                            class="h-2 w-2 rounded-full"
+                                            :class="
+                                                activeRequest.examples[
+                                                    activeExampleIndex[
+                                                        activeRequest.id
+                                                    ] || 0
+                                                ]?.status_code >= 200 &&
+                                                activeRequest.examples[
+                                                    activeExampleIndex[
+                                                        activeRequest.id
+                                                    ] || 0
+                                                ]?.status_code < 300
+                                                    ? 'bg-emerald-500'
+                                                    : 'bg-rose-500'
+                                            "
+                                        ></span>
+                                        <select
+                                            :value="
+                                                activeExampleIndex[
+                                                    activeRequest.id
+                                                ] || 0
+                                            "
+                                            @change="
+                                                activeExampleIndex[
+                                                    activeRequest.id
+                                                ] = parseInt(
+                                                    (
+                                                        $event.target as HTMLSelectElement
+                                                    ).value,
+                                                )
+                                            "
+                                            class="h-7 cursor-pointer border-0 bg-transparent text-[11px] font-bold text-zinc-700 focus:outline-hidden dark:text-zinc-300"
+                                        >
+                                            <option
+                                                v-for="(
+                                                    example, idx
+                                                ) in activeRequest.examples"
+                                                :key="example.id"
+                                                :value="idx"
+                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                                            >
+                                                {{ example.status_code }} -
+                                                {{ example.name }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Example Body -->
+                                <pre
+                                    class="max-h-[350px] overflow-x-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-zinc-800 select-all dark:text-zinc-300"
+                                ><code>{{ activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.body || '{\n  "status": "empty"\n}' }}</code></pre>
+                            </div>
+                        </div>
+                    </template>
+                </aside>
             </ResizablePanel>
         </ResizablePanelGroup>
-        <div v-else class="flex-1 flex items-center justify-center p-6">
-            <div class="text-center py-16 px-6 rounded-2xl border border-dashed border-border bg-muted/10 max-w-xl mx-auto space-y-4">
-                <div class="h-12 w-12 rounded-xl bg-muted/40 flex items-center justify-center mx-auto text-muted-foreground shadow-xs">
+        <div v-else class="flex flex-1 items-center justify-center p-6">
+            <div
+                class="mx-auto max-w-xl space-y-4 rounded-2xl border border-dashed border-border bg-muted/10 px-6 py-16 text-center"
+            >
+                <div
+                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground shadow-xs"
+                >
                     <BookOpen class="h-6 w-6" />
                 </div>
                 <div class="space-y-1">
                     <h3 class="text-base font-bold text-foreground">
                         No Public API Collections Available
                     </h3>
-                    <p class="text-xs text-muted-foreground max-w-md mx-auto">
-                        No documentation collections have been published as public yet. Team administrators can publish documentation from the dashboard.
+                    <p class="mx-auto max-w-md text-xs text-muted-foreground">
+                        No documentation collections have been published as
+                        public yet. Team administrators can publish
+                        documentation from the dashboard.
                     </p>
                 </div>
                 <a
                     href="/login"
-                    class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
                 >
                     Team Login
                 </a>

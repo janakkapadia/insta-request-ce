@@ -265,7 +265,11 @@ const handleDropOnCollectionHeader = async (
                         );
 
                         if (folder && folder.parent_id !== null) {
-                            await store.moveFolder(parsed.id, collectionId, null);
+                            await store.moveFolder(
+                                parsed.id,
+                                collectionId,
+                                null,
+                            );
                         }
 
                         return;
@@ -634,7 +638,11 @@ const getCollectionColor = (name: string) => {
                                                     >
                                                         <button
                                                             class="rounded p-0.5 hover:bg-muted/50"
-                                                            @click.stop="handleSelectCollection(collection)"
+                                                            @click.stop="
+                                                                handleSelectCollection(
+                                                                    collection,
+                                                                )
+                                                            "
                                                         >
                                                             <ChevronRight
                                                                 class="h-3 w-3 transition-transform"
@@ -695,7 +703,11 @@ const getCollectionColor = (name: string) => {
                                                     >
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="handleAddFolder(collection)"
+                                                            @click.stop="
+                                                                handleAddFolder(
+                                                                    collection,
+                                                                )
+                                                            "
                                                         >
                                                             <FolderPlus
                                                                 class="h-3.5 w-3.5 text-muted-foreground"
@@ -707,7 +719,11 @@ const getCollectionColor = (name: string) => {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="handleAddRequest(collection)"
+                                                            @click.stop="
+                                                                handleAddRequest(
+                                                                    collection,
+                                                                )
+                                                            "
                                                         >
                                                             <FilePlus
                                                                 class="h-3.5 w-3.5 text-muted-foreground"
@@ -719,7 +735,11 @@ const getCollectionColor = (name: string) => {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             class="cursor-pointer gap-2 text-xs"
-                                                            @click.stop="handleSelectRequests(collection)"
+                                                            @click.stop="
+                                                                handleSelectRequests(
+                                                                    collection,
+                                                                )
+                                                            "
                                                         >
                                                             <CheckSquare
                                                                 class="h-3.5 w-3.5 text-muted-foreground"

@@ -60,13 +60,23 @@ const isHtmlResponse = computed(() => {
             if (key.toLowerCase() === 'content-type') {
                 const val = responseHeaders.value[key] as any;
 
-                if (Array.isArray(val) && val.some(v => typeof v === 'string' && v.toLowerCase().includes('text/html'))) {
-isHtmlContentType = true;
-}
+                if (
+                    Array.isArray(val) &&
+                    val.some(
+                        (v) =>
+                            typeof v === 'string' &&
+                            v.toLowerCase().includes('text/html'),
+                    )
+                ) {
+                    isHtmlContentType = true;
+                }
 
-                if (typeof val === 'string' && val.toLowerCase().includes('text/html')) {
-isHtmlContentType = true;
-}
+                if (
+                    typeof val === 'string' &&
+                    val.toLowerCase().includes('text/html')
+                ) {
+                    isHtmlContentType = true;
+                }
             }
         }
     }
@@ -74,7 +84,11 @@ isHtmlContentType = true;
     if (typeof responseBody.value === 'string') {
         const trimmed = responseBody.value.trim();
 
-        if (isHtmlContentType || trimmed.toLowerCase().startsWith('<!doctype html>') || trimmed.toLowerCase().startsWith('<html')) {
+        if (
+            isHtmlContentType ||
+            trimmed.toLowerCase().startsWith('<!doctype html>') ||
+            trimmed.toLowerCase().startsWith('<html')
+        ) {
             return true;
         }
     }
@@ -91,11 +105,10 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
     }
 };
 
-
-
-
 onMounted(() => {
-    isDark.value = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+    isDark.value =
+        typeof document !== 'undefined' &&
+        document.documentElement.classList.contains('dark');
     themeObserver = new MutationObserver(() => {
         isDark.value = document.documentElement.classList.contains('dark');
     });
@@ -105,7 +118,6 @@ onMounted(() => {
     });
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-
 });
 onUnmounted(() => {
     themeObserver?.disconnect();
@@ -123,19 +135,24 @@ const fetchRequestHistory = async () => {
     const currentId = store.selectedRequest?.id;
 
     if (!currentId) {
-return;
-}
+        return;
+    }
 
-    if (historyFetchedForRequestId.value === currentId && requestHistoryItems.value.length > 0) {
+    if (
+        historyFetchedForRequestId.value === currentId &&
+        requestHistoryItems.value.length > 0
+    ) {
         return;
     }
 
     try {
         isFetchingHistory.value = true;
-        const res = await axios.get('/requests/history', { params: { request_id: currentId } });
+        const res = await axios.get('/requests/history', {
+            params: { request_id: currentId },
+        });
         requestHistoryItems.value = res.data;
         historyFetchedForRequestId.value = currentId;
-    } catch(e) {
+    } catch (e) {
         console.error('Failed to fetch request history', e);
     } finally {
         isFetchingHistory.value = false;
@@ -146,12 +163,12 @@ const graphPoints = computed(() => {
     const items = requestHistoryItems.value.slice(0, 20).reverse();
 
     if (items.length === 0) {
-return [];
-}
-    
-    const maxTime = Math.max(...items.map(i => i.time_ms));
+        return [];
+    }
+
+    const maxTime = Math.max(...items.map((i) => i.time_ms));
     const padding = 10; // 10% padding top and bottom
-    
+
     return items.map((item, i, arr) => {
         const x = arr.length > 1 ? ((i + 0.5) / arr.length) * 100 : 50;
         const normalizedVal = maxTime > 0 ? item.time_ms / maxTime : 0;
@@ -163,13 +180,13 @@ return [];
 
 const generateLinePath = (points: any[]) => {
     if (points.length === 0) {
-return '';
-}
+        return '';
+    }
 
     if (points.length === 1) {
-return `M 0,${points[0].y} L 100,${points[0].y}`;
-}
-    
+        return `M 0,${points[0].y} L 100,${points[0].y}`;
+    }
+
     let d = `M ${points[0].x},${points[0].y}`;
 
     for (let i = 0; i < points.length - 1; i++) {
@@ -185,8 +202,8 @@ return `M 0,${points[0].y} L 100,${points[0].y}`;
 const graphLinePath = computed(() => generateLinePath(graphPoints.value));
 const graphAreaPath = computed(() => {
     if (graphPoints.value.length === 0) {
-return '';
-}
+        return '';
+    }
 
     const points = graphPoints.value;
     const startX = points.length === 1 ? 0 : points[0].x;
@@ -196,11 +213,15 @@ return '';
 });
 
 const methodSupportsBody = computed(() => {
-    return !['GET', 'DELETE', 'HEAD', 'OPTIONS'].includes(method.value.toUpperCase());
+    return !['GET', 'DELETE', 'HEAD', 'OPTIONS'].includes(
+        method.value.toUpperCase(),
+    );
 });
 
 watch(method, (newMethod) => {
-    if (['GET', 'DELETE', 'HEAD', 'OPTIONS'].includes(newMethod.toUpperCase())) {
+    if (
+        ['GET', 'DELETE', 'HEAD', 'OPTIONS'].includes(newMethod.toUpperCase())
+    ) {
         if (activeRequestTab.value === 'body') {
             activeRequestTab.value = 'params';
         }
@@ -230,14 +251,16 @@ const handleAutoCurlImport = async (curlCmd: string) => {
             filename: 'curl-import.txt',
             format: 'curl',
         });
-        
+
         const importRecord = uploadRes.data.import;
-        
-        const targetCollectionId = store.selectedRequest?.collection_id || store.selectedCollection?.id;
+
+        const targetCollectionId =
+            store.selectedRequest?.collection_id ||
+            store.selectedCollection?.id;
         const targetFolderId = store.selectedRequest?.folder_id || null;
-        
+
         if (!targetCollectionId) {
-            toast.error("No collection selected to import into.");
+            toast.error('No collection selected to import into.');
 
             return;
         }
@@ -249,32 +272,42 @@ const handleAutoCurlImport = async (curlCmd: string) => {
         });
 
         await store.refreshCollections();
-        toast.success("cURL imported successfully!");
+        toast.success('cURL imported successfully!');
 
         // Auto-select the newly imported request
         if (uploadRes.data.preview?.requests?.length > 0) {
             const firstParsedReq = uploadRes.data.preview.requests[0];
-            const targetCollection = store.collections.find(c => c.id === targetCollectionId);
-            
+            const targetCollection = store.collections.find(
+                (c) => c.id === targetCollectionId,
+            );
+
             if (targetCollection) {
                 let foundReq = null;
-                
+
                 if (targetFolderId) {
-                    const folder = targetCollection.folders?.find(f => f.id === targetFolderId);
+                    const folder = targetCollection.folders?.find(
+                        (f) => f.id === targetFolderId,
+                    );
 
                     if (folder) {
-                        foundReq = folder.requests?.find(r => 
-                            r.name.toLowerCase() === firstParsedReq.name.toLowerCase() && 
-                            r.method.toUpperCase() === firstParsedReq.method.toUpperCase()
+                        foundReq = folder.requests?.find(
+                            (r) =>
+                                r.name.toLowerCase() ===
+                                    firstParsedReq.name.toLowerCase() &&
+                                r.method.toUpperCase() ===
+                                    firstParsedReq.method.toUpperCase(),
                         );
                     }
                 } else {
-                    foundReq = targetCollection.requests?.find(r => 
-                        r.name.toLowerCase() === firstParsedReq.name.toLowerCase() && 
-                        r.method.toUpperCase() === firstParsedReq.method.toUpperCase()
+                    foundReq = targetCollection.requests?.find(
+                        (r) =>
+                            r.name.toLowerCase() ===
+                                firstParsedReq.name.toLowerCase() &&
+                            r.method.toUpperCase() ===
+                                firstParsedReq.method.toUpperCase(),
                     );
                 }
-                
+
                 if (foundReq) {
                     store.selectRequest(foundReq);
                 }
@@ -282,12 +315,14 @@ const handleAutoCurlImport = async (curlCmd: string) => {
         }
     } catch (e: any) {
         console.error('Failed to auto-import curl', e);
-        const msg = e.response?.data?.error || 'Failed to parse and import cURL command';
+        const msg =
+            e.response?.data?.error ||
+            'Failed to parse and import cURL command';
         toast.error(msg);
     }
 };
 
-watch(url, (v, oldV) => console.log("URL CHANGED:", {from: oldV, to: v}));
+watch(url, (v, oldV) => console.log('URL CHANGED:', { from: oldV, to: v }));
 
 watch(url, (newVal) => {
     if (newVal && newVal.trim().toLowerCase().startsWith('curl ')) {
@@ -305,9 +340,11 @@ const syncPathVariablesFromUrl = (newVal: string) => {
     // Extract path variables (e.g. :id, :user_id)
     const regex = /\/:([a-zA-Z0-9_-]+)/g;
     const matches = [...(newVal || '').matchAll(regex)].map((m) => m[1]);
-    
+
     // Remove variables that are no longer in the URL
-    const filteredVars = pathVariables.value.filter((v) => matches.includes(v.key));
+    const filteredVars = pathVariables.value.filter((v) =>
+        matches.includes(v.key),
+    );
 
     if (filteredVars.length !== pathVariables.value.length) {
         pathVariables.value = filteredVars;
@@ -325,8 +362,6 @@ const syncPathVariablesFromUrl = (newVal: string) => {
         }
     });
 };
-
-
 
 const description = ref('');
 const activeDocTab = ref<'write' | 'preview'>('write');
@@ -437,8 +472,8 @@ const suggestionCoords = ref({ top: 0, left: 0, width: 0 });
 
 const updateCoords = () => {
     if (!activeInputEl.value) {
-return;
-}
+        return;
+    }
 
     const rect = activeInputEl.value.getBoundingClientRect();
     suggestionCoords.value = {
@@ -526,8 +561,8 @@ const commonQueryParams = [
 ];
 const filteredSuggestions = computed(() => {
     if (!activeSuggestion.value) {
-return [];
-}
+        return [];
+    }
 
     let list: string[] = [];
 
@@ -545,8 +580,8 @@ return [];
     const filter = activeSuggestion.value.filter.toLowerCase();
 
     if (!filter) {
-return list;
-}
+        return list;
+    }
 
     const matched = list.filter((item) => item.toLowerCase().includes(filter));
 
@@ -560,8 +595,8 @@ return list;
 
 const selectSuggestion = (val: string) => {
     if (!activeSuggestion.value) {
-return;
-}
+        return;
+    }
 
     const { type, index } = activeSuggestion.value;
 
@@ -611,11 +646,13 @@ watch(
     () => {
         if (!isSwitchingRequest && currentRequestId.value) {
             const currentStr = getCurrentPayloadStr();
-            const dirty = currentRequestId.value.startsWith('new-') || currentStr !== cleanPayloadStr.value;
+            const dirty =
+                currentRequestId.value.startsWith('new-') ||
+                currentStr !== cleanPayloadStr.value;
             store.setRequestDraft(currentRequestId.value, currentStr, dirty);
         }
     },
-    { deep: true }
+    { deep: true },
 );
 
 let isSwitchingRequest = false;
@@ -626,7 +663,7 @@ watch(
     (newReq) => {
         if (newReq) {
             const isNewRequest = currentRequestId.value !== newReq.id;
-            
+
             if (isNewRequest) {
                 currentRequestId.value = newReq.id;
                 isSwitchingRequest = true;
@@ -635,266 +672,277 @@ watch(
                 method.value = newReq.method || 'GET';
                 url.value = newReq.url || '';
                 description.value = newReq.description || '';
-            // Populate bodyConfig
-            const parsedBody =
-                typeof newReq.body === 'string'
-                    ? (() => {
-                          try {
-                              return JSON.parse(newReq.body);
-                          } catch {
-                              return null;
-                          }
-                      })()
-                    : newReq.body;
-
-            if (
-                parsedBody &&
-                typeof parsedBody === 'object' &&
-                'mode' in parsedBody
-            ) {
-                bodyConfig.value = {
-                    mode: parsedBody.mode || 'none',
-                    raw: {
-                        language: parsedBody.raw?.language || 'json',
-                        content: parsedBody.raw?.content || '',
-                    },
-                    formdata:
-                        Array.isArray(parsedBody.formdata) &&
-                        parsedBody.formdata.length > 0
-                            ? parsedBody.formdata
-                            : [
-                                  {
-                                      key: '',
-                                      value: '',
-                                      type: 'text',
-                                      enabled: true,
-                                      description: '',
-                                  },
-                              ],
-                    urlencoded:
-                        Array.isArray(parsedBody.urlencoded) &&
-                        parsedBody.urlencoded.length > 0
-                            ? parsedBody.urlencoded
-                            : [
-                                  {
-                                      key: '',
-                                      value: '',
-                                      enabled: true,
-                                      description: '',
-                                  },
-                              ],
-                    graphql: {
-                        query: parsedBody.graphql?.query || '',
-                        variables: parsedBody.graphql?.variables || '',
-                    },
-                };
-            } else {
-                // Legacy / fallback body
-                let bodyText = '';
+                // Populate bodyConfig
+                const parsedBody =
+                    typeof newReq.body === 'string'
+                        ? (() => {
+                              try {
+                                  return JSON.parse(newReq.body);
+                              } catch {
+                                  return null;
+                              }
+                          })()
+                        : newReq.body;
 
                 if (
                     parsedBody &&
                     typeof parsedBody === 'object' &&
-                    'text' in parsedBody
+                    'mode' in parsedBody
                 ) {
-                    bodyText =
-                        typeof parsedBody.text === 'string'
-                            ? parsedBody.text
-                            : JSON.stringify(parsedBody.text, null, 2);
-                } else if (newReq.body) {
-                    bodyText =
-                        typeof newReq.body === 'string'
-                            ? newReq.body
-                            : JSON.stringify(newReq.body, null, 2);
+                    bodyConfig.value = {
+                        mode: parsedBody.mode || 'none',
+                        raw: {
+                            language: parsedBody.raw?.language || 'json',
+                            content: parsedBody.raw?.content || '',
+                        },
+                        formdata:
+                            Array.isArray(parsedBody.formdata) &&
+                            parsedBody.formdata.length > 0
+                                ? parsedBody.formdata
+                                : [
+                                      {
+                                          key: '',
+                                          value: '',
+                                          type: 'text',
+                                          enabled: true,
+                                          description: '',
+                                      },
+                                  ],
+                        urlencoded:
+                            Array.isArray(parsedBody.urlencoded) &&
+                            parsedBody.urlencoded.length > 0
+                                ? parsedBody.urlencoded
+                                : [
+                                      {
+                                          key: '',
+                                          value: '',
+                                          enabled: true,
+                                          description: '',
+                                      },
+                                  ],
+                        graphql: {
+                            query: parsedBody.graphql?.query || '',
+                            variables: parsedBody.graphql?.variables || '',
+                        },
+                    };
+                } else {
+                    // Legacy / fallback body
+                    let bodyText = '';
+
+                    if (
+                        parsedBody &&
+                        typeof parsedBody === 'object' &&
+                        'text' in parsedBody
+                    ) {
+                        bodyText =
+                            typeof parsedBody.text === 'string'
+                                ? parsedBody.text
+                                : JSON.stringify(parsedBody.text, null, 2);
+                    } else if (newReq.body) {
+                        bodyText =
+                            typeof newReq.body === 'string'
+                                ? newReq.body
+                                : JSON.stringify(newReq.body, null, 2);
+                    }
+
+                    bodyConfig.value = {
+                        mode: bodyText ? 'raw' : 'none',
+                        raw: {
+                            language: 'json',
+                            content: bodyText,
+                        },
+                        formdata: [
+                            {
+                                key: '',
+                                value: '',
+                                type: 'text',
+                                enabled: true,
+                                description: '',
+                            },
+                        ],
+                        urlencoded: [
+                            {
+                                key: '',
+                                value: '',
+                                enabled: true,
+                                description: '',
+                            },
+                        ],
+                        graphql: {
+                            query: '',
+                            variables: '',
+                        },
+                    };
                 }
 
-                bodyConfig.value = {
-                    mode: bodyText ? 'raw' : 'none',
-                    raw: {
-                        language: 'json',
-                        content: bodyText,
-                    },
-                    formdata: [
-                        {
-                            key: '',
-                            value: '',
-                            type: 'text',
-                            enabled: true,
-                            description: '',
-                        },
-                    ],
-                    urlencoded: [
+                // Populate queryParams
+                if (
+                    Array.isArray(newReq.query_params) &&
+                    newReq.query_params.length > 0
+                ) {
+                    queryParams.value = [
+                        ...newReq.query_params.map((p) => ({
+                            key: p.key || '',
+                            value: p.value || '',
+                            enabled: p.enabled !== false,
+                            description: p.description || '',
+                        })),
                         { key: '', value: '', enabled: true, description: '' },
-                    ],
-                    graphql: {
-                        query: '',
-                        variables: '',
-                    },
-                };
-            }
+                    ];
+                } else {
+                    queryParams.value = [
+                        { key: '', value: '', enabled: true, description: '' },
+                    ];
+                }
 
-            // Populate queryParams
-            if (
-                Array.isArray(newReq.query_params) &&
-                newReq.query_params.length > 0
-            ) {
-                queryParams.value = [
-                    ...newReq.query_params.map((p) => ({
+                // Sync queryParams from the URL only if the DB had no params stored
+                // (avoids overwriting imported params that aren't embedded in the URL string)
+                const dbHadParams =
+                    Array.isArray(newReq.query_params) &&
+                    newReq.query_params.length > 0;
+
+                if (!dbHadParams) {
+                    const queryPortion = (newReq.url || '').includes('?')
+                        ? (newReq.url || '').split('?')[1]
+                        : '';
+                    const currentSerialized = getParamsQueryString();
+
+                    if (queryPortion !== currentSerialized) {
+                        parseParamsFromUrl(newReq.url || '');
+                    }
+                }
+
+                // Populate pathVariables
+                if (
+                    Array.isArray(newReq.path_variables) &&
+                    newReq.path_variables.length > 0
+                ) {
+                    pathVariables.value = newReq.path_variables.map((p) => ({
                         key: p.key || '',
                         value: p.value || '',
                         enabled: p.enabled !== false,
                         description: p.description || '',
-                    })),
-                    { key: '', value: '', enabled: true, description: '' },
-                ];
-            } else {
-                queryParams.value = [
-                    { key: '', value: '', enabled: true, description: '' },
-                ];
-            }
-
-            // Sync queryParams from the URL only if the DB had no params stored
-            // (avoids overwriting imported params that aren't embedded in the URL string)
-            const dbHadParams = Array.isArray(newReq.query_params) && newReq.query_params.length > 0;
-
-            if (!dbHadParams) {
-                const queryPortion = (newReq.url || '').includes('?') ? (newReq.url || '').split('?')[1] : '';
-                const currentSerialized = getParamsQueryString();
-
-                if (queryPortion !== currentSerialized) {
-                    parseParamsFromUrl(newReq.url || '');
+                    }));
+                } else {
+                    pathVariables.value = [];
                 }
-            }
 
-            // Populate pathVariables
-            if (
-                Array.isArray(newReq.path_variables) &&
-                newReq.path_variables.length > 0
-            ) {
-                pathVariables.value = newReq.path_variables.map((p) => ({
-                    key: p.key || '',
-                    value: p.value || '',
-                    enabled: p.enabled !== false,
-                    description: p.description || '',
-                }));
-            } else {
-                pathVariables.value = [];
-            }
-            
-            // Sync with URL immediately to prevent flickering on missing DB values
-            syncPathVariablesFromUrl(newReq.url || '');
+                // Sync with URL immediately to prevent flickering on missing DB values
+                syncPathVariablesFromUrl(newReq.url || '');
 
-            // Populate headersList
-            if (Array.isArray(newReq.headers) && newReq.headers.length > 0) {
-                headersList.value = [
-                    ...newReq.headers.map((h) => ({
-                        key: h.key || '',
-                        value: h.value || '',
-                        enabled: h.enabled !== false,
-                        description: h.description || '',
-                    })),
-                    { key: '', value: '', enabled: true, description: '' },
-                ];
-            } else {
-                headersList.value = [
-                    {
-                        key: 'Accept',
-                        value: '*/*',
-                        enabled: true,
-                        description: 'Accept all content types',
-                    },
-                    {
-                        key: 'User-Agent',
-                        value: 'Jackman/1.0.0',
-                        enabled: true,
-                        description: 'Client user agent',
-                    },
-                    {
-                        key: 'Accept-Encoding',
-                        value: 'gzip, deflate, br',
-                        enabled: true,
-                        description: 'Supported encodings',
-                    },
-                    {
-                        key: 'Connection',
-                        value: 'keep-alive',
-                        enabled: true,
-                        description: 'Keep connection active',
-                    },
-                    { key: '', value: '', enabled: true, description: '' },
-                ];
-            }
+                // Populate headersList
+                if (
+                    Array.isArray(newReq.headers) &&
+                    newReq.headers.length > 0
+                ) {
+                    headersList.value = [
+                        ...newReq.headers.map((h) => ({
+                            key: h.key || '',
+                            value: h.value || '',
+                            enabled: h.enabled !== false,
+                            description: h.description || '',
+                        })),
+                        { key: '', value: '', enabled: true, description: '' },
+                    ];
+                } else {
+                    headersList.value = [
+                        {
+                            key: 'Accept',
+                            value: '*/*',
+                            enabled: true,
+                            description: 'Accept all content types',
+                        },
+                        {
+                            key: 'User-Agent',
+                            value: 'Jackman/1.0.0',
+                            enabled: true,
+                            description: 'Client user agent',
+                        },
+                        {
+                            key: 'Accept-Encoding',
+                            value: 'gzip, deflate, br',
+                            enabled: true,
+                            description: 'Supported encodings',
+                        },
+                        {
+                            key: 'Connection',
+                            value: 'keep-alive',
+                            enabled: true,
+                            description: 'Keep connection active',
+                        },
+                        { key: '', value: '', enabled: true, description: '' },
+                    ];
+                }
 
-            // Populate authConfig
-            if (newReq.auth && typeof newReq.auth === 'object') {
-                authConfig.value = {
-                    type: newReq.auth.type || 'noauth',
-                    bearerToken: newReq.auth.bearerToken || '',
-                    basicUsername: newReq.auth.basicUsername || '',
-                    basicPassword: newReq.auth.basicPassword || '',
-                    apiKeyKey: newReq.auth.apiKeyKey || '',
-                    apiKeyValue: newReq.auth.apiKeyValue || '',
-                    apiKeyAddTo: newReq.auth.apiKeyAddTo || 'header',
-                };
-            } else {
-                authConfig.value = {
-                    type: 'noauth',
-                    bearerToken: '',
-                    basicUsername: '',
-                    basicPassword: '',
-                    apiKeyKey: '',
-                    apiKeyValue: '',
-                    apiKeyAddTo: 'header',
-                };
-            }
+                // Populate authConfig
+                if (newReq.auth && typeof newReq.auth === 'object') {
+                    authConfig.value = {
+                        type: newReq.auth.type || 'noauth',
+                        bearerToken: newReq.auth.bearerToken || '',
+                        basicUsername: newReq.auth.basicUsername || '',
+                        basicPassword: newReq.auth.basicPassword || '',
+                        apiKeyKey: newReq.auth.apiKeyKey || '',
+                        apiKeyValue: newReq.auth.apiKeyValue || '',
+                        apiKeyAddTo: newReq.auth.apiKeyAddTo || 'header',
+                    };
+                } else {
+                    authConfig.value = {
+                        type: 'noauth',
+                        bearerToken: '',
+                        basicUsername: '',
+                        basicPassword: '',
+                        apiKeyKey: '',
+                        apiKeyValue: '',
+                        apiKeyAddTo: 'header',
+                    };
+                }
 
-            responseBody.value = '';
-            responseHeaders.value = {};
-            responseMeta.value = {};
-            // (Body variable parsing logic would go here if needed in the future)
+                responseBody.value = '';
+                responseHeaders.value = {};
+                responseMeta.value = {};
+                // (Body variable parsing logic would go here if needed in the future)
 
-            cleanPayloadStr.value = getCurrentPayloadStr();
-            
-            const draftStr = store.getRequestDraft(newReq.id);
+                cleanPayloadStr.value = getCurrentPayloadStr();
 
-            if (draftStr) {
-                try {
-                    const draft = JSON.parse(draftStr);
-                    method.value = draft.method || 'GET';
-                    url.value = draft.url || '';
+                const draftStr = store.getRequestDraft(newReq.id);
 
-                    if (draft.description !== undefined) {
-                        description.value = draft.description;
+                if (draftStr) {
+                    try {
+                        const draft = JSON.parse(draftStr);
+                        method.value = draft.method || 'GET';
+                        url.value = draft.url || '';
+
+                        if (draft.description !== undefined) {
+                            description.value = draft.description;
+                        }
+
+                        if (draft.bodyConfig) {
+                            bodyConfig.value = draft.bodyConfig;
+                        }
+
+                        if (draft.queryParams) {
+                            queryParams.value = draft.queryParams;
+                        }
+
+                        if (draft.pathVariables) {
+                            pathVariables.value = draft.pathVariables;
+                        }
+
+                        if (draft.headersList) {
+                            headersList.value = draft.headersList;
+                        }
+
+                        if (draft.authConfig) {
+                            authConfig.value = draft.authConfig;
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse draft', e);
                     }
-
-                    if (draft.bodyConfig) {
-bodyConfig.value = draft.bodyConfig;
-}
-
-                    if (draft.queryParams) {
-queryParams.value = draft.queryParams;
-}
-
-                    if (draft.pathVariables) {
-pathVariables.value = draft.pathVariables;
-}
-
-                    if (draft.headersList) {
-headersList.value = draft.headersList;
-}
-
-                    if (draft.authConfig) {
-authConfig.value = draft.authConfig;
-}
-
-                } catch (e) {
-                    console.error('Failed to parse draft', e);
                 }
-            }
 
-            nextTick(() => {
-                isSwitchingRequest = false;
-            });
+                nextTick(() => {
+                    isSwitchingRequest = false;
+                });
             } // end isNewRequest
         } else {
             currentRequestId.value = null;
@@ -957,8 +1005,8 @@ watch(
     queryParams,
     () => {
         if (isSwitchingRequest) {
-return;
-}
+            return;
+        }
 
         const queryPortion = url.value.includes('?')
             ? url.value.split('?')[1]
@@ -973,12 +1021,12 @@ return;
 );
 
 // Sync url -> queryParams
-watch(url, (v, oldV) => console.log("URL CHANGED:", {from: oldV, to: v}));
+watch(url, (v, oldV) => console.log('URL CHANGED:', { from: oldV, to: v }));
 
 watch(url, (newVal) => {
     if (isSwitchingRequest) {
-return;
-}
+        return;
+    }
 
     const queryPortion = newVal.includes('?') ? newVal.split('?')[1] : '';
     const currentSerialized = getParamsQueryString();
@@ -1048,7 +1096,16 @@ const handleEditorMount = (editor: any) => {
     editorRef.value = editor;
 };
 
-const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD', 'QUERY'];
+const methods = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+    'HEAD',
+    'QUERY',
+];
 
 const handleFileChange = (e: Event, item: any) => {
     const target = e.target as HTMLInputElement;
@@ -1060,8 +1117,8 @@ const handleFileChange = (e: Event, item: any) => {
 
 const handleSave = async () => {
     if (!store.selectedRequest) {
-return;
-}
+        return;
+    }
 
     isSaving.value = true;
 
@@ -1092,8 +1149,8 @@ return;
 
 const executeRequest = async () => {
     if (!url.value || !store.selectedRequest) {
-return;
-}
+        return;
+    }
 
     isExecuting.value = true;
 
@@ -1107,13 +1164,16 @@ return;
         const cleanParams = queryParams.value.filter((p) => p.key || p.value);
         const cleanHeaders = headersList.value.filter((h) => h.key || h.value);
 
-
-        const validRequestId = (store.selectedRequest?.id && !store.selectedRequest.id.startsWith('new-'))
-            ? store.selectedRequest.id
-            : null;
-        const validEnvironmentId = (store.activeEnvironment?.id && !store.activeEnvironment.id.startsWith('no-env'))
-            ? store.activeEnvironment.id
-            : null;
+        const validRequestId =
+            store.selectedRequest?.id &&
+            !store.selectedRequest.id.startsWith('new-')
+                ? store.selectedRequest.id
+                : null;
+        const validEnvironmentId =
+            store.activeEnvironment?.id &&
+            !store.activeEnvironment.id.startsWith('no-env')
+                ? store.activeEnvironment.id
+                : null;
 
         const res = await axios.post(`/requests/execute`, {
             request_id: validRequestId,
@@ -1152,7 +1212,6 @@ return;
                     ? data.body
                     : JSON.stringify(data.body, null, 2);
         }
-
     } catch (error) {
         console.error('Execution failed', error);
         responseBody.value = String(error);
@@ -1164,7 +1223,6 @@ return;
         historyFetchedForRequestId.value = null;
     }
 };
-
 </script>
 
 <template>
@@ -1207,19 +1265,39 @@ return;
                     <Sparkles class="h-4 w-4 text-violet-500" />
                     <div class="text-xs font-medium">Test Scripts</div>
                     <div class="text-[10px] text-muted-foreground">
-                        Write JavaScript test assertions and automated workflows.
+                        Write JavaScript test assertions and automated
+                        workflows.
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <ResizablePanelGroup id="request-editor-main-group" auto-save-id="request-editor-main-group" v-else direction="horizontal" class="h-full w-full">
+    <ResizablePanelGroup
+        id="request-editor-main-group"
+        auto-save-id="request-editor-main-group"
+        v-else
+        direction="horizontal"
+        class="h-full w-full"
+    >
         <!-- Editor and Response Panel -->
-        <ResizablePanel id="request-editor-left-panel" :default-size="70" :min-size="40">
-            <ResizablePanelGroup id="request-editor-vertical-group" auto-save-id="request-editor-vertical-group" direction="vertical" class="h-full w-full">
+        <ResizablePanel
+            id="request-editor-left-panel"
+            :default-size="70"
+            :min-size="40"
+        >
+            <ResizablePanelGroup
+                id="request-editor-vertical-group"
+                auto-save-id="request-editor-vertical-group"
+                direction="vertical"
+                class="h-full w-full"
+            >
                 <!-- Request Input -->
-                <ResizablePanel id="request-editor-input-panel" :default-size="50" :min-size="20">
+                <ResizablePanel
+                    id="request-editor-input-panel"
+                    :default-size="50"
+                    :min-size="20"
+                >
                     <div class="flex h-full flex-col">
                         <!-- Address Bar -->
                         <div
@@ -1227,7 +1305,7 @@ return;
                         >
                             <Select v-model="method">
                                 <SelectTrigger
-                                    class="h-9 w-[110px] text-xs font-bold font-mono"
+                                    class="h-9 w-[110px] font-mono text-xs font-bold"
                                     :class="getMethodColor(method)"
                                 >
                                     <SelectValue placeholder="Method" />
@@ -1237,7 +1315,7 @@ return;
                                         v-for="m in methods"
                                         :key="m"
                                         :value="m"
-                                        class="text-xs font-bold font-mono"
+                                        class="font-mono text-xs font-bold"
                                         :class="getMethodColor(m)"
                                     >
                                         {{ m }}
@@ -1309,7 +1387,6 @@ return;
                                         class="py-1 text-xs"
                                         >Docs</TabsTrigger
                                     >
-
                                 </TabsList>
 
                                 <div
@@ -1320,8 +1397,14 @@ return;
                                         class="m-0 h-full overflow-y-auto bg-background/50 p-2"
                                     >
                                         <div class="space-y-2">
-                                            <template v-if="pathVariables.length > 0">
-                                                <h3 class="text-sm font-semibold mt-2 px-2">Path Variables</h3>
+                                            <template
+                                                v-if="pathVariables.length > 0"
+                                            >
+                                                <h3
+                                                    class="mt-2 px-2 text-sm font-semibold"
+                                                >
+                                                    Path Variables
+                                                </h3>
                                                 <div
                                                     class="grid grid-cols-[30px_1fr_1fr_1fr_40px] items-center gap-2 border-b px-2 pb-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
                                                 >
@@ -1334,14 +1417,23 @@ return;
 
                                                 <div class="space-y-2">
                                                     <div
-                                                        v-for="(param, idx) in pathVariables"
+                                                        v-for="(
+                                                            param, idx
+                                                        ) in pathVariables"
                                                         :key="'path-' + idx"
                                                         class="group/row grid grid-cols-[30px_1fr_1fr_1fr_40px] items-center gap-2"
                                                     >
-                                                        <div class="flex justify-center">
+                                                        <div
+                                                            class="flex justify-center"
+                                                        >
                                                             <Checkbox
-                                                                :model-value="param.enabled"
-                                                                @update:model-value="param.enabled = !!$event"
+                                                                :model-value="
+                                                                    param.enabled
+                                                                "
+                                                                @update:model-value="
+                                                                    param.enabled =
+                                                                        !!$event
+                                                                "
                                                             />
                                                         </div>
                                                         <VariableInput
@@ -1351,25 +1443,68 @@ return;
                                                             readonly
                                                         />
                                                         <VariableInput
-                                                            v-model="param.value"
+                                                            v-model="
+                                                                param.value
+                                                            "
                                                             placeholder="Value"
                                                             class="h-8 font-mono text-xs"
                                                         />
                                                         <Input
-                                                            v-model="param.description"
+                                                            v-model="
+                                                                param.description
+                                                            "
                                                             placeholder="Description"
                                                             class="h-8 text-xs"
                                                         />
-                                                        <div class="flex justify-center"></div>
+                                                        <div
+                                                            class="flex justify-center"
+                                                        ></div>
                                                     </div>
                                                 </div>
                                             </template>
 
-                                            <div class="flex items-center justify-between mt-2 px-2">
-                                                <h3 class="text-sm font-semibold">Query Parameters</h3>
-                                                <div v-if="pathVariables.length === 0" class="text-xs text-muted-foreground/70 flex items-center gap-1.5">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                                                    <span>Tip: Add <code class="font-mono text-[10px] bg-muted/50 px-1 py-0.5 rounded">:variable</code> to the URL for path variables.</span>
+                                            <div
+                                                class="mt-2 flex items-center justify-between px-2"
+                                            >
+                                                <h3
+                                                    class="text-sm font-semibold"
+                                                >
+                                                    Query Parameters
+                                                </h3>
+                                                <div
+                                                    v-if="
+                                                        pathVariables.length ===
+                                                        0
+                                                    "
+                                                    class="flex items-center gap-1.5 text-xs text-muted-foreground/70"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="12"
+                                                        height="12"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        class="lucide lucide-lightbulb"
+                                                    >
+                                                        <path
+                                                            d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"
+                                                        />
+                                                        <path d="M9 18h6" />
+                                                        <path d="M10 22h4" />
+                                                    </svg>
+                                                    <span
+                                                        >Tip: Add
+                                                        <code
+                                                            class="rounded bg-muted/50 px-1 py-0.5 font-mono text-[10px]"
+                                                            >:variable</code
+                                                        >
+                                                        to the URL for path
+                                                        variables.</span
+                                                    >
                                                 </div>
                                             </div>
                                             <div
@@ -1390,10 +1525,17 @@ return;
                                                     :key="idx"
                                                     class="group/row grid grid-cols-[30px_1fr_1fr_1fr_40px] items-center gap-2"
                                                 >
-                                                    <div class="flex justify-center">
+                                                    <div
+                                                        class="flex justify-center"
+                                                    >
                                                         <Checkbox
-                                                            :model-value="param.enabled"
-                                                            @update:model-value="param.enabled = !!$event"
+                                                            :model-value="
+                                                                param.enabled
+                                                            "
+                                                            @update:model-value="
+                                                                param.enabled =
+                                                                    !!$event
+                                                            "
                                                         />
                                                     </div>
                                                     <VariableInput
@@ -1484,10 +1626,17 @@ return;
                                                     :key="idx"
                                                     class="group/row grid grid-cols-[30px_1fr_1fr_1fr_40px] items-center gap-2"
                                                 >
-                                                    <div class="flex justify-center">
+                                                    <div
+                                                        class="flex justify-center"
+                                                    >
                                                         <Checkbox
-                                                            :model-value="header.enabled"
-                                                            @update:model-value="header.enabled = !!$event"
+                                                            :model-value="
+                                                                header.enabled
+                                                            "
+                                                            @update:model-value="
+                                                                header.enabled =
+                                                                    !!$event
+                                                            "
                                                         />
                                                     </div>
                                                     <VariableInput
@@ -1766,10 +1915,17 @@ return;
                                                         :key="idx"
                                                         class="group/row grid grid-cols-[40px_1.5fr_100px_2fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
                                                     >
-                                                        <div class="flex justify-center">
+                                                        <div
+                                                            class="flex justify-center"
+                                                        >
                                                             <Checkbox
-                                                                :model-value="item.enabled"
-                                                                @update:model-value="item.enabled = !!$event"
+                                                                :model-value="
+                                                                    item.enabled
+                                                                "
+                                                                @update:model-value="
+                                                                    item.enabled =
+                                                                        !!$event
+                                                                "
                                                             />
                                                         </div>
                                                         <div
@@ -1825,7 +1981,12 @@ return;
                                                                 "
                                                                 type="file"
                                                                 class="h-7 border-0 bg-transparent px-2 text-[11px] file:mr-2 file:rounded file:border-0 file:bg-muted file:px-2 file:py-0.5 file:text-[10px] focus-visible:ring-0 focus-visible:ring-offset-0"
-                                                                @change="handleFileChange($event, item)"
+                                                                @change="
+                                                                    handleFileChange(
+                                                                        $event,
+                                                                        item,
+                                                                    )
+                                                                "
                                                             />
                                                             <VariableInput
                                                                 v-else
@@ -1916,10 +2077,17 @@ return;
                                                         :key="idx"
                                                         class="group/row grid grid-cols-[40px_2fr_2fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
                                                     >
-                                                        <div class="flex justify-center">
+                                                        <div
+                                                            class="flex justify-center"
+                                                        >
                                                             <Checkbox
-                                                                :model-value="item.enabled"
-                                                                @update:model-value="item.enabled = !!$event"
+                                                                :model-value="
+                                                                    item.enabled
+                                                                "
+                                                                @update:model-value="
+                                                                    item.enabled =
+                                                                        !!$event
+                                                                "
                                                             />
                                                         </div>
                                                         <div
@@ -2369,17 +2537,23 @@ return;
                                             </div>
                                         </div>
                                     </TabsContent>
-
                                 </div>
                             </Tabs>
                         </div>
                     </div>
                 </ResizablePanel>
 
-                <ResizableHandle id="request-editor-vertical-handle" with-handle />
+                <ResizableHandle
+                    id="request-editor-vertical-handle"
+                    with-handle
+                />
 
                 <!-- Response Section -->
-                <ResizablePanel id="request-editor-response-panel" :default-size="50" :min-size="20">
+                <ResizablePanel
+                    id="request-editor-response-panel"
+                    :default-size="50"
+                    :min-size="20"
+                >
                     <div class="flex h-full flex-col bg-muted/10">
                         <div
                             class="flex items-center gap-4 border-b bg-background/50 px-3 py-2"
@@ -2408,62 +2582,135 @@ return;
                                 >
                                 <span class="flex items-center gap-1"
                                     >Time:
-                                    <HoverCard @update:open="(open) => { if(open) fetchRequestHistory() }">
+                                    <HoverCard
+                                        @update:open="
+                                            (open) => {
+                                                if (open) fetchRequestHistory();
+                                            }
+                                        "
+                                    >
                                         <HoverCardTrigger as-child>
-                                            <span class="font-mono font-bold cursor-help underline decoration-dotted underline-offset-2">{{ responseMeta.time }} ms</span>
+                                            <span
+                                                class="cursor-help font-mono font-bold underline decoration-dotted underline-offset-2"
+                                                >{{
+                                                    responseMeta.time
+                                                }}
+                                                ms</span
+                                            >
                                         </HoverCardTrigger>
-                                        <HoverCardContent align="end" class="w-64 p-3 z-[100]">
+                                        <HoverCardContent
+                                            align="end"
+                                            class="z-[100] w-64 p-3"
+                                        >
                                             <div class="flex flex-col gap-2">
-                                                <h4 class="text-xs font-semibold">Recent Executions</h4>
-                                                <div v-if="isFetchingHistory" class="text-[10px] text-muted-foreground flex items-center justify-center py-4">
-                                                    <Loader2 class="h-4 w-4 animate-spin" />
+                                                <h4
+                                                    class="text-xs font-semibold"
+                                                >
+                                                    Recent Executions
+                                                </h4>
+                                                <div
+                                                    v-if="isFetchingHistory"
+                                                    class="flex items-center justify-center py-4 text-[10px] text-muted-foreground"
+                                                >
+                                                    <Loader2
+                                                        class="h-4 w-4 animate-spin"
+                                                    />
                                                 </div>
-                                                <div v-else-if="requestHistoryItems.length === 0" class="text-[10px] text-muted-foreground text-center py-2">
+                                                <div
+                                                    v-else-if="
+                                                        requestHistoryItems.length ===
+                                                        0
+                                                    "
+                                                    class="py-2 text-center text-[10px] text-muted-foreground"
+                                                >
                                                     No history found.
                                                 </div>
-                                                <div v-else class="relative h-20 w-full mt-4 mb-2">
+                                                <div
+                                                    v-else
+                                                    class="relative mt-4 mb-2 h-20 w-full"
+                                                >
                                                     <!-- Beautiful SVG Curve Graph -->
-                                                    <svg class="absolute inset-0 w-full h-full overflow-visible pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                                    <svg
+                                                        class="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                                                        preserveAspectRatio="none"
+                                                        viewBox="0 0 100 100"
+                                                    >
                                                         <defs>
-                                                            <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="0%" stop-color="currentColor" stop-opacity="0.3" class="text-primary"/>
-                                                                <stop offset="100%" stop-color="currentColor" stop-opacity="0" class="text-primary"/>
+                                                            <linearGradient
+                                                                id="chart-gradient"
+                                                                x1="0"
+                                                                y1="0"
+                                                                x2="0"
+                                                                y2="1"
+                                                            >
+                                                                <stop
+                                                                    offset="0%"
+                                                                    stop-color="currentColor"
+                                                                    stop-opacity="0.3"
+                                                                    class="text-primary"
+                                                                />
+                                                                <stop
+                                                                    offset="100%"
+                                                                    stop-color="currentColor"
+                                                                    stop-opacity="0"
+                                                                    class="text-primary"
+                                                                />
                                                             </linearGradient>
                                                         </defs>
                                                         <!-- Area fill -->
-                                                        <path 
-                                                            :d="graphAreaPath" 
-                                                            fill="url(#chart-gradient)" 
+                                                        <path
+                                                            :d="graphAreaPath"
+                                                            fill="url(#chart-gradient)"
                                                         />
                                                         <!-- Line stroke -->
-                                                        <path 
-                                                            :d="graphLinePath" 
-                                                            fill="none" 
-                                                            stroke="currentColor" 
-                                                            stroke-width="2" 
-                                                            class="text-primary" 
-                                                            stroke-linecap="round" 
+                                                        <path
+                                                            :d="graphLinePath"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            stroke-width="2"
+                                                            class="text-primary"
+                                                            stroke-linecap="round"
                                                             stroke-linejoin="round"
                                                             vector-effect="non-scaling-stroke"
                                                         />
                                                     </svg>
 
                                                     <!-- Interactive Overlay -->
-                                                    <div class="absolute inset-0 flex items-stretch">
-                                                        <div v-for="(point, i) in graphPoints" :key="i" class="flex-1 h-full group/bar relative cursor-crosshair flex flex-col justify-end">
-                                                            
+                                                    <div
+                                                        class="absolute inset-0 flex items-stretch"
+                                                    >
+                                                        <div
+                                                            v-for="(
+                                                                point, i
+                                                            ) in graphPoints"
+                                                            :key="i"
+                                                            class="group/bar relative flex h-full flex-1 cursor-crosshair flex-col justify-end"
+                                                        >
                                                             <!-- Vertical Crosshair Line -->
-                                                            <div class="absolute bottom-0 w-px h-full bg-primary/20 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 pointer-events-none transition-opacity duration-150"></div>
-                                                            
+                                                            <div
+                                                                class="pointer-events-none absolute bottom-0 left-1/2 h-full w-px -translate-x-1/2 bg-primary/20 opacity-0 transition-opacity duration-150 group-hover/bar:opacity-100"
+                                                            ></div>
+
                                                             <!-- Tooltip -->
-                                                            <div class="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 bg-popover/90 backdrop-blur-sm border border-border text-popover-foreground text-[10px] px-2 py-1 rounded-md shadow-md pointer-events-none z-10 whitespace-nowrap transition-all duration-200 transform group-hover/bar:-translate-y-1">
-                                                                <div class="font-mono font-bold text-primary">{{ point.ms }} ms</div>
+                                                            <div
+                                                                class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-3 -translate-x-1/2 transform rounded-md border border-border bg-popover/90 px-2 py-1 text-[10px] whitespace-nowrap text-popover-foreground opacity-0 shadow-md backdrop-blur-sm transition-all duration-200 group-hover/bar:-translate-y-1 group-hover/bar:opacity-100"
+                                                            >
+                                                                <div
+                                                                    class="font-mono font-bold text-primary"
+                                                                >
+                                                                    {{
+                                                                        point.ms
+                                                                    }}
+                                                                    ms
+                                                                </div>
                                                             </div>
-                                                            
+
                                                             <!-- Point Indicator Dot -->
-                                                            <div 
-                                                                class="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-background border-[2px] border-primary opacity-0 group-hover/bar:opacity-100 transition-all duration-200 pointer-events-none shadow-sm group-hover/bar:scale-125"
-                                                                :style="{ top: `${point.y}%` }"
+                                                            <div
+                                                                class="pointer-events-none absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2px] border-primary bg-background opacity-0 shadow-sm transition-all duration-200 group-hover/bar:scale-125 group-hover/bar:opacity-100"
+                                                                :style="{
+                                                                    top: `${point.y}%`,
+                                                                }"
                                                             ></div>
                                                         </div>
                                                     </div>
@@ -2502,7 +2749,6 @@ return;
                                         class="py-1 text-xs"
                                         >Headers</TabsTrigger
                                     >
-
                                 </TabsList>
 
                                 <div
@@ -2526,16 +2772,22 @@ return;
                                     </div>
                                     <TabsContent
                                         value="body"
-                                        class="m-0 h-full flex flex-col"
+                                        class="m-0 flex h-full flex-col"
                                     >
-                                        <div v-if="isHtmlResponse" class="flex-1 relative min-h-0 bg-white">
+                                        <div
+                                            v-if="isHtmlResponse"
+                                            class="relative min-h-0 flex-1 bg-white"
+                                        >
                                             <iframe
-                                                class="w-full h-full border-none"
+                                                class="h-full w-full border-none"
                                                 :srcdoc="responseBody"
                                                 sandbox="allow-same-origin"
                                             ></iframe>
                                         </div>
-                                        <div v-else class="flex-1 relative min-h-0">
+                                        <div
+                                            v-else
+                                            class="relative min-h-0 flex-1"
+                                        >
                                             <VueMonacoEditor
                                                 :value="responseBody"
                                                 :theme="monacoTheme"
@@ -2545,7 +2797,7 @@ return;
                                                     minimap: { enabled: false },
                                                     automaticLayout: true,
                                                     scrollBeyondLastLine: false,
-                                                    wordWrap: 'on'
+                                                    wordWrap: 'on',
                                                 }"
                                             />
                                         </div>
@@ -2572,20 +2824,38 @@ return;
                                             >
                                         </div>
                                         <div v-else>
-                                            <div class="space-y-1.5 font-mono text-[11px]">
-                                                <div 
-                                                    v-for="(values, key) in responseHeaders" 
+                                            <div
+                                                class="space-y-1.5 font-mono text-[11px]"
+                                            >
+                                                <div
+                                                    v-for="(
+                                                        values, key
+                                                    ) in responseHeaders"
                                                     :key="key"
                                                     class="border-b border-muted/20 pb-1.5 last:border-0"
                                                 >
-                                                    <div class="font-semibold text-primary truncate select-all">{{ key }}</div>
-                                                    <div class="text-muted-foreground break-all mt-0.5 select-all">{{ Array.isArray(values) ? values.join(', ') : values }}</div>
+                                                    <div
+                                                        class="truncate font-semibold text-primary select-all"
+                                                    >
+                                                        {{ key }}
+                                                    </div>
+                                                    <div
+                                                        class="mt-0.5 break-all text-muted-foreground select-all"
+                                                    >
+                                                        {{
+                                                            Array.isArray(
+                                                                values,
+                                                            )
+                                                                ? values.join(
+                                                                      ', ',
+                                                                  )
+                                                                : values
+                                                        }}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </TabsContent>
-
-
                                 </div>
                             </Tabs>
                         </div>

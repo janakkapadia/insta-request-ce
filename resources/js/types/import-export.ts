@@ -1,8 +1,23 @@
-export type ImportFormat = 'postman_v2' | 'openapi_3' | 'swagger_2' | 'curl' | 'har' | 'insomnia';
+export type ImportFormat =
+    | 'postman_v2'
+    | 'openapi_3'
+    | 'swagger_2'
+    | 'curl'
+    | 'har'
+    | 'insomnia';
 export type ExportFormat = 'postman_v2' | 'openapi_3' | 'curl' | 'har';
-export type ImportStatus = 'pending' | 'previewing' | 'processing' | 'completed' | 'failed';
+export type ImportStatus =
+    | 'pending'
+    | 'previewing'
+    | 'processing'
+    | 'completed'
+    | 'failed';
 export type ExportStatus = 'processing' | 'completed' | 'failed';
-export type MergeStrategy = 'create_new' | 'merge_replace' | 'merge_skip' | 'mirror';
+export type MergeStrategy =
+    | 'create_new'
+    | 'merge_replace'
+    | 'merge_skip'
+    | 'mirror';
 
 export interface ValidationMessage {
     level: 'error' | 'warning' | 'info';

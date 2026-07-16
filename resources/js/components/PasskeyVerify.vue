@@ -21,7 +21,12 @@ type Props = {
 
 const props = defineProps<Props>();
 
-const { verify, isLoading, error, isSupported: baseIsSupported } = usePasskeyVerify({
+const {
+    verify,
+    isLoading,
+    error,
+    isSupported: baseIsSupported,
+} = usePasskeyVerify({
     ...(props.routes
         ? {
               routes: {

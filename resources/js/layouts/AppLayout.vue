@@ -20,9 +20,8 @@ watch(
     () => {
         updateLayoutForPage(page.component, page.props);
     },
-    { immediate: true, deep: true }
+    { immediate: true, deep: true },
 );
-
 
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
     const store = useWorkspaceStore();
@@ -49,7 +48,6 @@ const activeBreadcrumbs = computed(() => {
 
     return layoutState.breadcrumbs;
 });
-
 </script>
 
 <template>
@@ -58,4 +56,3 @@ const activeBreadcrumbs = computed(() => {
         <OfflineOverlay />
     </AppLayout>
 </template>
-
