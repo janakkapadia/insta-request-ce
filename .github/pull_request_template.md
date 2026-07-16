@@ -1,49 +1,59 @@
 <!--
 Thank you for contributing to InstaRequest Community Edition (CE)! 🚀
-Please fill out this template to help reviewers clearly understand your changes and verify them efficiently.
+Please fill out the sections below to help maintainers review and merge your pull request quickly.
 -->
 
 ### 📝 Summary of Changes
-<!-- Provide a concise description of what this pull request changes or adds. Explain the motivation and context. -->
+<!--
+Provide a clear and concise summary of what this pull request changes, adds, or fixes.
+Explain *why* this change is needed and how it improves the developer experience or application capability.
+-->
 
+
+---
 
 ### 🔗 Related Issue(s)
-<!-- Link to any relevant open issues this PR resolves or addresses (e.g., "Fixes #12", "Resolves #45", "Addresses #89"). -->
-- Fixes #
+<!--
+Link any related open GitHub issues. Using "Resolves #" or "Fixes #" will automatically close the linked issue when this PR is merged.
+-->
+* Resolves #
+* Related to #
+
+---
 
 ### 🏷️ Type of Change
-<!-- Check all options that apply by changing [ ] to [x] -->
-- [ ] 🐞 **Bug fix** (non-breaking change which fixes an issue)
-- [ ] ✨ **New feature** (non-breaking change which adds new functionality)
-- [ ] 💥 **Breaking change** (fix or feature that would cause existing functionality or API contracts to change)
-- [ ] 📚 **Documentation update** (README, CONTRIBUTING, API docs, or code comments)
-- [ ] 🛠️ **Refactoring / Performance** (code improvements without functional behavior changes)
-- [ ] ⚙️ **CI / Build / Chore** (tooling, dependencies, GitHub Actions workflows)
+<!-- Check all boxes that apply using [x] -->
+- [ ] `feat` — A new feature or capability
+- [ ] `fix` — A bug fix or error handling improvement
+- [ ] `docs` — Documentation additions or adjustments (`README.md`, `CONTRIBUTING.md`, etc.)
+- [ ] `refactor` — Code restructuring or cleanup without changing external behavior
+- [ ] `test` — Adding, updating, or fixing automated Pest PHP tests
+- [ ] `chore` — Maintenance tasks, dependency updates, or build tool adjustments
 
 ---
 
-### ✅ Verification & Testing Checklist
-<!-- Confirm that your changes have been thoroughly tested locally and check all boxes before submitting. -->
-- [ ] I have run `composer ci:check` locally and confirmed that all static analysis, linting, type checks (`vue-tsc`), and backend tests (`pest`) pass without errors.
-- [ ] I have verified that any new/modified API routes or UI workflows work correctly under local development (`composer run dev`).
-- [ ] I have added or updated automated unit/feature tests (`tests/Feature/` or `tests/Unit/`) covering the new functionality or bug fix.
+### ✅ Pre-Submission Quality Checklist
+<!-- Please verify the following checks before requesting review using [x] -->
+- [ ] My code strictly follows the [Contributing Guidelines](file:///Users/janakkapadia/code/insta-request-ce/CONTRIBUTING.md) and [Code of Conduct](file:///Users/janakkapadia/code/insta-request-ce/CODE_OF_CONDUCT.md).
+- [ ] My commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format (e.g., `feat(docs): add resizable sections`).
+- [ ] I have run our pre-push verification suite **`composer ci:check`** locally (`npm run lint:check` + `format:check` + `types:check` + `composer test`), and all checks passed without errors or warnings.
+- [ ] I have added or updated automated **Pest PHP** tests (`./vendor/bin/pest`) verifying my new feature or bug fix (for backend/API modifications).
+- [ ] I have performed a thorough self-review of my code and removed any temporary debugging statements (`dd()`, `dump()`, `console.log`).
 
-#### 🧪 Local Reproduction / Verification Steps
-<!-- Describe how a reviewer can manually test and verify this pull request locally: -->
-1. 
-2. 
-3. 
+---
 
-#### 📸 Screenshots / Screen Recordings (if applicable)
-<!-- If this PR modifies or introduces frontend UI components (`resources/js/`), please attach before/after screenshots or a short Loom/GIF demonstrating the visual interaction: -->
+### 📸 UI & Visual Changes (If Applicable)
+<!--
+If your PR modifies Vue components (`resources/js/`) or Tailwind CSS layouts, please attach Before and After screenshots or a brief screen recording illustrating the visual or interactive changes.
+-->
 | Before | After |
 | :---: | :---: |
-| <!-- attach before image --> | <!-- attach after image --> |
+| <!-- Insert screenshot --> | <!-- Insert screenshot --> |
 
 ---
 
-### 📋 Final Pre-Submission Checklist
-- [ ] My code strictly follows the existing coding style and formatting conventions of the project (`pint` and `eslint`).
-- [ ] I have self-reviewed my diff to ensure no scratch/temporary files, debug `console.log()` / `dd()`, or sensitive keys are committed.
-- [ ] My changes do not generate any new TypeScript compilation warnings or Vue prop mutations.
-- [ ] If introducing new environment variables (`.env`), I have documented them in `.env.example` and `CONTRIBUTING.md`.
+### ⚠️ Deploy / Migration Notes (If Applicable)
+<!--
+List any special steps required when deploying this branch (e.g., new `php artisan migrate` migrations, new `.env` variables added to `.env.example`, or new `npm/composer` packages installed).
+-->
+* 

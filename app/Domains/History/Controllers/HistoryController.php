@@ -2,9 +2,11 @@
 
 namespace App\Domains\History\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Domains\History\Models\RequestHistory;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class HistoryController extends Controller
@@ -13,7 +15,7 @@ class HistoryController extends Controller
     {
         $team = $request->user()->currentTeam;
 
-        if (!$team) {
+        if (! $team) {
             return Inertia::render('Dashboard');
         }
 
@@ -31,15 +33,15 @@ class HistoryController extends Controller
     {
         $team = $request->user()->currentTeam;
 
-        if (!$team) {
+        if (! $team) {
             return response()->json([]);
         }
 
         $query = RequestHistory::where('team_id', $team->id);
-        
-        \Log::info('apiIndex called', ['request_id' => $request->input('request_id'), 'team_id' => $team->id]);
 
-        if ($request->has('request_id')) {
+        Log::info('apiIndex called', ['request_id' => $request->input('request_id'), 'team_id' => $team->id]);
+
+        if ($request->has('request_id') && Str::isUuid($request->input('request_id'))) {
             $query->where('request_id', $request->input('request_id'));
         }
 
@@ -47,8 +49,8 @@ class HistoryController extends Controller
             ->orderBy('created_at', 'desc')
             ->take(50)
             ->get();
-            
-        \Log::info('apiIndex results', ['count' => $history->count()]);
+
+        Log::info('apiIndex results', ['count' => $history->count()]);
 
         return response()->json($history);
     }
@@ -77,4 +79,3 @@ class HistoryController extends Controller
         ]);
     }
 }
-

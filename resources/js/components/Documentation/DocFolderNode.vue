@@ -91,7 +91,7 @@ const folderRequestsCount = computed(() => getFolderRequestsCount(props.folder.i
                 :key="req.id"
                 @click="emit('selectRequest', req.id)"
                 class="w-full flex items-center gap-2 p-1.5 rounded-md transition-colors text-left group/btn"
-                :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground border border-border/50 shadow-sm' : 'hover:bg-muted text-muted-foreground'"
+                :class="selectedRequestId === req.id ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground border border-border/50 shadow-sm' : 'hover:bg-muted text-foreground'"
             >
                 <span
                     class="inline-flex shrink-0 items-center justify-center rounded border px-1 text-[8px] leading-none font-bold uppercase py-0.5 w-10 text-center select-none"
