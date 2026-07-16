@@ -288,10 +288,23 @@ export function parseMarkdown(markdown: string | null | undefined): string {
                 return tableBlock;
             }
 
+            let separatorLine = lines[1].trim();
+
+            if (separatorLine.startsWith('|')) {
+                separatorLine = separatorLine.slice(1);
+            }
+
+            if (separatorLine.endsWith('|')) {
+                separatorLine = separatorLine.slice(0, -1);
+            }
+
+            const separatorCells = separatorLine
+                .split('|')
+                .map((c) => c.trim());
+
             if (
-                !/^[ \t]*\|?[ \t]*:?[-=]+:?[ \t]*(\|([ \t]*:?[-=]+:?[ \t]*\|?)+)?$/.test(
-                    lines[1],
-                )
+                separatorCells.length === 0 ||
+                !separatorCells.every((cell) => /^:?[-=]+:?$/.test(cell))
             ) {
                 return tableBlock;
             }
