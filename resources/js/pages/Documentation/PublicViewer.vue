@@ -646,7 +646,7 @@ onMounted(() => {
 <template>
     <Head :title="((props.collection && props.collection.name) || 'API Documentation') + ' - API Reference'" />
 
-    <div class="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
+    <div class="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col font-sans">
         <!-- Gorgeous Top Bar Banner -->
         <header class="h-[69px] shrink-0 sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none gap-4">
             <div class="flex items-center gap-3 min-w-0 flex-1">
