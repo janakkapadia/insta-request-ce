@@ -14,7 +14,7 @@ import {
     Sun,
     Moon
 } from 'lucide-vue-next';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
 import {
     ResizableHandle,
@@ -628,6 +628,27 @@ const copyEndpointUrl = (url: string) => {
     }, 2000);
 };
 
+// Copy Permalink to Clipboard
+const permalinkCopied = ref(false);
+const copyPermalink = (id: string) => {
+    const url = new URL(window.location.href);
+    url.hash = id;
+    copyTextToClipboard(url.toString());
+    permalinkCopied.value = true;
+    setTimeout(() => {
+        permalinkCopied.value = false;
+    }, 2000);
+};
+
+// Sync selectedRequestId with URL hash
+watch(selectedRequestId, (newId) => {
+    if (newId) {
+        window.history.replaceState(null, '', `#${newId}`);
+    } else {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+});
+
 // Setup initial theme on load
 onMounted(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -638,6 +659,14 @@ onMounted(() => {
     } else {
         isDark.value = false;
         document.documentElement.classList.remove('dark');
+    }
+
+    // Read initial hash for permalink
+    if (window.location.hash) {
+        const hashId = window.location.hash.substring(1);
+        if (hashId && props.requests && props.requests.some(r => r.id === hashId)) {
+            selectedRequestId.value = hashId;
+        }
     }
 });
 </script>
@@ -825,7 +854,18 @@ onMounted(() => {
                             </span>
                             <span class="text-xs text-muted-foreground uppercase tracking-widest font-bold">API Endpoint</span>
                         </div>
-                        <h2 class="text-xl font-extrabold text-foreground tracking-tight">{{ activeRequest.name }}</h2>
+                        <div class="flex items-center justify-between gap-4">
+                            <h2 class="text-xl font-extrabold text-foreground tracking-tight">{{ activeRequest.name }}</h2>
+                            <button
+                                @click="copyPermalink(activeRequest.id)"
+                                class="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shrink-0"
+                                title="Copy documentation permalink"
+                            >
+                                <Check v-if="permalinkCopied" class="h-3.5 w-3.5 text-emerald-500" />
+                                <Copy v-else class="h-3.5 w-3.5" />
+                                <span>Permalink</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- URL Bar with copy -->
