@@ -664,6 +664,7 @@ onMounted(() => {
     // Read initial hash for permalink
     if (window.location.hash) {
         const hashId = window.location.hash.substring(1);
+
         if (hashId && props.requests && props.requests.some(r => r.id === hashId)) {
             selectedRequestId.value = hashId;
         }
