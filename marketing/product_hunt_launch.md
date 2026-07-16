@@ -1,4 +1,4 @@
-# Product Hunt Launch Kit for Jackman
+# Product Hunt Launch Kit for Insta Request
 
 ## Taglines
 - **Primary:** The lightweight, real-time Postman alternative.
@@ -8,11 +8,11 @@
 ## Maker's Comment
 Hello Product Hunt! 👋
 
-I'm incredibly excited to launch Jackman today. 
+I'm incredibly excited to launch Insta Request today. 
 
 Like many of you, I've spent years using tools like Postman and Insomnia. But lately, they've felt bloated, slow, and increasingly force you into their proprietary cloud ecosystems. I wanted something native-feeling, blazingly fast, and respectful of my data.
 
-So, I built **Jackman**.
+So, I built **Insta Request**.
 
 It has everything you need:
 ⚡️ **Fast Request Builder** with variables and scripting.
@@ -20,7 +20,7 @@ It has everything you need:
 🔒 **Encrypted Environments** (we automatically AES-256 encrypt your secrets on the fly).
 📁 **Collections & Import/Export** to easily migrate your existing workspaces.
 
-Jackman isn't a 1GB Electron app that takes 10 seconds to open. It's built for speed and developer productivity.
+Insta Request isn't a 1GB Electron app that takes 10 seconds to open. It's built for speed and developer productivity.
 
 I'd love to hear your feedback, feature requests, or what API pain points you're trying to solve today! I'll be hanging around in the comments all day.
 

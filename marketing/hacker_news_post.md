@@ -1,14 +1,14 @@
 # Hacker News Launch Post (Show HN)
 
-**Title:** Show HN: Jackman – A real-time, lightweight Postman alternative
+**Title:** Show HN: Insta Request – A real-time, lightweight Postman alternative
 
 **Body:**
 
 Hi HN,
 
-I’m the creator of Jackman. For the last few years, I’ve watched API testing tools turn from lightweight utilities into heavy, 1GB Electron behemoths that force you into their closed cloud ecosystems. 
+I’m the creator of Insta Request. For the last few years, I’ve watched API testing tools turn from lightweight utilities into heavy, 1GB Electron behemoths that force you into their closed cloud ecosystems. 
 
-I decided to build something different. Jackman is an API collaboration and testing tool built to be extremely fast, native-feeling, and deeply respectful of your data. 
+I decided to build something different. Insta Request is an API collaboration and testing tool built to be extremely fast, native-feeling, and deeply respectful of your data. 
 
 **Under the hood:**
 - **Tech Stack:** It's built on Laravel 13, Vue 3, and Inertia.js. No heavy SPA boilerplate, just clean server-driven state combined with instant client-side reactivity.

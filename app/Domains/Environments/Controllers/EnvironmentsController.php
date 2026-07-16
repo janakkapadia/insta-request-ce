@@ -182,7 +182,7 @@ class EnvironmentsController extends Controller
             })->values()->toArray(),
             '_postman_variable_scope' => 'environment',
             '_postman_exported_at' => now()->toIso8601String(),
-            '_postman_exported_using' => 'Jackman/1.0.0',
+            '_postman_exported_using' => 'InstaRequest/1.0.0',
         ];
 
         $filename = Str::slug($environment->name) . '.postman_environment.json';

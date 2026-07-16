@@ -28,7 +28,7 @@ const props = defineProps<{
 
 onMounted(() => {
     if (props.status === 'Email verified!') {
-        window.location.href = 'jackman://verified';
+        window.location.href = 'instarequest://verified';
     }
 });
 </script>

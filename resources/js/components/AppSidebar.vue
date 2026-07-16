@@ -254,9 +254,9 @@ const handleDropOnCollectionHeader = async (
                 try {
                     const parsed = JSON.parse(data);
 
-                    if (parsed.type === 'jackman-request') {
+                    if (parsed.type === 'instarequest-request') {
                         requestId = parsed.id;
-                    } else if (parsed.type === 'jackman-folder') {
+                    } else if (parsed.type === 'instarequest-folder') {
                         const collection = store.collections.find(
                             (c: any) => c.id === collectionId,
                         );

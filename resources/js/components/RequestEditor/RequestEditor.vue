@@ -854,7 +854,7 @@ watch(
                         },
                         {
                             key: 'User-Agent',
-                            value: 'Jackman/1.0.0',
+                            value: 'InstaRequest/1.0.0',
                             enabled: true,
                             description: 'Client user agent',
                         },

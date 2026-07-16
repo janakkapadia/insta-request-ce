@@ -237,7 +237,7 @@ const handleDragStart = (e: DragEvent, req: any) => {
     if (e.dataTransfer) {
         e.dataTransfer.setData(
             'text/plain',
-            JSON.stringify({ type: 'jackman-request', id: req.id }),
+            JSON.stringify({ type: 'instarequest-request', id: req.id }),
         );
         e.dataTransfer.effectAllowed = 'move';
     }
@@ -263,9 +263,9 @@ const handleDropOnCollection = async (e: DragEvent) => {
             try {
                 const parsed = JSON.parse(dataStr);
 
-                if (parsed.type === 'jackman-request') {
+                if (parsed.type === 'instarequest-request') {
                     requestId = parsed.id;
-                } else if (parsed.type === 'jackman-folder') {
+                } else if (parsed.type === 'instarequest-folder') {
                     folderId = parsed.id;
                 }
             } catch {}

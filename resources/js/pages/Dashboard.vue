@@ -27,7 +27,7 @@ const page = usePage();
 
 onMounted(() => {
     if (page.props.status === 'Email verified!') {
-        window.location.href = 'jackman://verified';
+        window.location.href = 'instarequest://verified';
     }
 });
 
