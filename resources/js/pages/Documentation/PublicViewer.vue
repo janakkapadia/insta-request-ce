@@ -22,6 +22,7 @@ import {
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { parseMarkdown } from '@/lib/markdown';
+import { getMethodBadgeColors as getMethodClass } from '@/lib/method-colors';
 
 defineOptions({ layout: null as any });
 
@@ -236,28 +237,7 @@ return [];
     return [];
 });
 
-// Helper for HTTP Method styling
-const getMethodClass = (method: string) => {
-    const m = method.toUpperCase();
-
-    if (m === 'GET') {
-return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-}
-
-    if (m === 'POST') {
-return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-}
-
-    if (m === 'PUT') {
-return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-}
-
-    if (m === 'DELETE') {
-return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-}
-
-    return 'bg-muted text-muted-foreground border-border';
-};
+// Helper for HTTP Method styling — uses shared utility for consistency
 
 // Pre-render content
 const introHtml = computed(() => {
