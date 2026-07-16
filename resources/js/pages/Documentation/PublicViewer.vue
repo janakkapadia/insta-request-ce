@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 import DocFolderNode from '@/components/Documentation/DocFolderNode.vue';
+import OfflineOverlay from '@/components/OfflineOverlay.vue';
 import {
     ResizableHandle,
     ResizablePanel,
@@ -639,17 +640,30 @@ onMounted(() => {
         isDark.value = false;
         document.documentElement.classList.remove('dark');
     }
+
+    if (props.documentation?.settings?.favicon_path) {
+        const customFavicon = `/storage/${props.documentation.settings.favicon_path}`;
+        const links = document.querySelectorAll("link[rel*='icon']");
+        links.forEach((link: any) => {
+            link.href = customFavicon;
+        });
+    }
 });
+
 </script>
 
 <template>
-    <Head :title="((props.collection && props.collection.name) || 'API Documentation') + ' - API Reference'" />
+    <Head :title="((props.collection && props.collection.name) || 'API Documentation') + ' - API Reference'">
+    </Head>
 
     <div class="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col font-sans">
         <!-- Gorgeous Top Bar Banner -->
         <header class="h-[69px] shrink-0 sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md px-6 py-4 flex items-center justify-between select-none gap-4">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xs shrink-0">
+                <div v-if="props.documentation?.settings?.logo_path" class="h-9 w-9 shrink-0 flex items-center justify-center overflow-hidden">
+                    <img :src="`/storage/${props.documentation.settings.logo_path}`" class="h-full w-full object-contain" />
+                </div>
+                <div v-else class="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xs shrink-0">
                     <BookOpen class="h-5 w-5 text-primary" />
                 </div>
                 <div v-if="props.collection && props.documentation" class="relative shrink-0 max-w-[calc(100%-48px)]">
@@ -717,6 +731,8 @@ onMounted(() => {
                 </button>
             </div>
         </header>
+
+        <OfflineOverlay />
 
         <!-- Main Workspace: 3 Column resizable layout or Empty State -->
         <ResizablePanelGroup

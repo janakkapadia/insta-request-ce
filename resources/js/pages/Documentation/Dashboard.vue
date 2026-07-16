@@ -17,7 +17,9 @@ import {
     ExternalLink,
     X,
     Copy,
-    ArrowLeft
+    ArrowLeft,
+    Image,
+    UploadCloud
 } from 'lucide-vue-next';
 import { ref, watch, computed } from 'vue';
 import { toast } from 'vue-sonner';
@@ -170,7 +172,11 @@ const quickTogglePublic = (col: any) => {
 // State vars
 const selectedCollectionId = ref<string>(props.selectedCollectionId || '');
 const isLoading = ref<boolean>(false);
-const activeTab = ref<'settings' | 'intro' | 'requests'>('settings');
+const activeTab = ref<'settings' | 'intro' | 'requests' | 'branding'>('settings');
+
+const getObjectUrl = (file: File) => {
+    return URL.createObjectURL(file);
+};
 
 // Documentation details
 const docId = ref<string>('');
@@ -181,6 +187,37 @@ const markdownIntro = ref<string>('');
 const authInfo = ref<string>('');
 const docSettings = ref<any>({});
 const environmentId = ref<string>('');
+
+const logoFile = ref<File | null>(null);
+const faviconFile = ref<File | null>(null);
+const removeLogo = ref<boolean>(false);
+const removeFavicon = ref<boolean>(false);
+
+const handleLogoUpload = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        logoFile.value = target.files[0];
+        removeLogo.value = false;
+    }
+};
+
+const handleFaviconUpload = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        faviconFile.value = target.files[0];
+        removeFavicon.value = false;
+    }
+};
+
+const clearLogo = () => {
+    logoFile.value = null;
+    removeLogo.value = true;
+};
+
+const clearFavicon = () => {
+    faviconFile.value = null;
+    removeFavicon.value = true;
+};
 
 // Requests of selected collection with descriptions and mock response examples
 const editableRequestsList = ref<Array<any>>([]);
@@ -256,9 +293,18 @@ watch(() => props.documentation, (newDoc) => {
         authInfo.value = newDoc.auth_info || '';
         docSettings.value = newDoc.settings || {};
         environmentId.value = newDoc.environment_id || '';
+        
+        logoFile.value = null;
+        faviconFile.value = null;
+        removeLogo.value = false;
+        removeFavicon.value = false;
     } else {
         docId.value = '';
         environmentId.value = '';
+        logoFile.value = null;
+        faviconFile.value = null;
+        removeLogo.value = false;
+        removeFavicon.value = false;
     }
 }, { immediate: true });
 
@@ -278,21 +324,36 @@ watch(() => props.requestsList, (newList) => {
 // Save Documentation
 const handleSave = () => {
     if (!selectedCollectionId.value) {
-return;
-}
+        return;
+    }
     
     isLoading.value = true;
 
-    router.post(`/documentation/collection/${selectedCollectionId.value}`, {
-        is_public: isPublic.value,
-        public_slug: publicSlug.value,
-        version: version.value,
-        markdown_intro: markdownIntro.value,
-        auth_info: authInfo.value,
-        settings: docSettings.value,
-        environment_id: environmentId.value || null,
-        requests_descriptions: { ...editedRequestDescriptions.value }
-    }, {
+    const formData = new FormData();
+    formData.append('is_public', isPublic.value ? '1' : '0');
+    formData.append('public_slug', publicSlug.value);
+    formData.append('version', version.value);
+    formData.append('markdown_intro', markdownIntro.value);
+    formData.append('auth_info', authInfo.value);
+    if (environmentId.value) {
+        formData.append('environment_id', environmentId.value);
+    }
+    
+    if (logoFile.value) formData.append('logo', logoFile.value);
+    if (faviconFile.value) formData.append('favicon', faviconFile.value);
+    if (removeLogo.value) formData.append('remove_logo', '1');
+    if (removeFavicon.value) formData.append('remove_favicon', '1');
+
+    // Add nested arrays/objects properly for formData
+    Object.keys(docSettings.value).forEach(key => {
+        formData.append(`settings[${key}]`, docSettings.value[key]);
+    });
+    
+    Object.keys(editedRequestDescriptions.value).forEach(key => {
+        formData.append(`requests_descriptions[${key}]`, editedRequestDescriptions.value[key]);
+    });
+
+    router.post(`/documentation/collection/${selectedCollectionId.value}`, formData, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -626,6 +687,14 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                     General Settings
                 </button>
                 <button
+                    @click="activeTab = 'branding'"
+                    class="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold rounded-md transition-colors text-left"
+                    :class="activeTab === 'branding' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'"
+                >
+                    <Image class="h-4 w-4" />
+                    Branding & Auth
+                </button>
+                <button
                     @click="activeTab = 'intro'"
                     class="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold rounded-md transition-colors text-left"
                     :class="activeTab === 'intro' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'"
@@ -757,8 +826,79 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                             <p class="text-xs text-muted-foreground">Specify the API specification version (e.g. 1.2.0, v2).</p>
                         </div>
 
+                    </CardContent>
+                </Card>
+
+                <!-- Branding & Auth Settings -->
+                <Card v-if="activeTab === 'branding'" class="shadow-sm">
+                    <CardHeader>
+                        <CardTitle class="text-lg">Branding & Auth Settings</CardTitle>
+                        <CardDescription>Customize the look and feel of your public documentation portal and setup global authentication.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-8">
+                        <!-- Logo and Favicon Settings -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Custom Logo -->
+                            <div class="space-y-3">
+                                <Label class="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                    <Image class="h-3.5 w-3.5" />
+                                    Custom Logo
+                                </Label>
+                                <div class="flex items-start gap-4">
+                                    <div class="h-16 w-16 shrink-0 rounded-lg border border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                                        <img v-if="logoFile" :src="getObjectUrl(logoFile)" class="h-full w-full object-contain p-1" />
+                                        <img v-else-if="!removeLogo && docSettings?.logo_path" :src="`/storage/${docSettings.logo_path}`" class="h-full w-full object-contain p-1" />
+                                        <Image v-else class="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <div class="flex-1 space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <Label for="logo-upload" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
+                                                <UploadCloud class="h-3.5 w-3.5" />
+                                                Upload Logo
+                                            </Label>
+                                            <input id="logo-upload" type="file" accept="image/*" class="hidden" @change="handleLogoUpload" />
+                                            
+                                            <button v-if="logoFile || (!removeLogo && docSettings?.logo_path)" @click="clearLogo" class="text-xs text-destructive hover:underline font-semibold">
+                                                Remove
+                                            </button>
+                                        </div>
+                                        <p class="text-[11px] text-muted-foreground">Recommended: Transparent PNG/SVG, max height 64px, up to 5MB.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Favicon -->
+                            <div class="space-y-3">
+                                <Label class="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                    <Globe class="h-3.5 w-3.5" />
+                                    Custom Favicon
+                                </Label>
+                                <div class="flex items-start gap-4">
+                                    <div class="h-12 w-12 shrink-0 rounded-md border border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                                        <img v-if="faviconFile" :src="getObjectUrl(faviconFile)" class="h-full w-full object-contain p-1" />
+                                        <img v-else-if="!removeFavicon && docSettings?.favicon_path" :src="`/storage/${docSettings.favicon_path}`" class="h-full w-full object-contain p-1" />
+                                        <Globe v-else class="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                    <div class="flex-1 space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <Label for="favicon-upload" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
+                                                <UploadCloud class="h-3.5 w-3.5" />
+                                                Upload Favicon
+                                            </Label>
+                                            <input id="favicon-upload" type="file" accept=".ico,.png,.svg" class="hidden" @change="handleFaviconUpload" />
+                                            
+                                            <button v-if="faviconFile || (!removeFavicon && docSettings?.favicon_path)" @click="clearFavicon" class="text-xs text-destructive hover:underline font-semibold">
+                                                Remove
+                                            </button>
+                                        </div>
+                                        <p class="text-[11px] text-muted-foreground">Recommended: 32x32 ICO or PNG, up to 1MB.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Global Authentication info -->
-                        <div class="space-y-2">
+                        <div class="space-y-2 pt-6 border-t border-border">
                             <Label for="authInfo" class="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                                 Global Authentication Info
                                 <span class="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-semibold font-mono">Markdown Supported</span>
