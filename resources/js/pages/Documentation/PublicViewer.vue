@@ -858,6 +858,12 @@ onMounted(() => {
                 'API Documentation') + ' - API Reference'
         "
     >
+        <meta
+            v-if="props.documentation?.settings?.logo_path"
+            head-key="og:image"
+            property="og:image"
+            :content="`${$page.props.appUrl}/storage/${props.documentation.settings.logo_path}`"
+        />
     </Head>
 
     <div
