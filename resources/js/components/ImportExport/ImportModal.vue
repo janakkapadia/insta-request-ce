@@ -1568,9 +1568,7 @@ const methodColor = (method: string) => {
                                 Import Complete!
                             </div>
                             <div class="mt-1 text-xs text-muted-foreground">
-                                {{
-                                    finalResult.summary?.requests ?? 0
-                                }}
+                                {{ finalResult.summary?.requests ?? 0 }}
                                 requests imported successfully
                             </div>
                         </template>

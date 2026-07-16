@@ -481,9 +481,7 @@ const isHtmlResponse = computed(() => {
                                 <!-- Payload Size -->
                                 <span class="flex items-center gap-1 font-mono">
                                     <Database class="h-3.5 w-3.5" />
-                                    {{
-                                        (record.size_bytes / 1024).toFixed(2)
-                                    }}
+                                    {{ (record.size_bytes / 1024).toFixed(2) }}
                                     KB
                                 </span>
 
