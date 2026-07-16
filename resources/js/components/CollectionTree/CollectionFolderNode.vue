@@ -112,7 +112,10 @@ const handleFolderDragStart = (e: DragEvent) => {
     if (e.dataTransfer) {
         e.dataTransfer.setData(
             'text/plain',
-            JSON.stringify({ type: 'instarequest-folder', id: props.folder.id }),
+            JSON.stringify({
+                type: 'instarequest-folder',
+                id: props.folder.id,
+            }),
         );
         e.dataTransfer.effectAllowed = 'move';
     }

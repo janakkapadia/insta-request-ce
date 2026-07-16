@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { usePage } from '@inertiajs/vue3';
+
 import {
     Plus,
     Import,
@@ -10,7 +10,7 @@ import {
     Layers,
     Globe,
 } from 'lucide-vue-next';
-import { onMounted } from 'vue';
+
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -22,9 +22,6 @@ import {
 import { dashboard } from '@/routes';
 import * as collections from '@/routes/collections';
 import { useWorkspaceStore } from '@/stores/workspace';
-
-const page = usePage();
-
 
 interface Stats {
     total_collections: number;

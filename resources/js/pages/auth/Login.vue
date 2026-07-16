@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { onMounted } from 'vue';
+
 import InputError from '@/components/InputError.vue';
 import PasskeyVerify from '@/components/PasskeyVerify.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -21,11 +21,10 @@ defineOptions({
     },
 });
 
-const props = defineProps<{
+defineProps<{
     status?: string;
     canResetPassword: boolean;
 }>();
-
 </script>
 
 <template>
