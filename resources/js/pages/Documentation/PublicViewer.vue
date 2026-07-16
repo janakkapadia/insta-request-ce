@@ -384,12 +384,11 @@ axios({
 
         case 'python':
             return `import requests
-import json
 
 url = "${url}"
-${headersList.length ? `headers = {\n    ` + headersList.map(h => `"${h.key}": "${h.value}"`).join(',\n    ') + `\n}\n` : ''}${bodyStr ? `data = ${bodyStr}\n` : ''}
+${headersList.length ? `headers = {\n    ` + headersList.map(h => `"${h.key}": "${h.value}"`).join(',\n    ') + `\n}\n` : ''}${bodyStr ? `payload = ${JSON.stringify(bodyStr)}\n` : ''}
 response = requests.${method.toLowerCase()}(
-    url${headersList.length ? ', headers=headers' : ''}${bodyStr ? ', data=json.dumps(data)' : ''}
+    url${headersList.length ? ', headers=headers' : ''}${bodyStr ? ', data=payload' : ''}
 )
 
 print(response.status_code)
