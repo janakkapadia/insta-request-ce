@@ -112,7 +112,10 @@ const handleFolderDragStart = (e: DragEvent) => {
     if (e.dataTransfer) {
         e.dataTransfer.setData(
             'text/plain',
-            JSON.stringify({ type: 'jackman-folder', id: props.folder.id }),
+            JSON.stringify({
+                type: 'instarequest-folder',
+                id: props.folder.id,
+            }),
         );
         e.dataTransfer.effectAllowed = 'move';
     }
@@ -132,10 +135,10 @@ const handleDropOnFolder = async (e: DragEvent) => {
         let id: string | null = null;
 
         if (store.draggedRequestId) {
-            type = 'jackman-request';
+            type = 'instarequest-request';
             id = store.draggedRequestId;
         } else if (store.draggedFolderId) {
-            type = 'jackman-folder';
+            type = 'instarequest-folder';
             id = store.draggedFolderId;
         } else {
             // Fallback to dataTransfer
@@ -156,7 +159,7 @@ const handleDropOnFolder = async (e: DragEvent) => {
             return;
         }
 
-        if (type === 'jackman-request') {
+        if (type === 'instarequest-request') {
             // Find request to make sure it's not already in this folder
             let req: any = null;
 
@@ -180,7 +183,7 @@ const handleDropOnFolder = async (e: DragEvent) => {
                     props.folder.id,
                 );
             }
-        } else if (type === 'jackman-folder') {
+        } else if (type === 'instarequest-folder') {
             if (id !== props.folder.id) {
                 await store.moveFolder(
                     id,
@@ -256,7 +259,7 @@ const handleDragStart = (e: DragEvent, req: any) => {
     if (e.dataTransfer) {
         e.dataTransfer.setData(
             'text/plain',
-            JSON.stringify({ type: 'jackman-request', id: req.id }),
+            JSON.stringify({ type: 'instarequest-request', id: req.id }),
         );
         e.dataTransfer.effectAllowed = 'move';
     }
