@@ -26,11 +26,6 @@ const props = defineProps<{
     canResetPassword: boolean;
 }>();
 
-onMounted(() => {
-    if (props.status === 'Email verified!') {
-        window.location.href = 'instarequest://verified';
-    }
-});
 </script>
 
 <template>
