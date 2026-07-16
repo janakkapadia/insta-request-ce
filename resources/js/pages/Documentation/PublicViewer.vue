@@ -500,10 +500,10 @@ public class Main {
         case 'curl':
         default:
             const headersCurl = headersList.length
-                ? headersList.map(h => `-H "${h.key}: ${h.value}"`).join(' ')
+                ? headersList.map(h => `-H "${h.key}: ${h.value}"`).join(' \\\n  ')
                 : '';
 
-            return `curl -X ${method} "${url}" ${headersCurl ? `\\\n  ${headersCurl} ` : ''}${bodyStr ? `\\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'` : ''}`;
+            return `curl -X ${method} "${url}"${headersCurl ? ` \\\n  ${headersCurl}` : ''}${bodyStr ? ` \\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'` : ''}`;
     }
 });
 
