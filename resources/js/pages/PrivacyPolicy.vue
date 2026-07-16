@@ -117,7 +117,7 @@ import MarketingLayout from '@/layouts/MarketingLayout.vue';
                 </h2>
                 <p>
                     If you have any questions about this Privacy Policy, please
-                    contact us at privacy@instarequest.dev.
+                    contact us at janak@kapadia.me.
                 </p>
             </div>
         </div>
