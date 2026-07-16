@@ -37,13 +37,13 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600&display=swap" rel="stylesheet" />
 
-        <meta name="description" content="Jackman is a powerful, modern API development environment designed to streamline building, testing, and monitoring your APIs with ease." />
-        <meta property="og:title" content="{{ config('app.name', 'Jackman') }}" />
-        <meta property="og:description" content="Jackman is a powerful, modern API development environment designed to streamline building, testing, and monitoring your APIs with ease." />
+        <meta name="description" content="A powerful, modern API development environment designed to streamline building, testing, and monitoring your APIs with ease." />
+        <meta property="og:title" content="{{ config('app.name', 'InstaRequest') }}" />
+        <meta property="og:description" content="A powerful, modern API development environment designed to streamline building, testing, and monitoring your APIs with ease." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="{{ request()->url() }}" />
         <meta property="og:image" content="{{ asset('og-image.png') }}" />
-        <meta property="og:site_name" content="{{ config('app.name', 'Jackman') }}" />
+        <meta property="og:site_name" content="{{ config('app.name', 'InstaRequest') }}" />
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         <x-inertia::head>
