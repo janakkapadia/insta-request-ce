@@ -402,7 +402,7 @@ const generatedCode = computed(() => {
     const method = req.method.toUpperCase();
     const url = substituteEnvVariables(
         req.url || 'https://api.example.com/endpoint',
-    );
+    ).replace(/\\/g, '\\\\');
 
     // Parse body using extractBodyContent helper (only for methods that support request bodies, e.g. POST, PUT, PATCH)
     const hasRequestBody = ['POST', 'PUT', 'PATCH'].includes(method);
@@ -410,7 +410,10 @@ const generatedCode = computed(() => {
     const bodyStr = substituteEnvVariables(rawBody);
 
     // De-duplicate headers, adding Content-Type if missing and if a body is present
-    const rawHeaders = parsedHeaders.value;
+    const rawHeaders = parsedHeaders.value.map((h) => ({
+        key: h.key.replace(/\\/g, '\\\\'),
+        value: h.value.replace(/\\/g, '\\\\'),
+    }));
     const hasContentType = rawHeaders.some(
         (h) => h.key.toLowerCase() === 'content-type',
     );
