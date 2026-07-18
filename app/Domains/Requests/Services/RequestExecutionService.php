@@ -15,11 +15,11 @@ class RequestExecutionService
 
     public function __construct()
     {
-        $this->client = new Client([
+        $this->client = \Illuminate\Support\Facades\Http::withOptions([
             'timeout' => 30,
             'http_errors' => false,
             'verify' => false, // For local development testing
-        ]);
+        ])->buildClient();
     }
 
     /**
