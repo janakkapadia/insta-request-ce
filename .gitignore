@@ -35,3 +35,4 @@ yarn-error.log
 storage/logs/laravel.log
 
 /marketing
+/test_output.log
