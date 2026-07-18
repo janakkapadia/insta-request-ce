@@ -120,16 +120,19 @@ const totalPrivateCount = computed(() => {
 
 const getPublicUrl = (col: any) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
     return `${origin}/docs/${col.id}/${col.documentation?.public_slug || ''}`;
 };
 
 const currentPublicUrl = computed(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
     return `${origin}/docs/${selectedCollectionId.value}/${publicSlug.value}`;
 });
 
 const currentPublicBaseUrl = computed(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
     return `${origin}/docs/${selectedCollectionId.value}/`;
 });
 
