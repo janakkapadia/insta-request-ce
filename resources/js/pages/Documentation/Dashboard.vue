@@ -118,12 +118,27 @@ const totalPrivateCount = computed(() => {
     ).length;
 });
 
+const getPublicUrl = (col: any) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/docs/${col.id}/${col.documentation?.public_slug || ''}`;
+};
+
+const currentPublicUrl = computed(() => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/docs/${selectedCollectionId.value}/${publicSlug.value}`;
+});
+
+const currentPublicBaseUrl = computed(() => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/docs/${selectedCollectionId.value}/`;
+});
+
 const copyPublicUrl = (col: any) => {
     if (!col.documentation?.public_slug) {
         return;
     }
 
-    const url = `${window.location.origin}/docs/${col.id}/${col.documentation.public_slug}`;
+    const url = getPublicUrl(col);
 
     const doCopy = () => {
         copiedUrlId.value = col.id;
@@ -795,11 +810,7 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                             class="mt-1.5 flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
                         >
                             <Globe class="h-3 w-3 shrink-0 text-emerald-500" />
-                            <span class="truncate"
-                                >/docs/{{ col.id }}/{{
-                                    col.documentation.public_slug
-                                }}</span
-                            >
+                            <span class="truncate">{{ getPublicUrl(col) }}</span>
                             <button
                                 @click="copyPublicUrl(col)"
                                 class="shrink-0 cursor-pointer rounded p-0.5 transition-colors hover:text-foreground"
@@ -944,7 +955,7 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                     v-if="isPublic && publicSlug"
                 >
                     <a
-                        :href="`/docs/${selectedCollectionId}/${publicSlug}`"
+                        :href="currentPublicUrl"
                         target="_blank"
                         class="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-500 transition-colors hover:bg-emerald-500/20"
                     >
@@ -1120,14 +1131,14 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                             <Label
                                 for="slug"
                                 class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
-                                >Custom Link Slug</Label
+                                >Custom Slug</Label
                             >
                             <div class="flex w-full rounded-md shadow-xs">
                                 <span
                                     class="inline-flex shrink-0 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm whitespace-nowrap text-muted-foreground select-none"
-                                    :title="`/docs/${selectedCollectionId}/`"
+                                    :title="currentPublicBaseUrl"
                                 >
-                                    {{ `/docs/${selectedCollectionId}/` }}
+                                    {{ currentPublicBaseUrl }}
                                 </span>
                                 <Input
                                     id="slug"
