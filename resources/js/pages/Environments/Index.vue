@@ -448,17 +448,17 @@ const executeReplace = async () => {
             </div>
 
             <ScrollArea class="flex-1">
-                <div class="space-y-0.5 p-2">
+                <div class="space-y-1.5 p-2">
                     <button
                         v-for="env in filteredEnvironments"
                         :key="env.id"
                         type="button"
                         @click="selectEnv(env)"
                         :class="[
-                            'group flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left transition-colors',
+                            'group flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left transition-colors border',
                             selectedEnvId === env.id
-                                ? 'border border-accent/20 bg-accent font-medium text-accent-foreground shadow-sm'
-                                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                                ? 'border-accent/20 bg-accent font-medium text-accent-foreground shadow-sm'
+                                : 'border-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                         ]"
                     >
                         <div class="flex min-w-0 items-center gap-2.5">
