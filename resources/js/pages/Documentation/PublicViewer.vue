@@ -57,6 +57,7 @@ const props = defineProps<{
         method: string;
         url: string;
         headers: any;
+        path_variables: any;
         query_params: any;
         body: any;
         auth: any;
@@ -106,7 +107,11 @@ const substituteEnvVariables = (text: string | null | undefined): string => {
     activeEnvVariables.value.forEach((v) => {
         const regex1 = new RegExp(`\\{\\{${v.key}\\}\\}`, 'g');
         const regex2 = new RegExp(`\\{${v.key}\\}`, 'g');
-        result = result.replace(regex1, v.value).replace(regex2, v.value);
+        const val =
+            v.value !== null && v.value !== undefined && v.value !== ''
+                ? String(v.value)
+                : `{${v.key}}`;
+        result = result.replace(regex1, val).replace(regex2, val);
     });
 
     return result;
@@ -271,6 +276,70 @@ const parsedQueryParams = computed(() => {
     }
 
     return [];
+});
+
+// Helper to normalize path variables to a list of { key: string, value: string }
+const parsedPathVariables = computed(() => {
+    const req = activeRequest.value;
+
+    if (!req) {
+        return [];
+    }
+
+    let vars: any[] = [];
+
+    if (req.path_variables && Array.isArray(req.path_variables)) {
+        vars = req.path_variables
+            .filter(
+                (p) =>
+                    p && typeof p === 'object' && p.key && p.enabled !== false,
+            )
+            .map((p) => ({
+                ...p,
+                value: substituteEnvVariables(String(p.value || '')),
+            }));
+    } else if (req.path_variables && typeof req.path_variables === 'object') {
+        vars = Object.entries(req.path_variables)
+            .filter(([k, v]) => k && v !== undefined && v !== null)
+            .map(([k, v]) => ({
+                key: k,
+                value: substituteEnvVariables(String(v)),
+            }));
+    }
+
+    if (req.url) {
+        let urlStr = String(req.url);
+        // Remove env variables like {{api_url}} before extracting
+        urlStr = urlStr.replace(/\{\{[^}]+\}\}/g, '');
+
+        const extractedKeys = new Set<string>();
+
+        // Extract :param
+        const colonMatches = urlStr.matchAll(/:([a-zA-Z0-9_]+)/g);
+
+        for (const match of colonMatches) {
+            extractedKeys.add(match[1]);
+        }
+
+        // Extract {param}
+        const bracketMatches = urlStr.matchAll(/\{([a-zA-Z0-9_]+)\}/g);
+
+        for (const match of bracketMatches) {
+            extractedKeys.add(match[1]);
+        }
+
+        extractedKeys.forEach((key) => {
+            if (!vars.find((v) => v.key === key)) {
+                vars.push({
+                    key: key,
+                    value: '',
+                    description: '',
+                });
+            }
+        });
+    }
+
+    return vars;
 });
 
 const rawBodyContent = computed(() => {
@@ -1400,7 +1469,7 @@ onMounted(() => {
                             class="mt-8 rounded-xl border border-border bg-muted/20 p-5"
                         >
                             <h3
-                                class="mb-3 flex items-center gap-1.5 text-sm font-extrabold tracking-widest text-muted-foreground uppercase"
+                                class="mb-3 flex items-center gap-1.5 text-sm font-extrabold tracking-widest text-foreground uppercase"
                             >
                                 <Sparkles class="h-4 w-4 text-primary" />
                                 Authentication Guide
@@ -1429,7 +1498,7 @@ onMounted(() => {
                                     {{ activeRequest.method }}
                                 </span>
                                 <span
-                                    class="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+                                    class="text-xs font-bold tracking-widest text-foreground uppercase"
                                     >API Endpoint</span
                                 >
                             </div>
@@ -1443,7 +1512,7 @@ onMounted(() => {
                                 </h2>
                                 <button
                                     @click="copyPermalink(activeRequest.id)"
-                                    class="flex shrink-0 items-center gap-1.5 rounded-md border border-border/50 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-md border border-border/50 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
                                     title="Copy documentation permalink"
                                 >
                                     <Check
@@ -1473,7 +1542,7 @@ onMounted(() => {
                                         ),
                                     )
                                 "
-                                class="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
+                                class="shrink-0 rounded p-1 text-foreground transition-colors hover:bg-border hover:text-foreground"
                                 title="Copy URL Path"
                             >
                                 <Check
@@ -1490,10 +1559,65 @@ onMounted(() => {
                             v-html="requestDescHtml"
                         ></div>
 
+                        <!-- Path Variables -->
+                        <div
+                            v-if="parsedPathVariables.length > 0"
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
+                            >
+                                Path Variables
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
+                                            >
+                                                Variable
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
+                                            >
+                                                Description
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="param in parsedPathVariables"
+                                            :key="param.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ param.key }}
+                                                <span
+                                                    class="ml-1 text-[10px] text-red-500"
+                                                    >*</span
+                                                >
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 text-foreground/80"
+                                            >
+                                                {{ param.description }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Request Headers & Query Params Tables (if present) -->
                         <div v-if="parsedHeaders.length > 0" class="space-y-3">
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Request Headers
                             </h4>
@@ -1504,17 +1628,17 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Header key
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Type
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Mock Value
                                             </th>
@@ -1533,12 +1657,12 @@ onMounted(() => {
                                                 {{ header.key }}
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                                class="px-4 py-2 font-mono text-[10px] text-foreground"
                                             >
                                                 string
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 font-mono text-foreground/80 select-all"
                                             >
                                                 {{ header.value }}
                                             </td>
@@ -1554,7 +1678,7 @@ onMounted(() => {
                             class="space-y-3"
                         >
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Request Body
                             </h4>
@@ -1565,17 +1689,17 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Key
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Type
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Description
                                             </th>
@@ -1599,12 +1723,12 @@ onMounted(() => {
                                                 >
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                                class="px-4 py-2 font-mono text-[10px] text-foreground"
                                             >
                                                 {{ item.dataType || 'string' }}
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 font-mono text-foreground/80 select-all"
                                             >
                                                 {{ item.description || '' }}
                                             </td>
@@ -1618,7 +1742,7 @@ onMounted(() => {
                             class="flex flex-col gap-3"
                         >
                             <h4
-                                class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                                class="text-xs font-semibold tracking-wider text-foreground/80 uppercase"
                             >
                                 Request Body (Raw -
                                 {{ rawBodyContent.language }})
@@ -1639,7 +1763,7 @@ onMounted(() => {
                             class="space-y-3"
                         >
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Query Parameters
                             </h4>
@@ -1650,17 +1774,17 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Parameter
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Type
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Value
                                             </th>
@@ -1679,12 +1803,12 @@ onMounted(() => {
                                                 {{ param.key }}
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                                class="px-4 py-2 font-mono text-[10px] text-foreground"
                                             >
                                                 string
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 font-mono text-foreground/80 select-all"
                                             >
                                                 {{ param.value }}
                                             </td>

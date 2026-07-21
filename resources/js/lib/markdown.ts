@@ -111,7 +111,7 @@ export function parseMarkdown(markdown: string | null | undefined): string {
             })
             .join('\n');
 
-        return `<blockquote class="border-l-4 border-primary pl-4 italic text-muted-foreground my-4 space-y-2">\n${formattedContent}\n</blockquote>\n\n`;
+        return `<blockquote class="border-l-4 border-primary pl-4 italic text-foreground my-4 space-y-2">\n${formattedContent}\n</blockquote>\n\n`;
     });
 
     // 4. Headers: # through ######
@@ -260,7 +260,7 @@ export function parseMarkdown(markdown: string | null | undefined): string {
                     const inner = nodes
                         .map(
                             (n) =>
-                                `<li class="ml-4 ${style} text-muted-foreground">${n.content}${render(n.children, depth + 1)}</li>`,
+                                `<li class="ml-4 ${style} text-foreground">${n.content}${render(n.children, depth + 1)}</li>`,
                         )
                         .join('');
 
@@ -324,7 +324,7 @@ export function parseMarkdown(markdown: string | null | undefined): string {
                 const tag = isHeader ? 'th' : 'td';
                 const cellClass = isHeader
                     ? 'border border-border bg-muted/80 px-4 py-2.5 text-left font-semibold text-foreground'
-                    : 'border border-border px-4 py-2.5 text-muted-foreground';
+                    : 'border border-border px-4 py-2.5 text-foreground';
 
                 return `<tr>${cells.map((c) => `<${tag} class="${cellClass}">${c.trim()}</${tag}>`).join('')}</tr>`;
             };
@@ -358,7 +358,7 @@ export function parseMarkdown(markdown: string | null | undefined): string {
                 return trimmed;
             }
 
-            return `<p class="leading-relaxed text-muted-foreground mb-4">${trimmed}</p>`;
+            return `<p class="leading-relaxed text-foreground mb-4">${trimmed}</p>`;
         })
         .filter(Boolean)
         .join('');

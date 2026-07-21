@@ -41,12 +41,26 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import VariableInput from '@/components/VariableInput.vue';
 import { parseMarkdown } from '@/lib/markdown';
 import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
 import { useWorkspaceStore } from '@/stores/workspace';
 
 const store = useWorkspaceStore();
+
+const isMac = computed(() => {
+    if (typeof window === 'undefined') {
+return false;
+}
+
+    return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+});
 
 // ── Monaco theme: track the `dark` class on <html> ──────────────────────────
 const isDark = ref(false);
@@ -118,11 +132,24 @@ onMounted(() => {
     });
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleKeyDown);
 });
 onUnmounted(() => {
     themeObserver?.disconnect();
     window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.removeEventListener('keydown', handleKeyDown);
 });
+
+const handleKeyDown = (e: KeyboardEvent) => {
+    // Save on Cmd+S (Mac) or Ctrl+S (Windows)
+    if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key.toLowerCase() === 's' || e.code === 'KeyS')
+    ) {
+        e.preventDefault();
+        handleSave();
+    }
+};
 
 const method = ref('GET');
 const activeRequestTab = ref('params');
@@ -1125,8 +1152,66 @@ const removeHeader = (index: number) => {
     }
 };
 
-const handleEditorMount = (editor: any) => {
+let isMonacoHoverRegistered = false;
+
+const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.value = editor;
+
+    if (monaco && !isMonacoHoverRegistered) {
+        isMonacoHoverRegistered = true;
+
+        // Disable JSON validation to prevent errors from {{env}} variables
+        monaco.languages.json?.jsonDefaults?.setDiagnosticsOptions({
+            validate: false,
+        });
+
+        // Register hover provider for {{env}} variables across any language mode
+        monaco.languages.registerHoverProvider('*', {
+            provideHover: (model: any, position: any) => {
+                const lineContent = model.getLineContent(position.lineNumber);
+
+                const envRegex = /\{\{([^}]+)\}\}|\{([^}]+)\}/g;
+                let match;
+
+                while ((match = envRegex.exec(lineContent)) !== null) {
+                    const start = match.index + 1; // 1-based index in Monaco
+                    const end = start + match[0].length;
+
+                    if (position.column >= start && position.column <= end) {
+                        const varName = (match[1] || match[2]).trim();
+                        const variable =
+                            store.activeEnvironment?.variables?.find(
+                                (v: any) => v.key === varName && v.enabled,
+                            );
+
+                        return {
+                            range: new monaco.Range(
+                                position.lineNumber,
+                                start,
+                                position.lineNumber,
+                                end,
+                            ),
+                            contents: [
+                                {
+                                    value: `**Environment Variable: ${varName}**`,
+                                },
+                                {
+                                    value: variable
+                                        ? variable.value
+                                        : '*Unresolved*',
+                                },
+                                {
+                                    value: `*Scope: ${store.activeEnvironment?.name || 'Active Environment'}*`,
+                                },
+                            ],
+                        };
+                    }
+                }
+
+                return null;
+            },
+        });
+    }
 };
 
 const methods = [
@@ -1362,16 +1447,34 @@ const executeRequest = async () => {
                                 class="h-9 flex-1"
                             />
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="h-9 gap-1 text-xs"
-                                @click="handleSave"
-                                :disabled="isSaving"
-                            >
-                                <Save class="h-3.5 w-3.5" />
-                                <span>{{ isSaving ? '...' : 'Save' }}</span>
-                            </Button>
+                            <TooltipProvider>
+                                <Tooltip :delay-duration="300">
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            class="h-9 gap-1 text-xs"
+                                            @click="handleSave"
+                                            :disabled="isSaving"
+                                        >
+                                            <Save class="h-3.5 w-3.5" />
+                                            <span>{{
+                                                isSaving ? '...' : 'Save'
+                                            }}</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>
+                                            Save
+                                            <kbd
+                                                class="ml-1 rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] shadow-sm"
+                                            >
+                                                {{ isMac ? '⌘' : 'Ctrl' }} S
+                                            </kbd>
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
 
                             <Button
                                 variant="default"
@@ -1882,6 +1985,7 @@ const executeRequest = async () => {
                                                 class="h-full"
                                             >
                                                 <VueMonacoEditor
+                                                    @mount="handleEditorMount"
                                                     v-model:value="
                                                         bodyConfig.raw.content
                                                     "
@@ -1899,7 +2003,6 @@ const executeRequest = async () => {
                                                         tabSize: 2,
                                                         scrollBeyondLastLine: false,
                                                     }"
-                                                    @mount="handleEditorMount"
                                                 />
                                             </div>
 
@@ -2368,6 +2471,9 @@ const executeRequest = async () => {
                                                         class="flex-1 overflow-hidden"
                                                     >
                                                         <VueMonacoEditor
+                                                            @mount="
+                                                                handleEditorMount
+                                                            "
                                                             v-model:value="
                                                                 bodyConfig
                                                                     .graphql
@@ -2398,6 +2504,9 @@ const executeRequest = async () => {
                                                         class="flex-1 overflow-hidden"
                                                     >
                                                         <VueMonacoEditor
+                                                            @mount="
+                                                                handleEditorMount
+                                                            "
                                                             v-model:value="
                                                                 bodyConfig
                                                                     .graphql
@@ -2677,6 +2786,7 @@ const executeRequest = async () => {
                                                 class="absolute inset-0 flex flex-col"
                                             >
                                                 <VueMonacoEditor
+                                                    @mount="handleEditorMount"
                                                     v-model:value="description"
                                                     :theme="monacoTheme"
                                                     language="markdown"
@@ -2973,6 +3083,7 @@ const executeRequest = async () => {
                                             class="relative min-h-0 flex-1"
                                         >
                                             <VueMonacoEditor
+                                                @mount="handleEditorMount"
                                                 :value="responseBody"
                                                 :theme="monacoTheme"
                                                 language="json"
