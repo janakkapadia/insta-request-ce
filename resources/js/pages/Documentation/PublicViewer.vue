@@ -57,6 +57,7 @@ const props = defineProps<{
         method: string;
         url: string;
         headers: any;
+        path_variables: any;
         query_params: any;
         body: any;
         auth: any;
@@ -267,6 +268,38 @@ const parsedQueryParams = computed(() => {
     // If it's stored as a key-value object
     if (typeof req.query_params === 'object') {
         return Object.entries(req.query_params)
+            .filter(([k, v]) => k && v !== undefined && v !== null)
+            .map(([k, v]) => ({
+                key: k,
+                value: substituteEnvVariables(String(v)),
+            }));
+    }
+
+    return [];
+});
+
+// Helper to normalize path variables to a list of { key: string, value: string }
+const parsedPathVariables = computed(() => {
+    const req = activeRequest.value;
+
+    if (!req || !req.path_variables) {
+        return [];
+    }
+
+    if (Array.isArray(req.path_variables)) {
+        return req.path_variables
+            .filter(
+                (p) =>
+                    p && typeof p === 'object' && p.key && p.enabled !== false,
+            )
+            .map((p) => ({
+                ...p,
+                value: substituteEnvVariables(String(p.value || '')),
+            }));
+    }
+
+    if (typeof req.path_variables === 'object') {
+        return Object.entries(req.path_variables)
             .filter(([k, v]) => k && v !== undefined && v !== null)
             .map(([k, v]) => ({
                 key: k,
@@ -1634,6 +1667,67 @@ onMounted(() => {
                                     class="p-4 font-mono text-xs break-all whitespace-pre-wrap text-foreground"
                                     >{{ rawBodyContent.content }}</pre
                                 >
+                            </div>
+                        </div>
+
+                        <!-- Path Variables -->
+                        <div
+                            v-if="parsedPathVariables.length > 0"
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Path Variables
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Variable
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Type
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Value
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="param in parsedPathVariables"
+                                            :key="param.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ param.key }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                            >
+                                                string
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                            >
+                                                {{ param.value }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
