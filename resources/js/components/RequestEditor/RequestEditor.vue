@@ -1125,8 +1125,66 @@ const removeHeader = (index: number) => {
     }
 };
 
-const handleEditorMount = (editor: any) => {
+let isMonacoHoverRegistered = false;
+
+const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.value = editor;
+
+    if (monaco && !isMonacoHoverRegistered) {
+        isMonacoHoverRegistered = true;
+
+        // Disable JSON validation to prevent errors from {{env}} variables
+        monaco.languages.json?.jsonDefaults?.setDiagnosticsOptions({
+            validate: false,
+        });
+
+        // Register hover provider for {{env}} variables across any language mode
+        monaco.languages.registerHoverProvider('*', {
+            provideHover: (model: any, position: any) => {
+                const lineContent = model.getLineContent(position.lineNumber);
+
+                const envRegex = /\{\{([^}]+)\}\}|\{([^}]+)\}/g;
+                let match;
+
+                while ((match = envRegex.exec(lineContent)) !== null) {
+                    const start = match.index + 1; // 1-based index in Monaco
+                    const end = start + match[0].length;
+
+                    if (position.column >= start && position.column <= end) {
+                        const varName = (match[1] || match[2]).trim();
+                        const variable =
+                            store.activeEnvironment?.variables?.find(
+                                (v: any) => v.key === varName && v.enabled,
+                            );
+
+                        return {
+                            range: new monaco.Range(
+                                position.lineNumber,
+                                start,
+                                position.lineNumber,
+                                end,
+                            ),
+                            contents: [
+                                {
+                                    value: `**Environment Variable: ${varName}**`,
+                                },
+                                {
+                                    value: variable
+                                        ? variable.value
+                                        : '*Unresolved*',
+                                },
+                                {
+                                    value: `*Scope: ${store.activeEnvironment?.name || 'Active Environment'}*`,
+                                },
+                            ],
+                        };
+                    }
+                }
+
+                return null;
+            },
+        });
+    }
 };
 
 const methods = [
@@ -1882,6 +1940,7 @@ const executeRequest = async () => {
                                                 class="h-full"
                                             >
                                                 <VueMonacoEditor
+                                                    @mount="handleEditorMount"
                                                     v-model:value="
                                                         bodyConfig.raw.content
                                                     "
@@ -1899,7 +1958,6 @@ const executeRequest = async () => {
                                                         tabSize: 2,
                                                         scrollBeyondLastLine: false,
                                                     }"
-                                                    @mount="handleEditorMount"
                                                 />
                                             </div>
 
@@ -2368,6 +2426,9 @@ const executeRequest = async () => {
                                                         class="flex-1 overflow-hidden"
                                                     >
                                                         <VueMonacoEditor
+                                                            @mount="
+                                                                handleEditorMount
+                                                            "
                                                             v-model:value="
                                                                 bodyConfig
                                                                     .graphql
@@ -2398,6 +2459,9 @@ const executeRequest = async () => {
                                                         class="flex-1 overflow-hidden"
                                                     >
                                                         <VueMonacoEditor
+                                                            @mount="
+                                                                handleEditorMount
+                                                            "
                                                             v-model:value="
                                                                 bodyConfig
                                                                     .graphql
@@ -2677,6 +2741,7 @@ const executeRequest = async () => {
                                                 class="absolute inset-0 flex flex-col"
                                             >
                                                 <VueMonacoEditor
+                                                    @mount="handleEditorMount"
                                                     v-model:value="description"
                                                     :theme="monacoTheme"
                                                     language="markdown"
@@ -2973,6 +3038,7 @@ const executeRequest = async () => {
                                             class="relative min-h-0 flex-1"
                                         >
                                             <VueMonacoEditor
+                                                @mount="handleEditorMount"
                                                 :value="responseBody"
                                                 :theme="monacoTheme"
                                                 language="json"
