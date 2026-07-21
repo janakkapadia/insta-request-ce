@@ -316,12 +316,14 @@ const parsedPathVariables = computed(() => {
 
         // Extract :param
         const colonMatches = urlStr.matchAll(/:([a-zA-Z0-9_]+)/g);
+
         for (const match of colonMatches) {
             extractedKeys.add(match[1]);
         }
 
         // Extract {param}
         const bracketMatches = urlStr.matchAll(/\{([a-zA-Z0-9_]+)\}/g);
+
         for (const match of bracketMatches) {
             extractedKeys.add(match[1]);
         }

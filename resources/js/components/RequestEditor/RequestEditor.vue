@@ -55,7 +55,10 @@ import { useWorkspaceStore } from '@/stores/workspace';
 const store = useWorkspaceStore();
 
 const isMac = computed(() => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') {
+return false;
+}
+
     return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 });
 
