@@ -501,7 +501,7 @@ use GuzzleHttp\\Client;
 
 $client = new Client();
 $response = $client->request('${method}', '${url}', [
-    ${headersList.length ? `'headers' => [\n        ` + headersObjStr + `\n    ]` : ''}${bodyStr ? `${headersList.length ? ',\n    ' : ''}'body' => '${bodyStr.replace(/'/g, "\\'")}'` : ''}
+    ${headersList.length ? `'headers' => [\n        ` + headersObjStr + `\n    ]` : ''}${bodyStr ? `${headersList.length ? ',\n    ' : ''}'body' => '${bodyStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'` : ''}
 ]);
 
 echo $response->getBody();`;
@@ -528,7 +528,7 @@ curl_setopt_array($curl, [
     CURLOPT_TIMEOUT => 0,
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => '${method}',${bodyStr ? `\n    CURLOPT_POSTFIELDS => '${bodyStr.replace(/'/g, "\\'")}',` : ''}
+    CURLOPT_CUSTOMREQUEST => '${method}',${bodyStr ? `\n    CURLOPT_POSTFIELDS => '${bodyStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}',` : ''}
     CURLOPT_HTTPHEADER => ${headersArrStr},
 ]);
 
