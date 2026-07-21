@@ -74,7 +74,7 @@ const setFolderExpanded = (expanded: boolean) => {
 const toggle = () => {
     setFolderExpanded(!props.folder.expanded);
 
-    if (!page.url.startsWith('/collections')) {
+    if (!page.url.startsWith(`/collections/${props.collection.id}`)) {
         router.get(`/collections/${props.collection.id}`);
     }
 };

@@ -41,12 +41,26 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import VariableInput from '@/components/VariableInput.vue';
 import { parseMarkdown } from '@/lib/markdown';
 import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
 import { useWorkspaceStore } from '@/stores/workspace';
 
 const store = useWorkspaceStore();
+
+const isMac = computed(() => {
+    if (typeof window === 'undefined') {
+return false;
+}
+
+    return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+});
 
 // ── Monaco theme: track the `dark` class on <html> ──────────────────────────
 const isDark = ref(false);
@@ -118,11 +132,24 @@ onMounted(() => {
     });
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleKeyDown);
 });
 onUnmounted(() => {
     themeObserver?.disconnect();
     window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.removeEventListener('keydown', handleKeyDown);
 });
+
+const handleKeyDown = (e: KeyboardEvent) => {
+    // Save on Cmd+S (Mac) or Ctrl+S (Windows)
+    if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key.toLowerCase() === 's' || e.code === 'KeyS')
+    ) {
+        e.preventDefault();
+        handleSave();
+    }
+};
 
 const method = ref('GET');
 const activeRequestTab = ref('params');
@@ -394,9 +421,26 @@ const bodyConfig = ref({
         content: '',
     },
     formdata: [
-        { key: '', value: '', type: 'text', enabled: true, description: '' },
+        {
+            key: '',
+            value: '',
+            type: 'text',
+            enabled: true,
+            description: '',
+            dataType: 'string',
+            required: true,
+        },
     ],
-    urlencoded: [{ key: '', value: '', enabled: true, description: '' }],
+    urlencoded: [
+        {
+            key: '',
+            value: '',
+            enabled: true,
+            description: '',
+            dataType: 'string',
+            required: true,
+        },
+    ],
     graphql: {
         query: '',
         variables: '',
@@ -414,6 +458,8 @@ const handleFormDataInput = (index: number) => {
                 type: 'text',
                 enabled: true,
                 description: '',
+                dataType: 'string',
+                required: true,
             });
         }
     }
@@ -429,6 +475,8 @@ const removeFormData = (index: number) => {
             type: 'text',
             enabled: true,
             description: '',
+            dataType: 'string',
+            required: true,
         });
     }
 };
@@ -443,6 +491,8 @@ const handleUrlEncodedInput = (index: number) => {
                 value: '',
                 enabled: true,
                 description: '',
+                dataType: 'string',
+                required: true,
             });
         }
     }
@@ -457,6 +507,8 @@ const removeUrlEncoded = (index: number) => {
             value: '',
             enabled: true,
             description: '',
+            dataType: 'string',
+            required: true,
         });
     }
 };
@@ -706,6 +758,8 @@ watch(
                                           type: 'text',
                                           enabled: true,
                                           description: '',
+                                          dataType: 'string',
+                                          required: true,
                                       },
                                   ],
                         urlencoded:
@@ -718,6 +772,8 @@ watch(
                                           value: '',
                                           enabled: true,
                                           description: '',
+                                          dataType: 'string',
+                                          required: true,
                                       },
                                   ],
                         graphql: {
@@ -758,6 +814,8 @@ watch(
                                 type: 'text',
                                 enabled: true,
                                 description: '',
+                                dataType: 'string',
+                                required: true,
                             },
                         ],
                         urlencoded: [
@@ -766,6 +824,8 @@ watch(
                                 value: '',
                                 enabled: true,
                                 description: '',
+                                dataType: 'string',
+                                required: true,
                             },
                         ],
                         graphql: {
@@ -1092,8 +1152,66 @@ const removeHeader = (index: number) => {
     }
 };
 
-const handleEditorMount = (editor: any) => {
+let isMonacoHoverRegistered = false;
+
+const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.value = editor;
+
+    if (monaco && !isMonacoHoverRegistered) {
+        isMonacoHoverRegistered = true;
+
+        // Disable JSON validation to prevent errors from {{env}} variables
+        monaco.languages.json?.jsonDefaults?.setDiagnosticsOptions({
+            validate: false,
+        });
+
+        // Register hover provider for {{env}} variables across any language mode
+        monaco.languages.registerHoverProvider('*', {
+            provideHover: (model: any, position: any) => {
+                const lineContent = model.getLineContent(position.lineNumber);
+
+                const envRegex = /\{\{([^}]+)\}\}|\{([^}]+)\}/g;
+                let match;
+
+                while ((match = envRegex.exec(lineContent)) !== null) {
+                    const start = match.index + 1; // 1-based index in Monaco
+                    const end = start + match[0].length;
+
+                    if (position.column >= start && position.column <= end) {
+                        const varName = (match[1] || match[2]).trim();
+                        const variable =
+                            store.activeEnvironment?.variables?.find(
+                                (v: any) => v.key === varName && v.enabled,
+                            );
+
+                        return {
+                            range: new monaco.Range(
+                                position.lineNumber,
+                                start,
+                                position.lineNumber,
+                                end,
+                            ),
+                            contents: [
+                                {
+                                    value: `**Environment Variable: ${varName}**`,
+                                },
+                                {
+                                    value: variable
+                                        ? variable.value
+                                        : '*Unresolved*',
+                                },
+                                {
+                                    value: `*Scope: ${store.activeEnvironment?.name || 'Active Environment'}*`,
+                                },
+                            ],
+                        };
+                    }
+                }
+
+                return null;
+            },
+        });
+    }
 };
 
 const methods = [
@@ -1329,16 +1447,34 @@ const executeRequest = async () => {
                                 class="h-9 flex-1"
                             />
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="h-9 gap-1 text-xs"
-                                @click="handleSave"
-                                :disabled="isSaving"
-                            >
-                                <Save class="h-3.5 w-3.5" />
-                                <span>{{ isSaving ? '...' : 'Save' }}</span>
-                            </Button>
+                            <TooltipProvider>
+                                <Tooltip :delay-duration="300">
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            class="h-9 gap-1 text-xs"
+                                            @click="handleSave"
+                                            :disabled="isSaving"
+                                        >
+                                            <Save class="h-3.5 w-3.5" />
+                                            <span>{{
+                                                isSaving ? '...' : 'Save'
+                                            }}</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>
+                                            Save
+                                            <kbd
+                                                class="ml-1 rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] shadow-sm"
+                                            >
+                                                {{ isMac ? '⌘' : 'Ctrl' }} S
+                                            </kbd>
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
 
                             <Button
                                 variant="default"
@@ -1849,6 +1985,7 @@ const executeRequest = async () => {
                                                 class="h-full"
                                             >
                                                 <VueMonacoEditor
+                                                    @mount="handleEditorMount"
                                                     v-model:value="
                                                         bodyConfig.raw.content
                                                     "
@@ -1866,7 +2003,6 @@ const executeRequest = async () => {
                                                         tabSize: 2,
                                                         scrollBeyondLastLine: false,
                                                     }"
-                                                    @mount="handleEditorMount"
                                                 />
                                             </div>
 
@@ -1879,10 +2015,10 @@ const executeRequest = async () => {
                                                 class="h-full overflow-y-auto bg-background/50 p-2"
                                             >
                                                 <div
-                                                    class="max-w-4xl divide-y overflow-hidden rounded-md border bg-background shadow-sm"
+                                                    class="w-full divide-y overflow-hidden rounded-md border bg-background shadow-sm"
                                                 >
                                                     <div
-                                                        class="grid h-8 grid-cols-[40px_1.5fr_100px_2fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+                                                        class="grid h-8 grid-cols-[40px_1.5fr_80px_100px_50px_1.5fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
                                                     >
                                                         <div></div>
                                                         <div
@@ -1894,6 +2030,16 @@ const executeRequest = async () => {
                                                             class="flex h-full items-center border-r px-2"
                                                         >
                                                             Type
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Data Type
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Req
                                                         </div>
                                                         <div
                                                             class="flex h-full items-center border-r px-2"
@@ -1913,7 +2059,7 @@ const executeRequest = async () => {
                                                             item, idx
                                                         ) in bodyConfig.formdata"
                                                         :key="idx"
-                                                        class="group/row grid grid-cols-[40px_1.5fr_100px_2fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
+                                                        class="group/row grid grid-cols-[40px_1.5fr_80px_100px_50px_1.5fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
                                                     >
                                                         <div
                                                             class="flex justify-center"
@@ -1953,9 +2099,11 @@ const executeRequest = async () => {
                                                                 "
                                                             >
                                                                 <SelectTrigger
-                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0"
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
                                                                 >
-                                                                    <SelectValue />
+                                                                    <SelectValue
+                                                                        placeholder="Text"
+                                                                    />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <SelectItem
@@ -1970,6 +2118,73 @@ const executeRequest = async () => {
                                                                     >
                                                                 </SelectContent>
                                                             </Select>
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-1"
+                                                        >
+                                                            <Select
+                                                                v-model="
+                                                                    item.dataType
+                                                                "
+                                                            >
+                                                                <SelectTrigger
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
+                                                                >
+                                                                    <SelectValue
+                                                                        placeholder="String"
+                                                                    />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem
+                                                                        value="string"
+                                                                        class="text-xs"
+                                                                        >String</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="integer"
+                                                                        class="text-xs"
+                                                                        >Integer</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="number"
+                                                                        class="text-xs"
+                                                                        >Number</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="boolean"
+                                                                        class="text-xs"
+                                                                        >Boolean</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="array"
+                                                                        class="text-xs"
+                                                                        >Array</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="object"
+                                                                        class="text-xs"
+                                                                        >Object</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="file"
+                                                                        class="text-xs"
+                                                                        >File</SelectItem
+                                                                    >
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center justify-center border-r"
+                                                        >
+                                                            <Checkbox
+                                                                :model-value="
+                                                                    item.required
+                                                                "
+                                                                @update:model-value="
+                                                                    item.required =
+                                                                        !!$event
+                                                                "
+                                                            />
                                                         </div>
                                                         <div
                                                             class="flex h-full items-center border-r"
@@ -2046,16 +2261,26 @@ const executeRequest = async () => {
                                                 class="h-full overflow-y-auto bg-background/50 p-2"
                                             >
                                                 <div
-                                                    class="max-w-4xl divide-y overflow-hidden rounded-md border bg-background shadow-sm"
+                                                    class="w-full divide-y overflow-hidden rounded-md border bg-background shadow-sm"
                                                 >
                                                     <div
-                                                        class="grid h-8 grid-cols-[40px_2fr_2fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+                                                        class="grid h-8 grid-cols-[40px_1.5fr_100px_50px_1.5fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
                                                     >
                                                         <div></div>
                                                         <div
                                                             class="flex h-full items-center border-r px-2"
                                                         >
                                                             Key
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Data Type
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Req
                                                         </div>
                                                         <div
                                                             class="flex h-full items-center border-r px-2"
@@ -2075,7 +2300,7 @@ const executeRequest = async () => {
                                                             item, idx
                                                         ) in bodyConfig.urlencoded"
                                                         :key="idx"
-                                                        class="group/row grid grid-cols-[40px_2fr_2fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
+                                                        class="group/row grid grid-cols-[40px_1.5fr_100px_50px_1.5fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
                                                     >
                                                         <div
                                                             class="flex justify-center"
@@ -2103,6 +2328,68 @@ const executeRequest = async () => {
                                                                     handleUrlEncodedInput(
                                                                         idx,
                                                                     )
+                                                                "
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-1"
+                                                        >
+                                                            <Select
+                                                                v-model="
+                                                                    item.dataType
+                                                                "
+                                                            >
+                                                                <SelectTrigger
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
+                                                                >
+                                                                    <SelectValue
+                                                                        placeholder="String"
+                                                                    />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem
+                                                                        value="string"
+                                                                        class="text-xs"
+                                                                        >String</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="integer"
+                                                                        class="text-xs"
+                                                                        >Integer</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="number"
+                                                                        class="text-xs"
+                                                                        >Number</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="boolean"
+                                                                        class="text-xs"
+                                                                        >Boolean</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="array"
+                                                                        class="text-xs"
+                                                                        >Array</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="object"
+                                                                        class="text-xs"
+                                                                        >Object</SelectItem
+                                                                    >
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center justify-center border-r"
+                                                        >
+                                                            <Checkbox
+                                                                :model-value="
+                                                                    item.required
+                                                                "
+                                                                @update:model-value="
+                                                                    item.required =
+                                                                        !!$event
                                                                 "
                                                             />
                                                         </div>
@@ -2184,6 +2471,9 @@ const executeRequest = async () => {
                                                         class="flex-1 overflow-hidden"
                                                     >
                                                         <VueMonacoEditor
+                                                            @mount="
+                                                                handleEditorMount
+                                                            "
                                                             v-model:value="
                                                                 bodyConfig
                                                                     .graphql
@@ -2214,6 +2504,9 @@ const executeRequest = async () => {
                                                         class="flex-1 overflow-hidden"
                                                     >
                                                         <VueMonacoEditor
+                                                            @mount="
+                                                                handleEditorMount
+                                                            "
                                                             v-model:value="
                                                                 bodyConfig
                                                                     .graphql
@@ -2493,6 +2786,7 @@ const executeRequest = async () => {
                                                 class="absolute inset-0 flex flex-col"
                                             >
                                                 <VueMonacoEditor
+                                                    @mount="handleEditorMount"
                                                     v-model:value="description"
                                                     :theme="monacoTheme"
                                                     language="markdown"
@@ -2789,6 +3083,7 @@ const executeRequest = async () => {
                                             class="relative min-h-0 flex-1"
                                         >
                                             <VueMonacoEditor
+                                                @mount="handleEditorMount"
                                                 :value="responseBody"
                                                 :theme="monacoTheme"
                                                 language="json"

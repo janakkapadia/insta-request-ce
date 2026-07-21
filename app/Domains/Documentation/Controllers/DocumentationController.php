@@ -242,6 +242,7 @@ class DocumentationController extends Controller
                     'method' => $req->method,
                     'url' => $req->url,
                     'headers' => $req->headers,
+                    'path_variables' => $req->path_variables,
                     'query_params' => $req->query_params,
                     'body' => $req->body,
                     'auth' => $req->auth,

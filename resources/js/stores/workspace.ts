@@ -555,7 +555,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
                 method: 'POST',
                 body: JSON.stringify({ name, parent_id: parentId }),
             });
-            await refreshCollections();
+            const collection = collections.value.find(
+                (c) => c.id === collectionId,
+            );
+
+            if (!collection) {
+                await fetchCollectionDetails(collectionId);
+            } else if (!collection.has_loaded_details) {
+                await fetchCollectionDetails(collectionId);
+            } else {
+                await refreshCollections();
+            }
         } catch (e) {
             console.error('Failed to create folder', e);
         }
@@ -590,7 +600,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
                     },
                 );
 
-                await refreshCollections();
+                const collection = collections.value.find(
+                    (c) => c.id === collectionId,
+                );
+
+                if (!collection) {
+                    await fetchCollectionDetails(collectionId);
+                } else if (!collection.has_loaded_details) {
+                    await fetchCollectionDetails(collectionId);
+                } else {
+                    await refreshCollections();
+                }
 
                 const newReq = response.data?.request || response.data;
                 const forceNewTab = openRequests.value.length > 0;
