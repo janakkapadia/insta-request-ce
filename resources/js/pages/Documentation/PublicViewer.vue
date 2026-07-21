@@ -106,7 +106,11 @@ const substituteEnvVariables = (text: string | null | undefined): string => {
     activeEnvVariables.value.forEach((v) => {
         const regex1 = new RegExp(`\\{\\{${v.key}\\}\\}`, 'g');
         const regex2 = new RegExp(`\\{${v.key}\\}`, 'g');
-        result = result.replace(regex1, v.value).replace(regex2, v.value);
+        const val =
+            v.value !== null && v.value !== undefined && v.value !== ''
+                ? String(v.value)
+                : `{${v.key}}`;
+        result = result.replace(regex1, val).replace(regex2, val);
     });
 
     return result;
