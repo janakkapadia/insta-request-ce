@@ -1548,67 +1548,6 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Query Parameters -->
-                        <div
-                            v-if="parsedQueryParams.length > 0"
-                            class="space-y-3"
-                        >
-                            <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
-                            >
-                                Query Parameters
-                            </h4>
-                            <div class="overflow-hidden rounded-lg border">
-                                <table
-                                    class="min-w-full divide-y divide-border text-xs"
-                                >
-                                    <thead class="bg-muted/40">
-                                        <tr>
-                                            <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
-                                            >
-                                                Parameter
-                                            </th>
-                                            <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
-                                            >
-                                                Type
-                                            </th>
-                                            <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
-                                            >
-                                                Value
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody
-                                        class="divide-y divide-border bg-card"
-                                    >
-                                        <tr
-                                            v-for="param in parsedQueryParams"
-                                            :key="param.key"
-                                        >
-                                            <td
-                                                class="px-4 py-2 font-mono font-semibold text-foreground"
-                                            >
-                                                {{ param.key }}
-                                            </td>
-                                            <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
-                                            >
-                                                string
-                                            </td>
-                                            <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
-                                            >
-                                                {{ param.value }}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
                         <!-- Request Body (Form / URLEncoded) -->
                         <div
                             v-if="parsedBodyItems.length > 0"
@@ -1691,6 +1630,67 @@ onMounted(() => {
                                     class="p-4 font-mono text-xs break-all whitespace-pre-wrap text-foreground"
                                     >{{ rawBodyContent.content }}</pre
                                 >
+                            </div>
+                        </div>
+
+                        <!-- Query Parameters -->
+                        <div
+                            v-if="parsedQueryParams.length > 0"
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Query Parameters
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Parameter
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Type
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Value
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="param in parsedQueryParams"
+                                            :key="param.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ param.key }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                            >
+                                                string
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                            >
+                                                {{ param.value }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
