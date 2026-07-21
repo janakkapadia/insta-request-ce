@@ -501,7 +501,7 @@ use GuzzleHttp\\Client;
 
 $client = new Client();
 $response = $client->request('${method}', '${url}', [
-    ${headersList.length ? `'headers' => [\n        ` + headersObjStr + `\n    ]` : ''}${bodyStr ? `${headersList.length ? ',\n    ' : ''}'body' => '${bodyStr.replace(/'/g, "\\'")}'` : ''}
+    ${headersList.length ? `'headers' => [\n        ` + headersObjStr + `\n    ]` : ''}${bodyStr ? `${headersList.length ? ',\n    ' : ''}'body' => '${bodyStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'` : ''}
 ]);
 
 echo $response->getBody();`;
