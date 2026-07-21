@@ -282,12 +282,14 @@ const parsedQueryParams = computed(() => {
 const parsedPathVariables = computed(() => {
     const req = activeRequest.value;
 
-    if (!req || !req.path_variables) {
+    if (!req) {
         return [];
     }
 
-    if (Array.isArray(req.path_variables)) {
-        return req.path_variables
+    let vars: any[] = [];
+
+    if (req.path_variables && Array.isArray(req.path_variables)) {
+        vars = req.path_variables
             .filter(
                 (p) =>
                     p && typeof p === 'object' && p.key && p.enabled !== false,
@@ -296,10 +298,8 @@ const parsedPathVariables = computed(() => {
                 ...p,
                 value: substituteEnvVariables(String(p.value || '')),
             }));
-    }
-
-    if (typeof req.path_variables === 'object') {
-        return Object.entries(req.path_variables)
+    } else if (req.path_variables && typeof req.path_variables === 'object') {
+        vars = Object.entries(req.path_variables)
             .filter(([k, v]) => k && v !== undefined && v !== null)
             .map(([k, v]) => ({
                 key: k,
@@ -307,7 +307,37 @@ const parsedPathVariables = computed(() => {
             }));
     }
 
-    return [];
+    if (req.url) {
+        let urlStr = String(req.url);
+        // Remove env variables like {{api_url}} before extracting
+        urlStr = urlStr.replace(/\{\{[^}]+\}\}/g, '');
+
+        const extractedKeys = new Set<string>();
+
+        // Extract :param
+        const colonMatches = urlStr.matchAll(/:([a-zA-Z0-9_]+)/g);
+        for (const match of colonMatches) {
+            extractedKeys.add(match[1]);
+        }
+
+        // Extract {param}
+        const bracketMatches = urlStr.matchAll(/\{([a-zA-Z0-9_]+)\}/g);
+        for (const match of bracketMatches) {
+            extractedKeys.add(match[1]);
+        }
+
+        extractedKeys.forEach((key) => {
+            if (!vars.find((v) => v.key === key)) {
+                vars.push({
+                    key: key,
+                    value: '',
+                    description: '',
+                });
+            }
+        });
+    }
+
+    return vars;
 });
 
 const rawBodyContent = computed(() => {
