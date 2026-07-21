@@ -1467,7 +1467,7 @@ onMounted(() => {
                             class="mt-8 rounded-xl border border-border bg-muted/20 p-5"
                         >
                             <h3
-                                class="mb-3 flex items-center gap-1.5 text-sm font-extrabold tracking-widest text-muted-foreground uppercase"
+                                class="mb-3 flex items-center gap-1.5 text-sm font-extrabold tracking-widest text-foreground uppercase"
                             >
                                 <Sparkles class="h-4 w-4 text-primary" />
                                 Authentication Guide
@@ -1496,7 +1496,7 @@ onMounted(() => {
                                     {{ activeRequest.method }}
                                 </span>
                                 <span
-                                    class="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+                                    class="text-xs font-bold tracking-widest text-foreground uppercase"
                                     >API Endpoint</span
                                 >
                             </div>
@@ -1510,7 +1510,7 @@ onMounted(() => {
                                 </h2>
                                 <button
                                     @click="copyPermalink(activeRequest.id)"
-                                    class="flex shrink-0 items-center gap-1.5 rounded-md border border-border/50 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-md border border-border/50 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-foreground uppercase transition-colors hover:bg-muted/50 hover:text-foreground"
                                     title="Copy documentation permalink"
                                 >
                                     <Check
@@ -1540,7 +1540,7 @@ onMounted(() => {
                                         ),
                                     )
                                 "
-                                class="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
+                                class="shrink-0 rounded p-1 text-foreground transition-colors hover:bg-border hover:text-foreground"
                                 title="Copy URL Path"
                             >
                                 <Check
@@ -1563,7 +1563,7 @@ onMounted(() => {
                             class="space-y-3"
                         >
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Path Variables
                             </h4>
@@ -1574,12 +1574,12 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Variable
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Description
                                             </th>
@@ -1602,7 +1602,7 @@ onMounted(() => {
                                                 >
                                             </td>
                                             <td
-                                                class="px-4 py-2 text-muted-foreground/80"
+                                                class="px-4 py-2 text-foreground/80"
                                             >
                                                 {{ param.description }}
                                             </td>
@@ -1615,7 +1615,7 @@ onMounted(() => {
                         <!-- Request Headers & Query Params Tables (if present) -->
                         <div v-if="parsedHeaders.length > 0" class="space-y-3">
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Request Headers
                             </h4>
@@ -1626,17 +1626,17 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Header key
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Type
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Mock Value
                                             </th>
@@ -1655,12 +1655,12 @@ onMounted(() => {
                                                 {{ header.key }}
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                                class="px-4 py-2 font-mono text-[10px] text-foreground"
                                             >
                                                 string
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 font-mono text-foreground/80 select-all"
                                             >
                                                 {{ header.value }}
                                             </td>
@@ -1676,7 +1676,7 @@ onMounted(() => {
                             class="space-y-3"
                         >
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Request Body
                             </h4>
@@ -1687,17 +1687,17 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Key
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Type
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Description
                                             </th>
@@ -1721,12 +1721,12 @@ onMounted(() => {
                                                 >
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                                class="px-4 py-2 font-mono text-[10px] text-foreground"
                                             >
                                                 {{ item.dataType || 'string' }}
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 font-mono text-foreground/80 select-all"
                                             >
                                                 {{ item.description || '' }}
                                             </td>
@@ -1740,7 +1740,7 @@ onMounted(() => {
                             class="flex flex-col gap-3"
                         >
                             <h4
-                                class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                                class="text-xs font-semibold tracking-wider text-foreground/80 uppercase"
                             >
                                 Request Body (Raw -
                                 {{ rawBodyContent.language }})
@@ -1761,7 +1761,7 @@ onMounted(() => {
                             class="space-y-3"
                         >
                             <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                                class="text-xs font-bold tracking-wider text-foreground uppercase"
                             >
                                 Query Parameters
                             </h4>
@@ -1772,17 +1772,17 @@ onMounted(() => {
                                     <thead class="bg-muted/40">
                                         <tr>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Parameter
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Type
                                             </th>
                                             <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                                class="px-4 py-2 text-left font-semibold text-foreground"
                                             >
                                                 Value
                                             </th>
@@ -1801,12 +1801,12 @@ onMounted(() => {
                                                 {{ param.key }}
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                                class="px-4 py-2 font-mono text-[10px] text-foreground"
                                             >
                                                 string
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 font-mono text-foreground/80 select-all"
                                             >
                                                 {{ param.value }}
                                             </td>
