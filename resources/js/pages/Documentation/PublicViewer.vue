@@ -1629,11 +1629,6 @@ onMounted(() => {
                                                     class="ml-1 text-[10px] text-red-500"
                                                     >*</span
                                                 >
-                                                <span
-                                                    v-else
-                                                    class="ml-1 text-[10px] text-muted-foreground"
-                                                    >(optional)</span
-                                                >
                                             </td>
                                             <td
                                                 class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
