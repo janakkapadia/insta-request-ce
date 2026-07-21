@@ -489,9 +489,13 @@ const generatedCode = computed(() => {
 
     const formDataItems =
         isFormData && Array.isArray(parsedBodyObj?.formdata)
-            ? parsedBodyObj.formdata.filter(
-                  (i: any) => i && i.key && i.enabled !== false,
-              )
+            ? parsedBodyObj.formdata
+                  .filter((i: any) => i && i.key && i.enabled !== false)
+                  .map((i: any) => ({
+                      ...i,
+                      key: String(i.key),
+                      value: String(i.value || ''),
+                  }))
             : [];
 
     // De-duplicate headers, adding Content-Type if missing and if a body is present
@@ -523,7 +527,7 @@ const generatedCode = computed(() => {
                 fetchHeaders = fetchHeaders.filter(
                     (h) => h.key.toLowerCase() !== 'content-type',
                 );
-                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${String(i.key).replace(/"/g, '\\"')}", "${String(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}", "${i.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
                 fetchBodyStr = `,\n  body: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
@@ -553,7 +557,7 @@ const generatedCode = computed(() => {
                 axiosHeaders = axiosHeaders.filter(
                     (h) => h.key.toLowerCase() !== 'content-type',
                 );
-                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${String(i.key).replace(/"/g, '\\"')}", "${String(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}", "${i.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
                 axiosDataStr = `,\n  data: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
@@ -586,7 +590,7 @@ ${setupCode}axios({
                 pythonHeaders = pythonHeaders.filter(
                     (h) => h.key.toLowerCase() !== 'content-type',
                 );
-                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${String(i.key).replace(/"/g, '\\"')}": "${String(i.value || '').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
+                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}": "${i.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
                 pythonDataStr = `, data=payload`;
             } else if (bodyStr) {
                 setupCode = `payload = ${JSON.stringify(bodyStr)}\n`;
@@ -724,7 +728,7 @@ public class Main {
                 dataFlag = formDataItems
                     .map(
                         (i: any) =>
-                            ` \\\n  -F '${String(i.key).replace(/'/g, "'\\''")}=${String(i.value || '').replace(/'/g, "'\\''")}'`,
+                            ` \\\n  -F '${i.key.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}=${i.value.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}'`,
                     )
                     .join('');
             } else if (bodyStr) {
