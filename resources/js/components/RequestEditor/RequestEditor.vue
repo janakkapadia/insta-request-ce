@@ -41,12 +41,23 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import VariableInput from '@/components/VariableInput.vue';
 import { parseMarkdown } from '@/lib/markdown';
 import { getMethodTextColor as getMethodColor } from '@/lib/method-colors';
 import { useWorkspaceStore } from '@/stores/workspace';
 
 const store = useWorkspaceStore();
+
+const isMac = computed(() => {
+    if (typeof window === 'undefined') return false;
+    return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+});
 
 // ── Monaco theme: track the `dark` class on <html> ──────────────────────────
 const isDark = ref(false);
@@ -128,7 +139,10 @@ onUnmounted(() => {
 
 const handleKeyDown = (e: KeyboardEvent) => {
     // Save on Cmd+S (Mac) or Ctrl+S (Windows)
-    if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
+    if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key.toLowerCase() === 's' || e.code === 'KeyS')
+    ) {
         e.preventDefault();
         handleSave();
     }
@@ -1430,17 +1444,34 @@ const executeRequest = async () => {
                                 class="h-9 flex-1"
                             />
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="h-9 gap-1 text-xs"
-                                @click="handleSave"
-                                :disabled="isSaving"
-                                title="Save (Cmd/Ctrl + S)"
-                            >
-                                <Save class="h-3.5 w-3.5" />
-                                <span>{{ isSaving ? '...' : 'Save' }}</span>
-                            </Button>
+                            <TooltipProvider>
+                                <Tooltip :delay-duration="300">
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            class="h-9 gap-1 text-xs"
+                                            @click="handleSave"
+                                            :disabled="isSaving"
+                                        >
+                                            <Save class="h-3.5 w-3.5" />
+                                            <span>{{
+                                                isSaving ? '...' : 'Save'
+                                            }}</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>
+                                            Save
+                                            <kbd
+                                                class="ml-1 rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] shadow-sm"
+                                            >
+                                                {{ isMac ? '⌘' : 'Ctrl' }} S
+                                            </kbd>
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
 
                             <Button
                                 variant="default"
