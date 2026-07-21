@@ -164,11 +164,7 @@ const handleCreateFolder = async (
     store.activeNewFolder = null;
     newFolderName.value = '';
 
-    await store.createFolder(
-        collectionId,
-        name,
-        parentId,
-    );
+    await store.createFolder(collectionId, name, parentId);
 };
 
 const handleCreateRequest = async (
@@ -186,11 +182,7 @@ const handleCreateRequest = async (
     store.activeNewRequest = null;
     newRequestName.value = '';
 
-    await store.createRequest(
-        collectionId,
-        name,
-        folderId,
-    );
+    await store.createRequest(collectionId, name, folderId);
 };
 
 const handleDeleteRequest = (requestId: string) => {

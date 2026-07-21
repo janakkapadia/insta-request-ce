@@ -813,7 +813,9 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                             class="mt-1.5 flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
                         >
                             <Globe class="h-3 w-3 shrink-0 text-emerald-500" />
-                            <span class="truncate">{{ getPublicUrl(col) }}</span>
+                            <span class="truncate">{{
+                                getPublicUrl(col)
+                            }}</span>
                             <button
                                 @click="copyPublicUrl(col)"
                                 class="shrink-0 cursor-pointer rounded p-0.5 transition-colors hover:text-foreground"

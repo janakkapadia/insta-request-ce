@@ -422,12 +422,20 @@ const generatedCode = computed(() => {
     }
 
     const mode = parsedBodyObj?.mode || 'raw';
-    const isUrlEncoded = mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
+    const isUrlEncoded =
+        mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
     const isFormData = mode === 'formdata' || mode === 'form-data';
-    const formDataItems = isFormData && Array.isArray(parsedBodyObj?.formdata) 
-        ? parsedBodyObj.formdata.filter((i: any) => i && i.key && i.enabled !== false) 
-        : [];
-    
+    const formDataItems =
+        isFormData && Array.isArray(parsedBodyObj?.formdata)
+            ? parsedBodyObj.formdata
+                  .filter((i: any) => i && i.key && i.enabled !== false)
+                  .map((i: any) => ({
+                      ...i,
+                      key: String(i.key),
+                      value: String(i.value || ''),
+                  }))
+            : [];
+
     // De-duplicate headers, adding Content-Type if missing and if a body is present
     const rawHeaders = parsedHeaders.value.map((h) => ({
         key: h.key.replace(/\\/g, '\\\\'),
@@ -439,7 +447,12 @@ const generatedCode = computed(() => {
     const headersList = [...rawHeaders];
 
     if (!hasContentType && bodyStr) {
-        headersList.unshift({ key: 'Content-Type', value: isUrlEncoded ? 'application/x-www-form-urlencoded' : 'application/json' });
+        headersList.unshift({
+            key: 'Content-Type',
+            value: isUrlEncoded
+                ? 'application/x-www-form-urlencoded'
+                : 'application/json',
+        });
     }
 
     switch (selectedLang.value) {
@@ -449,8 +462,10 @@ const generatedCode = computed(() => {
             let fetchHeaders = headersList;
 
             if (isFormData && formDataItems.length > 0) {
-                fetchHeaders = fetchHeaders.filter(h => h.key.toLowerCase() !== 'content-type');
-                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/"/g, '\\"')}", "${(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                fetchHeaders = fetchHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}", "${(i.value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
                 fetchBodyStr = `,\n  body: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
@@ -477,8 +492,10 @@ const generatedCode = computed(() => {
             let axiosHeaders = headersList;
 
             if (isFormData && formDataItems.length > 0) {
-                axiosHeaders = axiosHeaders.filter(h => h.key.toLowerCase() !== 'content-type');
-                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/"/g, '\\"')}", "${(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                axiosHeaders = axiosHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}", "${(i.value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
                 axiosDataStr = `,\n  data: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
@@ -506,10 +523,12 @@ ${setupCode}axios({
             let pythonDataStr = '';
             let setupCode = '';
             let pythonHeaders = headersList;
-            
+
             if (isFormData && formDataItems.length > 0) {
-                pythonHeaders = pythonHeaders.filter(h => h.key.toLowerCase() !== 'content-type');
-                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${i.key.replace(/"/g, '\\"')}": "${(i.value || '').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
+                pythonHeaders = pythonHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}": "${(i.value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
                 pythonDataStr = `, data=payload`;
             } else if (bodyStr) {
                 setupCode = `payload = ${JSON.stringify(bodyStr)}\n`;
@@ -639,10 +658,17 @@ public class Main {
         default: {
             let curlHeadersList = headersList;
             let dataFlag = '';
-            
+
             if (isFormData && formDataItems.length > 0) {
-                curlHeadersList = curlHeadersList.filter(h => h.key.toLowerCase() !== 'content-type');
-                dataFlag = formDataItems.map((i: any) => ` \\\n  -F '${i.key.replace(/'/g, "'\\''")}=${(i.value || '').replace(/'/g, "'\\''")}'`).join('');
+                curlHeadersList = curlHeadersList.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                dataFlag = formDataItems
+                    .map(
+                        (i: any) =>
+                            ` \\\n  -F '${i.key.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}=${(i.value || '').replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}'`,
+                    )
+                    .join('');
             } else if (bodyStr) {
                 dataFlag = ` \\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'`;
             }

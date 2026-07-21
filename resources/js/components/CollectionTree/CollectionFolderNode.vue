@@ -286,11 +286,7 @@ const handleCreateRequest = async () => {
     store.activeNewRequest = null;
     newRequestName.value = '';
 
-    await store.createRequest(
-        props.collection.id,
-        name,
-        props.folder.id,
-    );
+    await store.createRequest(props.collection.id, name, props.folder.id);
     setFolderExpanded(true);
 };
 
@@ -306,11 +302,7 @@ const handleCreateFolder = async () => {
     store.activeNewFolder = null;
     newFolderName.value = '';
 
-    await store.createFolder(
-        props.collection.id,
-        name,
-        props.folder.id,
-    );
+    await store.createFolder(props.collection.id, name, props.folder.id);
     setFolderExpanded(true);
 };
 const vFocus = {
