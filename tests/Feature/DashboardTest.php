@@ -1,11 +1,11 @@
 <?php
 
 use App\Domains\Collections\Models\Collection;
-use App\Domains\History\Models\RequestHistory;
 use App\Domains\Environments\Models\Environment;
-use App\Models\User;
+use App\Domains\History\Models\RequestHistory;
 use App\Domains\Teams\Models\Team;
 use App\Enums\TeamRole;
+use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -23,10 +23,10 @@ test('guests are redirected to the login page', function () {
 test('authenticated users can view dashboard and it contains stats, collections and history', function () {
     Collection::create(['team_id' => $this->team->id, 'name' => 'Test Collection']);
     Environment::create(['team_id' => $this->team->id, 'name' => 'Prod', 'color' => 'red']);
-    
+
     // We need to fetch the user again or act as the user
     $this->actingAs($this->user);
-    
+
     RequestHistory::create([
         'team_id' => $this->team->id,
         'user_id' => $this->user->id,

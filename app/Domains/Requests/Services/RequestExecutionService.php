@@ -7,6 +7,7 @@ use App\Domains\Requests\Models\Request;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class RequestExecutionService
@@ -15,7 +16,7 @@ class RequestExecutionService
 
     public function __construct()
     {
-        $this->client = \Illuminate\Support\Facades\Http::withOptions([
+        $this->client = Http::withOptions([
             'timeout' => 30,
             'http_errors' => false,
             'verify' => false, // For local development testing
@@ -32,14 +33,14 @@ class RequestExecutionService
         $url = $payload['url'] ?? '';
 
         if (empty($url)) {
-            throw new \InvalidArgumentException("URL cannot be empty.");
+            throw new \InvalidArgumentException('URL cannot be empty.');
         }
 
         $pathVariables = $payload['path_variables'] ?? [];
-        if (!empty($pathVariables)) {
+        if (! empty($pathVariables)) {
             foreach ($pathVariables as $pv) {
-                if (!empty($pv['key']) && isset($pv['enabled']) && $pv['enabled']) {
-                    $url = str_replace(':' . $pv['key'], $pv['value'] ?? '', $url);
+                if (! empty($pv['key']) && isset($pv['enabled']) && $pv['enabled']) {
+                    $url = str_replace(':'.$pv['key'], $pv['value'] ?? '', $url);
                 }
             }
         }
@@ -60,14 +61,14 @@ class RequestExecutionService
         $auth = $payload['auth'] ?? null;
         if ($auth && isset($auth['type']) && $auth['type'] !== 'noauth') {
             $type = strtolower($auth['type']);
-            if ($type === 'bearer' && !empty($auth['bearerToken'])) {
+            if ($type === 'bearer' && ! empty($auth['bearerToken'])) {
                 $token = $this->interpolate($auth['bearerToken'], $variables);
-                $options['headers']['Authorization'] = 'Bearer ' . $token;
+                $options['headers']['Authorization'] = 'Bearer '.$token;
             } elseif ($type === 'basic' && (isset($auth['basicUsername']) || isset($auth['basicPassword']))) {
                 $username = $this->interpolate($auth['basicUsername'] ?? '', $variables);
                 $password = $this->interpolate($auth['basicPassword'] ?? '', $variables);
                 $options['auth'] = [$username, $password];
-            } elseif ($type === 'apikey' && !empty($auth['apiKeyKey'])) {
+            } elseif ($type === 'apikey' && ! empty($auth['apiKeyKey'])) {
                 $key = $this->interpolate($auth['apiKeyKey'], $variables);
                 $value = $this->interpolate($auth['apiKeyValue'] ?? '', $variables);
                 $addTo = $auth['apiKeyAddTo'] ?? 'header';
@@ -79,18 +80,18 @@ class RequestExecutionService
             }
         }
 
-        if (!empty($body)) {
+        if (! empty($body)) {
             $decodedBody = is_array($body) ? $body : json_decode($body, true);
             if (is_array($decodedBody) && isset($decodedBody['mode'])) {
                 $bodyMode = $decodedBody['mode'];
-                
+
                 if ($bodyMode === 'raw') {
                     $rawContent = $decodedBody['raw']['content'] ?? '';
                     $rawContent = $this->interpolate($rawContent, $variables);
                     $options['body'] = $rawContent;
-                    
+
                     $rawLang = $decodedBody['raw']['language'] ?? 'text';
-                    if (!isset($options['headers']['Content-Type'])) {
+                    if (! isset($options['headers']['Content-Type'])) {
                         if ($rawLang === 'json') {
                             $options['headers']['Content-Type'] = 'application/json';
                         } elseif ($rawLang === 'javascript') {
@@ -105,45 +106,45 @@ class RequestExecutionService
                     $formParams = [];
                     if (isset($decodedBody['urlencoded']) && is_array($decodedBody['urlencoded'])) {
                         foreach ($decodedBody['urlencoded'] as $item) {
-                            if (!empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
+                            if (! empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
                                 $k = $this->interpolate($item['key'], $variables);
                                 $v = $this->interpolate($item['value'] ?? '', $variables);
                                 $formParams[$k] = $v;
                             }
                         }
                     }
-                    if (!empty($formParams)) {
+                    if (! empty($formParams)) {
                         $options['form_params'] = $formParams;
                     }
                 } elseif ($bodyMode === 'formdata') {
                     $multipart = [];
                     if (isset($decodedBody['formdata']) && is_array($decodedBody['formdata'])) {
                         foreach ($decodedBody['formdata'] as $item) {
-                            if (!empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
+                            if (! empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
                                 $k = $this->interpolate($item['key'], $variables);
                                 $v = $this->interpolate($item['value'] ?? '', $variables);
                                 $multipart[] = [
                                     'name' => $k,
-                                    'contents' => $v
+                                    'contents' => $v,
                                 ];
                             }
                         }
                     }
-                    if (!empty($multipart)) {
+                    if (! empty($multipart)) {
                         $options['multipart'] = $multipart;
                     }
                 } elseif ($bodyMode === 'graphql') {
                     $query = $decodedBody['graphql']['query'] ?? '';
                     $variablesStr = $decodedBody['graphql']['variables'] ?? '{}';
-                    
+
                     $query = $this->interpolate($query, $variables);
                     $variablesStr = $this->interpolate($variablesStr, $variables);
-                    
+
                     $varsDecoded = json_decode($variablesStr, true) ?? [];
-                    
+
                     $options['json'] = [
                         'query' => $query,
-                        'variables' => $varsDecoded
+                        'variables' => $varsDecoded,
                     ];
                 }
             } else {
@@ -154,7 +155,7 @@ class RequestExecutionService
         return [
             'resolved_url' => $url,
             'method' => $method,
-            'request_options' => $options
+            'request_options' => $options,
         ];
     }
 
@@ -173,7 +174,7 @@ class RequestExecutionService
 
             return array_merge($this->formatResponse($response, $endTime - $startTime), [
                 'resolved_url' => $url,
-                'request_options' => $options
+                'request_options' => $options,
             ]);
         } catch (RequestException $e) {
             $endTime = microtime(true);
@@ -182,7 +183,7 @@ class RequestExecutionService
             if ($response) {
                 return array_merge($this->formatResponse($response, $endTime - $startTime), [
                     'resolved_url' => $url,
-                    'request_options' => $options
+                    'request_options' => $options,
                 ]);
             }
 
@@ -194,7 +195,7 @@ class RequestExecutionService
                 'time_ms' => round(($endTime - $startTime) * 1000),
                 'size_bytes' => 0,
                 'resolved_url' => $url,
-                'request_options' => $options
+                'request_options' => $options,
             ];
         } catch (\Exception $e) {
             return [
@@ -205,7 +206,7 @@ class RequestExecutionService
                 'time_ms' => 0,
                 'size_bytes' => 0,
                 'resolved_url' => $url,
-                'request_options' => $options
+                'request_options' => $options,
             ];
         }
     }
@@ -233,24 +234,25 @@ class RequestExecutionService
     {
         $result = [];
         foreach ($items as $item) {
-            if (!empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
+            if (! empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
                 $key = $this->interpolate($item['key'], $variables);
                 $value = $this->interpolate($item['value'] ?? '', $variables);
                 $result[$key] = $value;
             }
         }
+
         return $result;
     }
 
     protected function getEnvironmentVariables(?string $environmentId): array
     {
-        if (!$environmentId) {
+        if (! $environmentId) {
             return [];
         }
 
         $environment = Environment::with('variables')->find($environmentId);
 
-        if (!$environment) {
+        if (! $environment) {
             return [];
         }
 
@@ -265,7 +267,8 @@ class RequestExecutionService
 
         // Find {{variable_name}} or {variable_name} and replace with value from $variables
         return preg_replace_callback('/\{\{\s*([^}]+?)\s*\}\}|\{\s*([^}]+?)\s*\}/', function ($matches) use ($variables) {
-            $key = trim(!empty($matches[1]) ? $matches[1] : $matches[2]);
+            $key = trim(! empty($matches[1]) ? $matches[1] : $matches[2]);
+
             return $variables[$key] ?? $matches[0];
         }, $content);
     }

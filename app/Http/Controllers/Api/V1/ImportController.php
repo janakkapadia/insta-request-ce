@@ -26,18 +26,18 @@ class ImportController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'file'             => 'required_without_all:content,url|nullable|file',
-            'content'          => 'required_without_all:file,url|nullable|string',
-            'url'              => 'required_without_all:file,content|nullable|url|max:2048',
-            'filename'         => 'nullable|string|max:255',
-            'format'           => 'nullable|string',
-            'merge_strategy'   => ['required', Rule::in(array_column(MergeStrategy::cases(), 'value'))],
-            'collection_id'    => 'required_if:merge_strategy,merge_replace,merge_skip,mirror|nullable|uuid|exists:collections,id',
-            'team_id'          => 'nullable|uuid|exists:teams,id',
+            'file' => 'required_without_all:content,url|nullable|file',
+            'content' => 'required_without_all:file,url|nullable|string',
+            'url' => 'required_without_all:file,content|nullable|url|max:2048',
+            'filename' => 'nullable|string|max:255',
+            'format' => 'nullable|string',
+            'merge_strategy' => ['required', Rule::in(array_column(MergeStrategy::cases(), 'value'))],
+            'collection_id' => 'required_if:merge_strategy,merge_replace,merge_skip,mirror|nullable|uuid|exists:collections,id',
+            'team_id' => 'nullable|uuid|exists:teams,id',
             'target_folder_id' => 'nullable|uuid|exists:collection_folders,id',
         ]);
 
-        $user     = $request->user();
+        $user = $request->user();
         $strategy = MergeStrategy::from($request->input('merge_strategy'));
 
         // ── Resolve & authorise the team ─────────────────────────────────────
@@ -91,9 +91,9 @@ class ImportController extends Controller
             );
         } catch (\Exception $e) {
             return response()->json([
-                'status'  => 'failed',
+                'status' => 'failed',
                 'message' => 'Failed to parse the provided file.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 422);
         }
 
@@ -108,9 +108,9 @@ class ImportController extends Controller
         // Surface failures as non-2xx — this is the fix for the silent-failure trap
         if ($import->status === ImportStatus::Failed) {
             return response()->json([
-                'status'    => 'failed',
+                'status' => 'failed',
                 'import_id' => $import->id,
-                'error'     => $import->error_message,
+                'error' => $import->error_message,
             ], 422);
         }
 
@@ -118,12 +118,12 @@ class ImportController extends Controller
         $collection = Collection::find($import->target_collection_id);
 
         return response()->json([
-            'status'          => 'completed',
-            'import_id'       => $import->id,
-            'collection_id'   => $import->target_collection_id,
+            'status' => 'completed',
+            'import_id' => $import->id,
+            'collection_id' => $import->target_collection_id,
             'collection_name' => $collection?->name,
-            'format'          => $import->source_format->value,
-            'summary'         => $import->summary,
+            'format' => $import->source_format->value,
+            'summary' => $import->summary,
         ], 201);
     }
 
@@ -152,6 +152,7 @@ class ImportController extends Controller
     {
         if ($request->hasFile('file')) {
             $file = $request->file('file');
+
             return [$file->get(), $file->getClientOriginalName()];
         }
 
@@ -163,6 +164,7 @@ class ImportController extends Controller
                     return [null, ''];
                 }
                 $filename = $request->input('filename') ?: (basename(parse_url($url, PHP_URL_PATH)) ?: 'import-from-url.json');
+
                 return [$response->body(), $filename];
             } catch (\Exception) {
                 return [null, ''];
@@ -170,6 +172,7 @@ class ImportController extends Controller
         }
 
         $filename = $request->input('filename', 'import.txt');
+
         return [$request->input('content'), $filename];
     }
 }

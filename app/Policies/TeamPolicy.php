@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Enums\TeamPermission;
 use App\Domains\Teams\Models\Team;
+use App\Enums\TeamPermission;
 use App\Models\User;
 
 class TeamPolicy

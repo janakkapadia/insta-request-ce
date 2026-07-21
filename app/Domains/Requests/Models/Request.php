@@ -4,21 +4,21 @@ namespace App\Domains\Requests\Models;
 
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Collections\Models\CollectionFolder;
+use App\Models\User;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Prunable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Contracts\Encryption\DecryptException;
-use App\Models\User;
 
 class Request extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes, Prunable;
+    use HasFactory, HasUuids, Prunable, SoftDeletes;
 
     protected $fillable = [
         'collection_id',
@@ -58,10 +58,12 @@ class Request extends Model
 
                 try {
                     $decrypted = Crypt::decryptString($value);
+
                     return json_decode($decrypted, true) ?: [];
                 } catch (DecryptException $e) {
                     // Fallback for existing unencrypted JSON records
                     $decoded = json_decode($value, true);
+
                     return is_array($decoded) ? $decoded : [];
                 }
             },
@@ -71,6 +73,7 @@ class Request extends Model
                 }
 
                 $jsonString = is_array($value) ? json_encode($value) : $value;
+
                 return Crypt::encryptString($jsonString);
             }
         );

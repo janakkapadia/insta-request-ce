@@ -7,6 +7,7 @@ use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\DTOs\ParsedFolder;
 use App\Domains\ImportExport\DTOs\ParsedRequest;
 use App\Domains\ImportExport\DTOs\ValidationMessage;
+use Symfony\Component\Yaml\Yaml;
 
 class InsomniaParser implements ImportParserInterface
 {
@@ -31,6 +32,7 @@ class InsomniaParser implements ImportParserInterface
         $resources = $data['resources'] ?? [];
         if (empty($resources)) {
             $messages[] = ValidationMessage::error('No resources found in Insomnia export.');
+
             return new ImportParseResult(pathinfo($filename, PATHINFO_FILENAME), null, [], [], $messages);
         }
 
@@ -50,7 +52,9 @@ class InsomniaParser implements ImportParserInterface
         $byId = [];
         foreach ($resources as $r) {
             $id = $r['_id'] ?? null;
-            if ($id) $byId[$id] = $r;
+            if ($id) {
+                $byId[$id] = $r;
+            }
         }
 
         // Collect folders and requests
@@ -91,6 +95,7 @@ class InsomniaParser implements ImportParserInterface
                     );
                 }
             }
+
             return $result;
         };
 
@@ -155,7 +160,7 @@ class InsomniaParser implements ImportParserInterface
         }
 
         $auth = [];
-        if (isset($r['authentication']) && !empty($r['authentication'])) {
+        if (isset($r['authentication']) && ! empty($r['authentication'])) {
             $auth = $r['authentication'];
         }
 
@@ -174,16 +179,19 @@ class InsomniaParser implements ImportParserInterface
             return $data;
         }
 
-        if (class_exists(\Symfony\Component\Yaml\Yaml::class)) {
+        if (class_exists(Yaml::class)) {
             try {
-                $data = \Symfony\Component\Yaml\Yaml::parse($content);
-                if (is_array($data)) return $data;
+                $data = Yaml::parse($content);
+                if (is_array($data)) {
+                    return $data;
+                }
             } catch (\Exception $e) {
                 // Fall through
             }
         }
 
         $messages[] = ValidationMessage::error('Could not parse file as JSON or YAML.');
+
         return null;
     }
 }

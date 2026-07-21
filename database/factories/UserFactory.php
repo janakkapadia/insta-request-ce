@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Enums\TeamRole;
 use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;

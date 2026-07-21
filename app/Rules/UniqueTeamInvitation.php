@@ -2,8 +2,8 @@
 
 namespace App\Rules;
 
-use App\Domains\Teams\Models\Team;
 use App\Domains\Teams\Models\Invitation as TeamInvitation;
+use App\Domains\Teams\Models\Team;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;

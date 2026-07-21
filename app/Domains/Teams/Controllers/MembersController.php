@@ -11,7 +11,7 @@ class MembersController extends Controller
     public function index(Request $request)
     {
         $team = $request->user()->currentTeam;
-        
+
         $team->load('memberships.user', 'invitations');
 
         return Inertia::render('teams/Members', [

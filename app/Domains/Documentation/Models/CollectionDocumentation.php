@@ -3,6 +3,7 @@
 namespace App\Domains\Documentation\Models;
 
 use App\Domains\Collections\Models\Collection;
+use App\Domains\Environments\Models\Environment;
 use App\Domains\Teams\Models\Team;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,7 +45,6 @@ class CollectionDocumentation extends Model
 
     public function environment(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Environments\Models\Environment::class);
+        return $this->belongsTo(Environment::class);
     }
 }
-

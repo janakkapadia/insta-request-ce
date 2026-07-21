@@ -9,6 +9,7 @@ use App\Enums\ExportFormat;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ExportController extends Controller
 {
@@ -27,7 +28,7 @@ class ExportController extends Controller
         ]);
 
         $team = $request->user()->currentTeam;
-        if (!$team) {
+        if (! $team) {
             return back()->withErrors(['error' => 'No active team']);
         }
 
@@ -51,7 +52,7 @@ class ExportController extends Controller
             ]);
         }
 
-        return \Inertia\Inertia::location(route('export.download', $export->id));
+        return Inertia::location(route('export.download', $export->id));
     }
 
     /**
@@ -64,7 +65,7 @@ class ExportController extends Controller
             abort(403);
         }
 
-        if (!$export->file_path || !Storage::exists($export->file_path)) {
+        if (! $export->file_path || ! Storage::exists($export->file_path)) {
             abort(404, 'Export file not found.');
         }
 

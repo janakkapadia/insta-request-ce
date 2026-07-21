@@ -7,6 +7,7 @@ use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\DTOs\ParsedFolder;
 use App\Domains\ImportExport\DTOs\ParsedRequest;
 use App\Domains\ImportExport\DTOs\ValidationMessage;
+use Symfony\Component\Yaml\Yaml;
 
 class OpenApiParser implements ImportParserInterface
 {
@@ -28,7 +29,7 @@ class OpenApiParser implements ImportParserInterface
         }
 
         $version = $data['openapi'] ?? '';
-        if (!str_starts_with($version, '3')) {
+        if (! str_starts_with($version, '3')) {
             $messages[] = ValidationMessage::warning("OpenAPI version is \"{$version}\", expected 3.x.");
         }
 
@@ -38,30 +39,30 @@ class OpenApiParser implements ImportParserInterface
 
         $paths = $data['paths'] ?? [];
         $servers = $data['servers'] ?? [];
-        $baseUrl = !empty($servers) ? rtrim($servers[0]['url'] ?? '', '/') : '';
+        $baseUrl = ! empty($servers) ? rtrim($servers[0]['url'] ?? '', '/') : '';
 
         // Group by tags → folders
         $taggedRequests = [];
         $untaggedRequests = [];
 
         foreach ($paths as $path => $methods) {
-            if (!is_array($methods)) {
+            if (! is_array($methods)) {
                 continue;
             }
 
             foreach ($methods as $method => $operation) {
                 $httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head'];
-                if (!in_array(strtolower($method), $httpMethods)) {
+                if (! in_array(strtolower($method), $httpMethods)) {
                     continue;
                 }
-                if (!is_array($operation)) {
+                if (! is_array($operation)) {
                     continue;
                 }
 
                 $request = $this->parseOperation($path, $method, $operation, $baseUrl, $messages);
 
                 $tags = $operation['tags'] ?? [];
-                if (!empty($tags)) {
+                if (! empty($tags)) {
                     $tag = $tags[0];
                     $taggedRequests[$tag][] = $request;
                 } else {
@@ -90,14 +91,14 @@ class OpenApiParser implements ImportParserInterface
 
     private function parseOperation(string $path, string $method, array $operation, string $baseUrl, array &$messages): ParsedRequest
     {
-        $name = $operation['summary'] ?? $operation['operationId'] ?? strtoupper($method) . ' ' . $path;
-        $url = $baseUrl . $path;
+        $name = $operation['summary'] ?? $operation['operationId'] ?? strtoupper($method).' '.$path;
+        $url = $baseUrl.$path;
 
         // Parse parameters into headers and query params
         $headers = [];
         $queryParams = [];
         foreach ($operation['parameters'] ?? [] as $param) {
-            if (!is_array($param)) {
+            if (! is_array($param)) {
                 continue;
             }
             $in = $param['in'] ?? '';
@@ -121,15 +122,15 @@ class OpenApiParser implements ImportParserInterface
                 $schema = $contentTypes['application/json']['schema'] ?? [];
                 $example = $contentTypes['application/json']['example'] ?? $schema['example'] ?? null;
                 $sample = $example !== null ? $example : $this->generateSample($schema);
-                
+
                 $contentStr = is_string($sample) ? $sample : json_encode($sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                
+
                 $body = [
                     'mode' => 'raw',
                     'raw' => [
                         'language' => 'json',
                         'content' => $contentStr,
-                    ]
+                    ],
                 ];
                 // Add content-type header
                 $hasContentType = false;
@@ -139,7 +140,7 @@ class OpenApiParser implements ImportParserInterface
                         break;
                     }
                 }
-                if (!$hasContentType) {
+                if (! $hasContentType) {
                     $headers[] = ['key' => 'Content-Type', 'value' => 'application/json'];
                 }
             }
@@ -194,9 +195,9 @@ class OpenApiParser implements ImportParserInterface
         }
 
         // Try YAML if symfony/yaml is available
-        if (class_exists(\Symfony\Component\Yaml\Yaml::class)) {
+        if (class_exists(Yaml::class)) {
             try {
-                $data = \Symfony\Component\Yaml\Yaml::parse($content);
+                $data = Yaml::parse($content);
                 if (is_array($data)) {
                     return $data;
                 }

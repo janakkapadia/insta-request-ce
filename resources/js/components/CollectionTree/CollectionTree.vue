@@ -277,9 +277,7 @@ const vFocus = {
                         v-model="newFolderName"
                         placeholder="Folder name..."
                         class="h-7 text-xs"
-                        @keyup.enter="
-                            ($event.target as HTMLInputElement).blur()
-                        "
+                        @keyup.enter="handleCreateFolder(collection.id)"
                         @blur="handleCreateFolder(collection.id)"
                         v-focus
                     />
@@ -294,9 +292,7 @@ const vFocus = {
                         v-model="newRequestName"
                         placeholder="Request name..."
                         class="h-7 text-xs"
-                        @keyup.enter="
-                            ($event.target as HTMLInputElement).blur()
-                        "
+                        @keyup.enter="handleCreateRequest(collection.id)"
                         @blur="handleCreateRequest(collection.id)"
                         v-focus
                     />

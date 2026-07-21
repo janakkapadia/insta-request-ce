@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Middleware\EnsureTeamPermission;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,16 +30,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'team_permission' => \App\Http\Middleware\EnsureTeamPermission::class,
+            'team_permission' => EnsureTeamPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
+        $exceptions->render(function (HttpException $e, Request $request) {
             if ($e->getStatusCode() === 403 && $request->header('X-Inertia')) {
-                \Inertia\Inertia::flash('toast', [
+                Inertia::flash('toast', [
                     'type' => 'error',
                     'message' => $e->getMessage() ?: 'You do not have permission to perform this action.',
                 ]);
+
                 return back();
             }
         });

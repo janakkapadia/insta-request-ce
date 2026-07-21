@@ -1,16 +1,18 @@
 <?php
 
-use App\Models\User;
-use App\Enums\TeamRole;
-use App\Domains\Teams\Models\Team;
 use App\Domains\Collections\Models\Collection;
+use App\Domains\Documentation\Models\CollectionDocumentation;
+use App\Domains\Environments\Models\Environment;
 use App\Domains\ImportExport\Exporters\PostmanV2Exporter;
 use App\Domains\ImportExport\Parsers\PostmanV2Parser;
 use App\Domains\Requests\Models\Request as ApiRequest;
+use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
+use App\Models\User;
 
 test('parses postman v2 request descriptions and header metadata', function () {
-    $parser = new PostmanV2Parser();
-    $json = <<<JSON
+    $parser = new PostmanV2Parser;
+    $json = <<<'JSON'
 {
   "info": {
     "name": "Test Collection",
@@ -46,7 +48,7 @@ test('parses postman v2 request descriptions and header metadata', function () {
             }
           ]
         },
-        "description": "### Login Request\\nThis endpoint authenticates a user using credentials."
+        "description": "### Login Request\nThis endpoint authenticates a user using credentials."
       }
     }
   ]
@@ -86,7 +88,7 @@ test('exports postman v2 request descriptions and header metadata', function () 
         'name' => 'Export Collection',
         'description' => 'Test collection export',
     ]);
-    
+
     $request = ApiRequest::create([
         'collection_id' => $collection->id,
         'name' => 'Get Profile',
@@ -98,16 +100,16 @@ test('exports postman v2 request descriptions and header metadata', function () 
                 'key' => 'Accept',
                 'value' => 'application/json',
                 'enabled' => true,
-                'description' => 'Accept json'
-            ]
+                'description' => 'Accept json',
+            ],
         ],
         'query_params' => [
             [
                 'key' => 'verbose',
                 'value' => '1',
                 'enabled' => true,
-                'description' => 'Verbose mode'
-            ]
+                'description' => 'Verbose mode',
+            ],
         ],
         'body' => [],
         'auth' => [],
@@ -115,14 +117,14 @@ test('exports postman v2 request descriptions and header metadata', function () 
 
     $collection->load(['folders.requests', 'requests']);
 
-    $exporter = new PostmanV2Exporter();
+    $exporter = new PostmanV2Exporter;
     $result = $exporter->generate($collection);
 
     $data = json_decode($result->content, true);
 
     expect($data)->toBeArray();
     expect($data['item'])->toHaveCount(1);
-    
+
     $item = $data['item'][0];
     expect($item['name'])->toBe('Get Profile');
     expect($item['request']['description'])->toBe("### Profile API\nReturns user profile details.");
@@ -172,9 +174,9 @@ test('controller stores and updates request description', function () {
 });
 
 test('documentation supports attached environment', function () {
-    $user = \App\Models\User::factory()->create();
-    $team = \App\Domains\Teams\Models\Team::factory()->create();
-    $team->members()->attach($user, ['role' => \App\Enums\TeamRole::Admin->value]);
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Admin->value]);
     $user->switchTeam($team);
 
     $collection = Collection::create([
@@ -182,7 +184,7 @@ test('documentation supports attached environment', function () {
         'name' => 'API Docs Collection',
     ]);
 
-    $environment = \App\Domains\Environments\Models\Environment::create([
+    $environment = Environment::create([
         'team_id' => $team->id,
         'name' => 'Staging',
         'color' => '#10b981',
@@ -205,7 +207,7 @@ test('documentation supports attached environment', function () {
 
     $response->assertStatus(302);
 
-    $doc = \App\Domains\Documentation\Models\CollectionDocumentation::where('collection_id', $collection->id)->first();
+    $doc = CollectionDocumentation::where('collection_id', $collection->id)->first();
     expect($doc)->not->toBeNull();
     expect($doc->environment_id)->toBe($environment->id);
     expect($doc->is_public)->toBeTrue();

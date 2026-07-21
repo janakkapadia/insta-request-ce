@@ -1,17 +1,16 @@
 <?php
 
-use App\Models\User;
-use App\Enums\TeamRole;
-use App\Domains\Teams\Models\Team;
 use App\Domains\Collections\Models\Collection;
-use App\Domains\Requests\Models\Request as ApiRequest;
-use App\Domains\History\Models\RequestHistory;
 use App\Domains\Environments\Models\Environment;
+use App\Domains\Requests\Models\Request as ApiRequest;
+use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
 test('authenticated team member can execute an HTTP request and log history', function () {
     Http::fake([
-        'https://jsonplaceholder.typicode.com/posts' => Http::response(['id' => 1, 'title' => 'Foo'], 200, ['Content-Type' => 'application/json'])
+        'https://jsonplaceholder.typicode.com/posts' => Http::response(['id' => 1, 'title' => 'Foo'], 200, ['Content-Type' => 'application/json']),
     ]);
 
     $owner = User::factory()->create();
@@ -63,7 +62,7 @@ test('authenticated team member can execute an HTTP request and log history', fu
 test('unauthorized user cannot execute a request belonging to another team', function () {
     $owner = User::factory()->create();
     $otherUser = User::factory()->create();
-    
+
     $team = Team::factory()->create();
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
     $owner->switchTeam($team);
@@ -105,7 +104,7 @@ test('unauthorized user cannot execute a request belonging to another team', fun
 
 test('path variables are properly substituted in the URL', function () {
     Http::fake([
-        'https://api.example.com/users/99/posts/100' => Http::response(['success' => true], 200, [])
+        'https://api.example.com/users/99/posts/100' => Http::response(['success' => true], 200, []),
     ]);
 
     $owner = User::factory()->create();
@@ -156,7 +155,7 @@ test('path variables are properly substituted in the URL', function () {
 
 test('environment variables work with both double curly and single curly syntax during request execution', function () {
     Http::fake([
-        'https://api.example.com/v1/users/123?filter=active' => Http::response(['success' => true], 200, [])
+        'https://api.example.com/v1/users/123?filter=active' => Http::response(['success' => true], 200, []),
     ]);
 
     $owner = User::factory()->create();
@@ -198,10 +197,10 @@ test('environment variables work with both double curly and single curly syntax 
             'url' => '{{baseUrl}}/{version}/users/{{userId}}',
             'headers' => [
                 ['key' => 'Authorization', 'value' => 'Bearer {{apiKey}}', 'enabled' => true],
-                ['key' => 'X-Custom', 'value' => '{apiKey}', 'enabled' => true]
+                ['key' => 'X-Custom', 'value' => '{apiKey}', 'enabled' => true],
             ],
             'query_params' => [
-                ['key' => 'filter', 'value' => '{{filterVal}}', 'enabled' => true]
+                ['key' => 'filter', 'value' => '{{filterVal}}', 'enabled' => true],
             ],
             'body' => '',
             'environment_id' => $environment->id,
@@ -213,4 +212,3 @@ test('environment variables work with both double curly and single curly syntax 
     expect($response->json('request_options.headers.Authorization'))->toBe('Bearer secret-key');
     expect($response->json('request_options.headers.X-Custom'))->toBe('secret-key');
 });
-

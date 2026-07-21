@@ -3,6 +3,7 @@
 namespace App\Domains\ImportExport\Controllers;
 
 use App\Domains\Collections\Models\Collection;
+use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\Models\Import;
 use App\Domains\ImportExport\Services\ConflictResolver;
 use App\Domains\ImportExport\Services\ImportService;
@@ -33,7 +34,7 @@ class ImportController extends Controller
         ]);
 
         $team = $request->user()->currentTeam;
-        if (!$team) {
+        if (! $team) {
             return back()->withErrors(['error' => 'No active team']);
         }
 
@@ -46,16 +47,16 @@ class ImportController extends Controller
             $url = $request->input('url');
             try {
                 $response = Http::timeout(15)->get($url);
-                if (!$response->successful()) {
+                if (! $response->successful()) {
                     return back()->withErrors([
-                        'error' => 'Failed to fetch URL: HTTP ' . $response->status(),
+                        'error' => 'Failed to fetch URL: HTTP '.$response->status(),
                     ]);
                 }
                 $content = $response->body();
                 $filename = $request->input('filename', basename(parse_url($url, PHP_URL_PATH)) ?: 'import-from-url.json');
             } catch (\Exception $e) {
                 return back()->withErrors([
-                    'error' => 'Failed to fetch URL: ' . $e->getMessage(),
+                    'error' => 'Failed to fetch URL: '.$e->getMessage(),
                 ]);
             }
         } else {
@@ -68,10 +69,10 @@ class ImportController extends Controller
         if ($request->input('format')) {
             $format = ImportFormat::tryFrom($request->input('format'));
         }
-        if (!$format) {
+        if (! $format) {
             $format = $this->importService->detectFormat($content, $filename);
         }
-        if (!$format) {
+        if (! $format) {
             return back()->withErrors([
                 'error' => 'Could not detect import format. Please select a format manually.',
             ]);
@@ -91,7 +92,7 @@ class ImportController extends Controller
         if ($request->input('target_collection_id')) {
             $collection = Collection::find($request->input('target_collection_id'));
             if ($collection) {
-                $parsed = \App\Domains\ImportExport\DTOs\ImportParseResult::fromArray($import->parsed_data);
+                $parsed = ImportParseResult::fromArray($import->parsed_data);
                 $conflictItems = $this->conflictResolver->findConflicts($parsed, $collection);
                 $conflicts = array_map(fn ($c) => $c->toArray(), $conflictItems);
                 $deletionItems = $this->conflictResolver->findDeletions($parsed, $collection);
@@ -124,7 +125,7 @@ class ImportController extends Controller
         if ($targetId) {
             $collection = Collection::find($targetId);
             if ($collection && $collection->team_id === $team->id) {
-                $parsed = \App\Domains\ImportExport\DTOs\ImportParseResult::fromArray($import->parsed_data);
+                $parsed = ImportParseResult::fromArray($import->parsed_data);
                 $conflictItems = $this->conflictResolver->findConflicts($parsed, $collection);
                 $conflicts = array_map(fn ($c) => $c->toArray(), $conflictItems);
                 $deletionItems = $this->conflictResolver->findDeletions($parsed, $collection);

@@ -1,10 +1,9 @@
 <?php
 
 use App\Domains\Environments\Models\Environment;
-use App\Domains\Environments\Models\EnvironmentVariable;
-use App\Models\User;
 use App\Domains\Teams\Models\Team;
 use App\Enums\TeamRole;
+use App\Models\User;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -20,7 +19,7 @@ test('guest cannot access environments', function () {
 
 test('user can view environment index page', function () {
     $this->actingAs($this->user);
-    
+
     $response = $this->get(route('environments.index', ['team' => $this->team->slug]));
     $response->assertStatus(200);
 });
@@ -30,11 +29,11 @@ test('user can fetch environments json list', function () {
 
     Environment::create([
         'team_id' => $this->team->id,
-        'name' => 'Staging Env'
+        'name' => 'Staging Env',
     ]);
 
     $response = $this->getJson(route('api.environments.list', ['team' => $this->team->slug]));
-    
+
     $response->assertStatus(200)
         ->assertJsonCount(1)
         ->assertJsonFragment(['name' => 'Staging Env']);
@@ -48,7 +47,7 @@ test('user can create a new environment with variables', function () {
         'variables' => [
             ['key' => 'base_url', 'value' => 'https://api.myapp.com', 'enabled' => true],
             ['key' => 'auth_token', 'value' => 'secret-1234', 'enabled' => false],
-        ]
+        ],
     ]);
 
     $response->assertStatus(200)
@@ -65,13 +64,13 @@ test('user can update environment and sync variables', function () {
 
     $env = Environment::create([
         'team_id' => $this->team->id,
-        'name' => 'Dev Local'
+        'name' => 'Dev Local',
     ]);
 
     $var = $env->variables()->create([
         'key' => 'port',
         'value' => '8000',
-        'enabled' => true
+        'enabled' => true,
     ]);
 
     $response = $this->putJson(route('api.environments.update', ['team' => $this->team->slug, 'environment' => $env->id]), [
@@ -81,7 +80,7 @@ test('user can update environment and sync variables', function () {
             ['id' => $var->id, 'key' => 'port', 'value' => '9000', 'enabled' => true],
             // Create new variable
             ['key' => 'debug', 'value' => 'true', 'enabled' => true],
-        ]
+        ],
     ]);
 
     $response->assertStatus(200);
@@ -98,11 +97,11 @@ test('user can delete environment', function () {
 
     $env = Environment::create([
         'team_id' => $this->team->id,
-        'name' => 'To Delete'
+        'name' => 'To Delete',
     ]);
 
     $response = $this->deleteJson(route('api.environments.destroy', ['team' => $this->team->slug, 'environment' => $env->id]));
-    
+
     $response->assertStatus(200);
     expect(Environment::find($env->id))->toBeNull();
 });
@@ -112,13 +111,13 @@ test('user can export an environment to postman environment format', function ()
 
     $env = Environment::create([
         'team_id' => $this->team->id,
-        'name' => 'Exportable Env'
+        'name' => 'Exportable Env',
     ]);
 
     $env->variables()->create([
         'key' => 'api_url',
         'value' => 'https://api.test.com',
-        'enabled' => true
+        'enabled' => true,
     ]);
 
     $response = $this->get(route('environments.export', ['environment' => $env->id]));
@@ -142,11 +141,11 @@ test('user can import an environment from json content', function () {
             ['key' => 'SECRET_KEY', 'value' => 'abc-123', 'enabled' => true],
             ['key' => 'DEBUG', 'value' => 'false', 'enabled' => false],
         ],
-        '_postman_variable_scope' => 'environment'
+        '_postman_variable_scope' => 'environment',
     ];
 
     $response = $this->postJson(route('environments.import'), [
-        'content' => json_encode($importPayload)
+        'content' => json_encode($importPayload),
     ]);
 
     $response->assertStatus(200)
@@ -157,4 +156,3 @@ test('user can import an environment from json content', function () {
     expect($env->variables)->toHaveCount(2);
     expect($env->variables()->where('key', 'SECRET_KEY')->first()->value)->toBe('abc-123');
 });
-

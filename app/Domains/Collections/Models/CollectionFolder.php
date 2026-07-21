@@ -3,20 +3,19 @@
 namespace App\Domains\Collections\Models;
 
 use App\Domains\Requests\Models\Request;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-use App\Models\User;
-
 class CollectionFolder extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes, Prunable;
+    use HasFactory, HasUuids, Prunable, SoftDeletes;
 
     protected $fillable = [
         'collection_id',

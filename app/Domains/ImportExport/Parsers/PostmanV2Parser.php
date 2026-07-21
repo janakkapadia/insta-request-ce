@@ -26,7 +26,7 @@ class PostmanV2Parser implements ImportParserInterface
                 collectionDescription: null,
                 folders: [],
                 requests: [],
-                validationMessages: [ValidationMessage::error('Invalid JSON: ' . json_last_error_msg())],
+                validationMessages: [ValidationMessage::error('Invalid JSON: '.json_last_error_msg())],
             );
         }
 
@@ -36,7 +36,7 @@ class PostmanV2Parser implements ImportParserInterface
 
         // Validate schema version
         $schema = $info['schema'] ?? '';
-        if ($schema && !str_contains($schema, 'v2')) {
+        if ($schema && ! str_contains($schema, 'v2')) {
             $messages[] = ValidationMessage::warning("Postman schema version may not be v2: {$schema}");
         }
 
@@ -93,7 +93,7 @@ class PostmanV2Parser implements ImportParserInterface
     private function parseRequest(array $item, array &$messages): ?ParsedRequest
     {
         $req = $item['request'] ?? null;
-        if (!$req) {
+        if (! $req) {
             $messages[] = ValidationMessage::warning("Item \"{$item['name']}\" has no request data.", $item['name'] ?? '');
 
             return null;
@@ -125,7 +125,7 @@ class PostmanV2Parser implements ImportParserInterface
                 $headers[] = [
                     'key' => $header['key'],
                     'value' => $header['value'] ?? '',
-                    'enabled' => !($header['disabled'] ?? false),
+                    'enabled' => ! ($header['disabled'] ?? false),
                     'description' => is_array($header['description'] ?? null) ? ($header['description']['content'] ?? '') : (is_string($header['description'] ?? null) ? $header['description'] : ''),
                 ];
             }
@@ -139,7 +139,7 @@ class PostmanV2Parser implements ImportParserInterface
                     $queryParams[] = [
                         'key' => $param['key'],
                         'value' => $param['value'] ?? '',
-                        'enabled' => !($param['disabled'] ?? false),
+                        'enabled' => ! ($param['disabled'] ?? false),
                         'description' => is_array($param['description'] ?? null) ? ($param['description']['content'] ?? '') : (is_string($param['description'] ?? null) ? $param['description'] : ''),
                     ];
                 }
@@ -152,12 +152,12 @@ class PostmanV2Parser implements ImportParserInterface
             $bodyData = $req['body'];
             $mode = $bodyData['mode'] ?? 'raw';
             $body = ['mode' => $mode];
-            
+
             if ($mode === 'raw') {
                 $language = $bodyData['options']['raw']['language'] ?? 'json';
                 $body['raw'] = [
                     'language' => $language,
-                    'content' => is_string($bodyData['raw'] ?? '') ? $bodyData['raw'] : ''
+                    'content' => is_string($bodyData['raw'] ?? '') ? $bodyData['raw'] : '',
                 ];
             } elseif ($mode === 'formdata') {
                 $body['formdata'] = $bodyData['formdata'] ?? [];
@@ -178,7 +178,7 @@ class PostmanV2Parser implements ImportParserInterface
         if (isset($req['description'])) {
             $description = is_array($req['description']) ? ($req['description']['content'] ?? null) : (is_string($req['description']) ? $req['description'] : null);
         }
-        if (!$description && isset($item['description'])) {
+        if (! $description && isset($item['description'])) {
             $description = is_array($item['description']) ? ($item['description']['content'] ?? null) : (is_string($item['description']) ? $item['description'] : null);
         }
 

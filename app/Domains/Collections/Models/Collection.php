@@ -2,22 +2,23 @@
 
 namespace App\Domains\Collections\Models;
 
+use App\Domains\Documentation\Models\CollectionDocumentation;
 use App\Domains\Requests\Models\Request;
 use App\Domains\Teams\Models\Team;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-use App\Models\User;
 
 class Collection extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes, Prunable;
+    use HasFactory, HasUuids, Prunable, SoftDeletes;
 
     protected $fillable = [
         'team_id',
@@ -46,9 +47,9 @@ class Collection extends Model
         return $this->hasMany(Request::class);
     }
 
-    public function documentation(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function documentation(): HasOne
     {
-        return $this->hasOne(\App\Domains\Documentation\Models\CollectionDocumentation::class);
+        return $this->hasOne(CollectionDocumentation::class);
     }
 
     public function prunable(): Builder

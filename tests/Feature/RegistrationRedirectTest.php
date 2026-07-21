@@ -20,15 +20,15 @@ class RegistrationRedirectTest extends TestCase
 
         $response->assertStatus(302);
         $redirectUrl = $response->headers->get('Location');
-        echo "Post register redirect: " . $redirectUrl . "\n";
-        
+        echo 'Post register redirect: '.$redirectUrl."\n";
+
         $dashboardResponse = $this->get($redirectUrl);
         $dashboardResponse->assertStatus(302);
-        
+
         $redirectUrl2 = $dashboardResponse->headers->get('Location');
-        echo "Dashboard redirect: " . $redirectUrl2 . "\n";
-        
+        echo 'Dashboard redirect: '.$redirectUrl2."\n";
+
         $verifyResponse = $this->get($redirectUrl2);
-        echo "Verify response status: " . $verifyResponse->getStatusCode() . "\n";
+        echo 'Verify response status: '.$verifyResponse->getStatusCode()."\n";
     }
 }

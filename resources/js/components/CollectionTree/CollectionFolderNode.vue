@@ -277,13 +277,15 @@ const handleCreateRequest = async () => {
         return;
     }
 
-    await store.createRequest(
-        props.collection.id,
-        newRequestName.value.trim(),
-        props.folder.id,
-    );
+    const name = newRequestName.value.trim();
     store.activeNewRequest = null;
     newRequestName.value = '';
+
+    await store.createRequest(
+        props.collection.id,
+        name,
+        props.folder.id,
+    );
     setFolderExpanded(true);
 };
 
@@ -295,13 +297,15 @@ const handleCreateFolder = async () => {
         return;
     }
 
-    await store.createFolder(
-        props.collection.id,
-        newFolderName.value.trim(),
-        props.folder.id,
-    );
+    const name = newFolderName.value.trim();
     store.activeNewFolder = null;
     newFolderName.value = '';
+
+    await store.createFolder(
+        props.collection.id,
+        name,
+        props.folder.id,
+    );
     setFolderExpanded(true);
 };
 const vFocus = {
@@ -421,7 +425,7 @@ const vFocus = {
                 v-model="newFolderName"
                 placeholder="Subfolder name..."
                 class="h-7 text-xs"
-                @keyup.enter="($event.target as HTMLInputElement).blur()"
+                @keyup.enter="handleCreateFolder"
                 @blur="handleCreateFolder"
                 v-focus
             />
@@ -432,7 +436,7 @@ const vFocus = {
                 v-model="newRequestName"
                 placeholder="Request name..."
                 class="h-7 text-xs"
-                @keyup.enter="($event.target as HTMLInputElement).blur()"
+                @keyup.enter="handleCreateRequest"
                 @blur="handleCreateRequest"
                 v-focus
             />

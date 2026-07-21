@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Teams\Models\Team;
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('request_histories', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignIdFor(\App\Domains\Teams\Models\Team::class)->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(\App\Models\User::class)->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Team::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
             $table->foreignUuid('request_id')->nullable()->constrained()->nullOnDelete();
             $table->string('method');
             $table->string('url');

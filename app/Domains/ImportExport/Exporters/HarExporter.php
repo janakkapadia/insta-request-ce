@@ -23,7 +23,7 @@ class HarExporter implements ExportGeneratorInterface
             $allRequests = $allRequests->merge($folder->requests);
         }
         $allRequests = $allRequests->merge(
-            $collection->requests->filter(fn ($r) => !$r->folder_id)
+            $collection->requests->filter(fn ($r) => ! $r->folder_id)
         );
 
         foreach ($allRequests as $req) {

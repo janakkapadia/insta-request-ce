@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('collection_documentations', function (Blueprint $table) {
-            if (!Schema::hasColumn('collection_documentations', 'environment_id')) {
+            if (! Schema::hasColumn('collection_documentations', 'environment_id')) {
                 $table->foreignUuid('environment_id')->nullable()->after('team_id')->constrained('environments')->nullOnDelete();
             }
         });
