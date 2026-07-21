@@ -1996,9 +1996,11 @@ const executeRequest = async () => {
                                                                 "
                                                             >
                                                                 <SelectTrigger
-                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0"
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
                                                                 >
-                                                                    <SelectValue />
+                                                                    <SelectValue
+                                                                        placeholder="Text"
+                                                                    />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <SelectItem
@@ -2023,9 +2025,11 @@ const executeRequest = async () => {
                                                                 "
                                                             >
                                                                 <SelectTrigger
-                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0"
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
                                                                 >
-                                                                    <SelectValue />
+                                                                    <SelectValue
+                                                                        placeholder="String"
+                                                                    />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <SelectItem
@@ -2218,9 +2222,11 @@ const executeRequest = async () => {
                                                                 "
                                                             >
                                                                 <SelectTrigger
-                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0"
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
                                                                 >
-                                                                    <SelectValue />
+                                                                    <SelectValue
+                                                                        placeholder="String"
+                                                                    />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <SelectItem
