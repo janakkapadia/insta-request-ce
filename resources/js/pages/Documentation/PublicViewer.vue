@@ -1699,7 +1699,7 @@ onMounted(() => {
                                             <th
                                                 class="px-4 py-2 text-left font-semibold text-muted-foreground"
                                             >
-                                                Value
+                                                Description
                                             </th>
                                         </tr>
                                     </thead>
@@ -1714,6 +1714,10 @@ onMounted(() => {
                                                 class="px-4 py-2 font-mono font-semibold text-foreground"
                                             >
                                                 {{ param.key }}
+                                                <span
+                                                    class="ml-1 text-[10px] text-red-500"
+                                                    >*</span
+                                                >
                                             </td>
                                             <td
                                                 class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
@@ -1721,9 +1725,9 @@ onMounted(() => {
                                                 string
                                             </td>
                                             <td
-                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                                class="px-4 py-2 text-muted-foreground/80"
                                             >
-                                                {{ param.value }}
+                                                {{ param.description }}
                                             </td>
                                         </tr>
                                     </tbody>
