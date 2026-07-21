@@ -422,12 +422,20 @@ const generatedCode = computed(() => {
     }
 
     const mode = parsedBodyObj?.mode || 'raw';
-    const isUrlEncoded = mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
-    
+    const isUrlEncoded =
+        mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
+    const isFormData = mode === 'formdata' || mode === 'form-data';
+    const formDataItems =
+        isFormData && Array.isArray(parsedBodyObj?.formdata)
+            ? parsedBodyObj.formdata.filter(
+                  (i: any) => i && i.key && i.enabled !== false,
+              )
+            : [];
+
     // De-duplicate headers, adding Content-Type if missing and if a body is present
     const rawHeaders = parsedHeaders.value.map((h) => ({
-        key: h.key.replace(/\\/g, '\\\\'),
-        value: h.value.replace(/\\/g, '\\\\'),
+        key: String(h.key).replace(/\\/g, '\\\\'),
+        value: String(h.value).replace(/\\/g, '\\\\'),
     }));
     const hasContentType = rawHeaders.some(
         (h) => h.key.toLowerCase() === 'content-type',
@@ -435,14 +443,27 @@ const generatedCode = computed(() => {
     const headersList = [...rawHeaders];
 
     if (!hasContentType && bodyStr) {
-        headersList.unshift({ key: 'Content-Type', value: isUrlEncoded ? 'application/x-www-form-urlencoded' : 'application/json' });
+        headersList.unshift({
+            key: 'Content-Type',
+            value: isUrlEncoded
+                ? 'application/x-www-form-urlencoded'
+                : 'application/json',
+        });
     }
 
     switch (selectedLang.value) {
         case 'fetch': {
             let fetchBodyStr = '';
+            let setupCode = '';
+            let fetchHeaders = headersList;
 
-            if (bodyStr) {
+            if (isFormData && formDataItems.length > 0) {
+                fetchHeaders = fetchHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${String(i.key).replace(/"/g, '\\"')}", "${String(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                fetchBodyStr = `,\n  body: formdata`;
+            } else if (bodyStr) {
                 if (isUrlEncoded) {
                     fetchBodyStr = `,\n  body: "${bodyStr.replace(/"/g, '\\"')}"`;
                 } else {
@@ -450,10 +471,10 @@ const generatedCode = computed(() => {
                 }
             }
 
-            return `fetch("${url}", {
+            return `${setupCode}fetch("${url}", {
   method: "${method}",
   headers: {
-    ${headersList.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ')}
+    ${fetchHeaders.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ')}
   }${fetchBodyStr}
 })
 .then(response => response.json())
@@ -463,8 +484,16 @@ const generatedCode = computed(() => {
 
         case 'axios': {
             let axiosDataStr = '';
+            let setupCode = '';
+            let axiosHeaders = headersList;
 
-            if (bodyStr) {
+            if (isFormData && formDataItems.length > 0) {
+                axiosHeaders = axiosHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${String(i.key).replace(/"/g, '\\"')}", "${String(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                axiosDataStr = `,\n  data: formdata`;
+            } else if (bodyStr) {
                 if (isUrlEncoded) {
                     axiosDataStr = `,\n  data: "${bodyStr.replace(/"/g, '\\"')}"`;
                 } else {
@@ -474,9 +503,9 @@ const generatedCode = computed(() => {
 
             return `import axios from 'axios';
 
-axios({
+${setupCode}axios({
   method: '${method.toLowerCase()}',
-  url: '${url}'${axiosDataStr}${headersList.length ? `,\n  headers: {\n    ` + headersList.map((h) => `'${h.key}': '${h.value}'`).join(',\n    ') + `\n  }` : ''}
+  url: '${url}'${axiosDataStr}${axiosHeaders.length ? `,\n  headers: {\n    ` + axiosHeaders.map((h) => `'${h.key}': '${h.value}'`).join(',\n    ') + `\n  }` : ''}
 })
 .then(response => {
   console.log(response.data);
@@ -486,17 +515,33 @@ axios({
 });`;
         }
 
-        case 'python':
+        case 'python': {
+            let pythonDataStr = '';
+            let setupCode = '';
+            let pythonHeaders = headersList;
+
+            if (isFormData && formDataItems.length > 0) {
+                pythonHeaders = pythonHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${String(i.key).replace(/"/g, '\\"')}": "${String(i.value || '').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
+                pythonDataStr = `, data=payload`;
+            } else if (bodyStr) {
+                setupCode = `payload = ${JSON.stringify(bodyStr)}\n`;
+                pythonDataStr = `, data=payload`;
+            }
+
             return `import requests
 
 url = "${url}"
-${headersList.length ? `headers = {\n    ` + headersList.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ') + `\n}\n` : ''}${bodyStr ? `payload = ${JSON.stringify(bodyStr)}\n` : ''}
+${pythonHeaders.length ? `headers = {\n    ` + pythonHeaders.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ') + `\n}\n` : ''}${setupCode}
 response = requests.${method.toLowerCase()}(
-    url${headersList.length ? ', headers=headers' : ''}${bodyStr ? ', data=payload' : ''}
+    url${pythonHeaders.length ? ', headers=headers' : ''}${pythonDataStr}
 )
 
 print(response.status_code)
 print(response.json())`;
+        }
 
         case 'go':
             return `package main
@@ -606,14 +651,32 @@ public class Main {
         }
 
         case 'curl':
-        default:
-            const headersCurl = headersList.length
-                ? headersList
+        default: {
+            let curlHeadersList = headersList;
+            let dataFlag = '';
+
+            if (isFormData && formDataItems.length > 0) {
+                curlHeadersList = curlHeadersList.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                dataFlag = formDataItems
+                    .map(
+                        (i: any) =>
+                            ` \\\n  -F '${String(i.key).replace(/'/g, "'\\''")}=${String(i.value || '').replace(/'/g, "'\\''")}'`,
+                    )
+                    .join('');
+            } else if (bodyStr) {
+                dataFlag = ` \\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'`;
+            }
+
+            const headersCurl = curlHeadersList.length
+                ? curlHeadersList
                       .map((h) => `-H "${h.key}: ${h.value}"`)
                       .join(' \\\n  ')
                 : '';
 
-            return `curl -X ${method} "${url}"${headersCurl ? ` \\\n  ${headersCurl}` : ''}${bodyStr ? ` \\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'` : ''}`;
+            return `curl -X ${method} "${url}"${headersCurl ? ` \\\n  ${headersCurl}` : ''}${dataFlag}`;
+        }
     }
 });
 
