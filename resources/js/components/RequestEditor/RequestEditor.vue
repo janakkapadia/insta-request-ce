@@ -394,9 +394,26 @@ const bodyConfig = ref({
         content: '',
     },
     formdata: [
-        { key: '', value: '', type: 'text', enabled: true, description: '' },
+        {
+            key: '',
+            value: '',
+            type: 'text',
+            enabled: true,
+            description: '',
+            dataType: 'string',
+            required: true,
+        },
     ],
-    urlencoded: [{ key: '', value: '', enabled: true, description: '' }],
+    urlencoded: [
+        {
+            key: '',
+            value: '',
+            enabled: true,
+            description: '',
+            dataType: 'string',
+            required: true,
+        },
+    ],
     graphql: {
         query: '',
         variables: '',
@@ -414,6 +431,8 @@ const handleFormDataInput = (index: number) => {
                 type: 'text',
                 enabled: true,
                 description: '',
+                dataType: 'string',
+                required: true,
             });
         }
     }
@@ -429,6 +448,8 @@ const removeFormData = (index: number) => {
             type: 'text',
             enabled: true,
             description: '',
+            dataType: 'string',
+            required: true,
         });
     }
 };
@@ -443,6 +464,8 @@ const handleUrlEncodedInput = (index: number) => {
                 value: '',
                 enabled: true,
                 description: '',
+                dataType: 'string',
+                required: true,
             });
         }
     }
@@ -457,6 +480,8 @@ const removeUrlEncoded = (index: number) => {
             value: '',
             enabled: true,
             description: '',
+            dataType: 'string',
+            required: true,
         });
     }
 };
@@ -706,6 +731,8 @@ watch(
                                           type: 'text',
                                           enabled: true,
                                           description: '',
+                                          dataType: 'string',
+                                          required: true,
                                       },
                                   ],
                         urlencoded:
@@ -718,6 +745,8 @@ watch(
                                           value: '',
                                           enabled: true,
                                           description: '',
+                                          dataType: 'string',
+                                          required: true,
                                       },
                                   ],
                         graphql: {
@@ -758,6 +787,8 @@ watch(
                                 type: 'text',
                                 enabled: true,
                                 description: '',
+                                dataType: 'string',
+                                required: true,
                             },
                         ],
                         urlencoded: [
@@ -766,6 +797,8 @@ watch(
                                 value: '',
                                 enabled: true,
                                 description: '',
+                                dataType: 'string',
+                                required: true,
                             },
                         ],
                         graphql: {
@@ -1882,7 +1915,7 @@ const executeRequest = async () => {
                                                     class="max-w-4xl divide-y overflow-hidden rounded-md border bg-background shadow-sm"
                                                 >
                                                     <div
-                                                        class="grid h-8 grid-cols-[40px_1.5fr_100px_2fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+                                                        class="grid h-8 grid-cols-[40px_1.5fr_80px_100px_50px_1.5fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
                                                     >
                                                         <div></div>
                                                         <div
@@ -1894,6 +1927,16 @@ const executeRequest = async () => {
                                                             class="flex h-full items-center border-r px-2"
                                                         >
                                                             Type
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Data Type
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Req
                                                         </div>
                                                         <div
                                                             class="flex h-full items-center border-r px-2"
@@ -1913,7 +1956,7 @@ const executeRequest = async () => {
                                                             item, idx
                                                         ) in bodyConfig.formdata"
                                                         :key="idx"
-                                                        class="group/row grid grid-cols-[40px_1.5fr_100px_2fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
+                                                        class="group/row grid grid-cols-[40px_1.5fr_80px_100px_50px_1.5fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
                                                     >
                                                         <div
                                                             class="flex justify-center"
@@ -1970,6 +2013,56 @@ const executeRequest = async () => {
                                                                     >
                                                                 </SelectContent>
                                                             </Select>
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-1"
+                                                        >
+                                                            <Select
+                                                                v-model="
+                                                                    item.dataType
+                                                                "
+                                                            >
+                                                                <SelectTrigger
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0"
+                                                                >
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem
+                                                                        value="string"
+                                                                        class="text-xs"
+                                                                        >String</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="integer"
+                                                                        class="text-xs"
+                                                                        >Integer</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="boolean"
+                                                                        class="text-xs"
+                                                                        >Boolean</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="file"
+                                                                        class="text-xs"
+                                                                        >File</SelectItem
+                                                                    >
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center justify-center border-r"
+                                                        >
+                                                            <Checkbox
+                                                                :model-value="
+                                                                    item.required
+                                                                "
+                                                                @update:model-value="
+                                                                    item.required =
+                                                                        !!$event
+                                                                "
+                                                            />
                                                         </div>
                                                         <div
                                                             class="flex h-full items-center border-r"
@@ -2049,13 +2142,23 @@ const executeRequest = async () => {
                                                     class="max-w-4xl divide-y overflow-hidden rounded-md border bg-background shadow-sm"
                                                 >
                                                     <div
-                                                        class="grid h-8 grid-cols-[40px_2fr_2fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+                                                        class="grid h-8 grid-cols-[40px_1.5fr_100px_50px_1.5fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
                                                     >
                                                         <div></div>
                                                         <div
                                                             class="flex h-full items-center border-r px-2"
                                                         >
                                                             Key
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Data Type
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-2"
+                                                        >
+                                                            Req
                                                         </div>
                                                         <div
                                                             class="flex h-full items-center border-r px-2"
@@ -2075,7 +2178,7 @@ const executeRequest = async () => {
                                                             item, idx
                                                         ) in bodyConfig.urlencoded"
                                                         :key="idx"
-                                                        class="group/row grid grid-cols-[40px_2fr_2fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
+                                                        class="group/row grid grid-cols-[40px_1.5fr_100px_50px_1.5fr_2fr_50px] items-center border-b transition-colors last:border-0 hover:bg-muted/10"
                                                     >
                                                         <div
                                                             class="flex justify-center"
@@ -2103,6 +2206,51 @@ const executeRequest = async () => {
                                                                     handleUrlEncodedInput(
                                                                         idx,
                                                                     )
+                                                                "
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center border-r px-1"
+                                                        >
+                                                            <Select
+                                                                v-model="
+                                                                    item.dataType
+                                                                "
+                                                            >
+                                                                <SelectTrigger
+                                                                    class="h-6 w-full border-0 bg-transparent px-1 text-[11px] shadow-none focus:ring-0"
+                                                                >
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem
+                                                                        value="string"
+                                                                        class="text-xs"
+                                                                        >String</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="integer"
+                                                                        class="text-xs"
+                                                                        >Integer</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="boolean"
+                                                                        class="text-xs"
+                                                                        >Boolean</SelectItem
+                                                                    >
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div
+                                                            class="flex h-full items-center justify-center border-r"
+                                                        >
+                                                            <Checkbox
+                                                                :model-value="
+                                                                    item.required
+                                                                "
+                                                                @update:model-value="
+                                                                    item.required =
+                                                                        !!$event
                                                                 "
                                                             />
                                                         </div>
