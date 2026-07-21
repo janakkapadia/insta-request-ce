@@ -1436,6 +1436,7 @@ const executeRequest = async () => {
                                 class="h-9 gap-1 text-xs"
                                 @click="handleSave"
                                 :disabled="isSaving"
+                                title="Save (Cmd/Ctrl + S)"
                             >
                                 <Save class="h-3.5 w-3.5" />
                                 <span>{{ isSaving ? '...' : 'Save' }}</span>
