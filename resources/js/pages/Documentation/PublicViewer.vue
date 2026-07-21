@@ -330,7 +330,7 @@ const extractBodyContent = (body: any): string => {
                 return parsed.raw?.content || '';
             }
 
-            if (mode === 'urlencoded') {
+            if (mode === 'urlencoded' || mode === 'x-www-form-urlencoded') {
                 const list = parsed.urlencoded || [];
                 const enabled = list.filter(
                     (item: any) => item && item.key && item.enabled !== false,
@@ -344,7 +344,7 @@ const extractBodyContent = (body: any): string => {
                     .join('&');
             }
 
-            if (mode === 'formdata') {
+            if (mode === 'formdata' || mode === 'form-data') {
                 const list = parsed.formdata || [];
                 const enabled = list.filter(
                     (item: any) => item && item.key && item.enabled !== false,
@@ -409,6 +409,21 @@ const generatedCode = computed(() => {
     const rawBody = hasRequestBody ? extractBodyContent(req.body) : '';
     const bodyStr = substituteEnvVariables(rawBody);
 
+    let parsedBodyObj: any = null;
+
+    if (req.body) {
+        if (typeof req.body === 'string') {
+            try {
+                parsedBodyObj = JSON.parse(req.body);
+            } catch {}
+        } else {
+            parsedBodyObj = req.body;
+        }
+    }
+
+    const mode = parsedBodyObj?.mode || 'raw';
+    const isUrlEncoded = mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
+    
     // De-duplicate headers, adding Content-Type if missing and if a body is present
     const rawHeaders = parsedHeaders.value.map((h) => ({
         key: h.key.replace(/\\/g, '\\\\'),
@@ -420,27 +435,48 @@ const generatedCode = computed(() => {
     const headersList = [...rawHeaders];
 
     if (!hasContentType && bodyStr) {
-        headersList.unshift({ key: 'Content-Type', value: 'application/json' });
+        headersList.unshift({ key: 'Content-Type', value: isUrlEncoded ? 'application/x-www-form-urlencoded' : 'application/json' });
     }
 
     switch (selectedLang.value) {
-        case 'fetch':
+        case 'fetch': {
+            let fetchBodyStr = '';
+
+            if (bodyStr) {
+                if (isUrlEncoded) {
+                    fetchBodyStr = `,\n  body: "${bodyStr.replace(/"/g, '\\"')}"`;
+                } else {
+                    fetchBodyStr = `,\n  body: JSON.stringify(${bodyStr.split('\n').join('\n  ')})`;
+                }
+            }
+
             return `fetch("${url}", {
   method: "${method}",
   headers: {
     ${headersList.map((h) => `"${h.key}": "${h.value}"`).join(',\n    ')}
-  }${bodyStr ? `,\n  body: JSON.stringify(${bodyStr.split('\n').join('\n  ')})` : ''}
+  }${fetchBodyStr}
 })
 .then(response => response.json())
 .then(data => console.log(data))
 .catch(error => console.error("Error:", error));`;
+        }
 
-        case 'axios':
+        case 'axios': {
+            let axiosDataStr = '';
+
+            if (bodyStr) {
+                if (isUrlEncoded) {
+                    axiosDataStr = `,\n  data: "${bodyStr.replace(/"/g, '\\"')}"`;
+                } else {
+                    axiosDataStr = `,\n  data: ${bodyStr.split('\n').join('\n  ')}`;
+                }
+            }
+
             return `import axios from 'axios';
 
 axios({
   method: '${method.toLowerCase()}',
-  url: '${url}'${bodyStr ? `,\n  data: ${bodyStr.split('\n').join('\n  ')}` : ''}${headersList.length ? `,\n  headers: {\n    ` + headersList.map((h) => `'${h.key}': '${h.value}'`).join(',\n    ') + `\n  }` : ''}
+  url: '${url}'${axiosDataStr}${headersList.length ? `,\n  headers: {\n    ` + headersList.map((h) => `'${h.key}': '${h.value}'`).join(',\n    ') + `\n  }` : ''}
 })
 .then(response => {
   console.log(response.data);
@@ -448,6 +484,7 @@ axios({
 .catch(error => {
   console.error(error);
 });`;
+        }
 
         case 'python':
             return `import requests
