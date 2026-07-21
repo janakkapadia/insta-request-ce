@@ -652,7 +652,7 @@ const generatedCode = computed(() => {
                 axiosDataStr = `,\n  data: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
-                    axiosDataStr = `,\n  data: "${bodyStr.replace(/"/g, '\\"')}"`;
+                    axiosDataStr = `,\n  data: "${bodyStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
                 } else {
                     axiosDataStr = `,\n  data: ${bodyStr.split('\n').join('\n  ')}`;
                 }
