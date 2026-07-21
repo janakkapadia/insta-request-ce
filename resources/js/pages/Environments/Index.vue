@@ -455,7 +455,7 @@ const executeReplace = async () => {
                         type="button"
                         @click="selectEnv(env)"
                         :class="[
-                            'group flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left transition-colors border',
+                            'group flex w-full items-center justify-between rounded-md border px-3 py-2.5 text-left transition-colors',
                             selectedEnvId === env.id
                                 ? 'border-accent/20 bg-accent font-medium text-accent-foreground shadow-sm'
                                 : 'border-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground',
