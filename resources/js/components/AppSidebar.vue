@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     Database,
     SlidersHorizontal,
@@ -206,6 +206,8 @@ const handleSelectCollection = (collection: any) => {
     if (collection.expanded && !collection.has_loaded_details) {
         store.fetchCollectionDetails(collection.id);
     }
+    
+    router.get(`/collections/${collection.id}`);
 };
 
 const handleDragOverCollection = (e: DragEvent) => {

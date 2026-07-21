@@ -72,6 +72,7 @@ const setFolderExpanded = (expanded: boolean) => {
 
 const toggle = () => {
     setFolderExpanded(!props.folder.expanded);
+    router.get(`/collections/${props.collection.id}`);
 };
 
 const startRenameFolder = (e?: Event) => {
