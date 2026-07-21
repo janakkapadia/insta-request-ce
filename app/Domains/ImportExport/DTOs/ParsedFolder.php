@@ -5,8 +5,6 @@ namespace App\Domains\ImportExport\DTOs;
 class ParsedFolder
 {
     /**
-     * @param  string  $name
-     * @param  string|null  $description
      * @param  array<ParsedRequest>  $requests
      * @param  array<ParsedFolder>  $folders
      */

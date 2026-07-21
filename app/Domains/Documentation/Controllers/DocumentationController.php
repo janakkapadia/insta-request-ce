@@ -5,9 +5,11 @@ namespace App\Domains\Documentation\Controllers;
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Documentation\Models\CollectionDocumentation;
 use App\Domains\Documentation\Models\RequestResponseExample;
+use App\Domains\Environments\Models\Environment;
 use App\Domains\Requests\Models\Request as ApiRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -17,7 +19,7 @@ class DocumentationController extends Controller
     public function index(HttpRequest $request)
     {
         $team = $request->user()->currentTeam;
-        
+
         $collections = Collection::where('team_id', $team->id)
             ->with(['folders', 'requests', 'documentation'])
             ->get();
@@ -27,13 +29,13 @@ class DocumentationController extends Controller
 
         if ($request->has('collection_id') && $request->collection_id) {
             $collection = Collection::where('team_id', $team->id)->findOrFail($request->collection_id);
-            
+
             $doc = CollectionDocumentation::firstOrCreate(
                 ['collection_id' => $collection->id],
                 [
                     'team_id' => $collection->team_id,
                     'is_public' => false,
-                    'public_slug' => Str::slug($collection->name) . '-' . Str::lower(Str::random(6)),
+                    'public_slug' => Str::slug($collection->name).'-'.Str::lower(Str::random(6)),
                     'version' => '1.0.0',
                 ]
             );
@@ -57,7 +59,7 @@ class DocumentationController extends Controller
                 });
         }
 
-        $environments = \App\Domains\Environments\Models\Environment::where('team_id', $team->id)
+        $environments = Environment::where('team_id', $team->id)
             ->with(['variables' => function ($q) {
                 $q->where('enabled', true)->orderBy('key');
             }])
@@ -72,8 +74,6 @@ class DocumentationController extends Controller
             'environments' => $environments,
         ]);
     }
-
-
 
     public function saveDoc(HttpRequest $request, Collection $collection)
     {
@@ -94,7 +94,7 @@ class DocumentationController extends Controller
                 'team_id' => $collection->team_id,
                 'environment_id' => $request->input('environment_id') ?: null,
                 'is_public' => $request->boolean('is_public'),
-                'public_slug' => $request->input('public_slug') ?: (Str::slug($collection->name) . '-' . Str::lower(Str::random(6))),
+                'public_slug' => $request->input('public_slug') ?: (Str::slug($collection->name).'-'.Str::lower(Str::random(6))),
                 'version' => $request->input('version', '1.0.0'),
                 'markdown_intro' => $request->input('markdown_intro'),
                 'auth_info' => $request->input('auth_info'),
@@ -109,7 +109,7 @@ class DocumentationController extends Controller
             $settings['logo_path'] = $path;
         } elseif ($request->boolean('remove_logo')) {
             if (isset($settings['logo_path'])) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($settings['logo_path']);
+                Storage::disk('public')->delete($settings['logo_path']);
                 unset($settings['logo_path']);
             }
         }
@@ -119,7 +119,7 @@ class DocumentationController extends Controller
             $settings['favicon_path'] = $path;
         } elseif ($request->boolean('remove_favicon')) {
             if (isset($settings['favicon_path'])) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($settings['favicon_path']);
+                Storage::disk('public')->delete($settings['favicon_path']);
                 unset($settings['favicon_path']);
             }
         }
@@ -128,7 +128,6 @@ class DocumentationController extends Controller
             $doc->settings = $settings;
             $doc->save();
         }
-
 
         // Update individual request descriptions if passed
         if ($request->has('requests_descriptions')) {
@@ -162,6 +161,7 @@ class DocumentationController extends Controller
     public function destroyExample(RequestResponseExample $example)
     {
         $example->delete();
+
         return back();
     }
 
@@ -206,7 +206,7 @@ class DocumentationController extends Controller
             ->where('is_public', true)
             ->first();
 
-        if (!$doc) {
+        if (! $doc) {
             $doc = CollectionDocumentation::where('collection_id', $publicDocsList[0]['collection_id'])
                 ->where('is_public', true)
                 ->firstOrFail();
@@ -251,7 +251,7 @@ class DocumentationController extends Controller
 
         $environment = null;
         if ($doc->environment_id) {
-            $environment = \App\Domains\Environments\Models\Environment::where('id', $doc->environment_id)
+            $environment = Environment::where('id', $doc->environment_id)
                 ->with(['variables' => function ($q) {
                     $q->where('enabled', true)->orderBy('key');
                 }])
@@ -267,4 +267,3 @@ class DocumentationController extends Controller
         ]);
     }
 }
-

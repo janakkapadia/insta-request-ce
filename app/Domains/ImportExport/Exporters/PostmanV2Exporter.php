@@ -34,7 +34,7 @@ class PostmanV2Exporter implements ExportGeneratorInterface
 
         // Root-level requests (no folder)
         foreach ($collection->requests as $req) {
-            if (!$req->folder_id) {
+            if (! $req->folder_id) {
                 $items[] = $this->buildRequestItem($req);
             }
         }
@@ -72,18 +72,19 @@ class PostmanV2Exporter implements ExportGeneratorInterface
         ];
 
         // Add query params
-        if (!empty($req->query_params)) {
+        if (! empty($req->query_params)) {
             $urlObj['query'] = array_map(function ($p) {
                 $item = [
                     'key' => $p['key'] ?? '',
                     'value' => $p['value'] ?? '',
                 ];
-                if (isset($p['enabled']) && !$p['enabled']) {
+                if (isset($p['enabled']) && ! $p['enabled']) {
                     $item['disabled'] = true;
                 }
-                if (!empty($p['description'])) {
+                if (! empty($p['description'])) {
                     $item['description'] = $p['description'];
                 }
+
                 return $item;
             }, $req->query_params);
         }
@@ -96,27 +97,28 @@ class PostmanV2Exporter implements ExportGeneratorInterface
                     'value' => $h['value'] ?? '',
                     'type' => 'text',
                 ];
-                if (isset($h['enabled']) && !$h['enabled']) {
+                if (isset($h['enabled']) && ! $h['enabled']) {
                     $item['disabled'] = true;
                 }
-                if (!empty($h['description'])) {
+                if (! empty($h['description'])) {
                     $item['description'] = $h['description'];
                 }
+
                 return $item;
             }, $req->headers ?? []),
             'url' => $urlObj,
         ];
 
-        if (!empty($req->description)) {
+        if (! empty($req->description)) {
             $requestObj['description'] = $req->description;
         }
 
         // Add body
         $body = $req->body ?? [];
-        if (!empty($body)) {
+        if (! empty($body)) {
             if (isset($body['mode'])) {
                 $postmanBody = ['mode' => $body['mode']];
-                
+
                 if ($body['mode'] === 'raw' && isset($body['raw'])) {
                     $postmanBody['raw'] = is_array($body['raw']) ? ($body['raw']['content'] ?? '') : $body['raw'];
                     if (is_array($body['raw']) && isset($body['raw']['language'])) {
@@ -129,7 +131,7 @@ class PostmanV2Exporter implements ExportGeneratorInterface
                 } elseif ($body['mode'] === 'graphql' && isset($body['graphql'])) {
                     $postmanBody['graphql'] = $body['graphql'];
                 }
-                
+
                 $requestObj['body'] = $postmanBody;
             } elseif (isset($body['text'])) {
                 $requestObj['body'] = [
@@ -141,7 +143,7 @@ class PostmanV2Exporter implements ExportGeneratorInterface
         }
 
         // Add auth
-        if (!empty($req->auth)) {
+        if (! empty($req->auth)) {
             $requestObj['auth'] = $req->auth;
         }
 

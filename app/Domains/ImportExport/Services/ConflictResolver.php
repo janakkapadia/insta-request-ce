@@ -6,6 +6,7 @@ use App\Domains\Collections\Models\Collection;
 use App\Domains\ImportExport\DTOs\ConflictItem;
 use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\DTOs\ParsedRequest;
+use App\Domains\Requests\Models\Request;
 
 class ConflictResolver
 {
@@ -40,7 +41,7 @@ class ConflictResolver
     {
         $key = $this->makeKey($parsed->name, $parsed->method, $parsed->url);
 
-        if (!isset($existingIndex[$key])) {
+        if (! isset($existingIndex[$key])) {
             return null;
         }
 
@@ -82,7 +83,7 @@ class ConflictResolver
         $deletions = [];
         foreach ($this->getAllExistingRequests($collection) as $existing) {
             $key = $this->makeKey($existing->name, $existing->method, $existing->url);
-            if (!isset($incomingIndex[$key])) {
+            if (! isset($incomingIndex[$key])) {
                 $deletions[] = new ConflictItem(
                     requestName: $existing->name,
                     method: $existing->method,
@@ -107,7 +108,7 @@ class ConflictResolver
     /**
      * Get all unique existing requests in the collection across root and all folders recursively.
      *
-     * @return array<int, \App\Domains\Requests\Models\Request>
+     * @return array<int, Request>
      */
     private function getAllExistingRequests(Collection $collection): array
     {
@@ -120,6 +121,7 @@ class ConflictResolver
         if ($collection->relationLoaded('folders') || $collection->folders) {
             $this->extractFolderRequests($collection->folders, $unique);
         }
+
         return array_values($unique);
     }
 
@@ -151,6 +153,7 @@ class ConflictResolver
         if ($parsed->folders) {
             $this->extractParsedFolderRequests($parsed->folders, $all);
         }
+
         return $all;
     }
 
@@ -160,7 +163,7 @@ class ConflictResolver
             foreach ($folder->requests as $req) {
                 $all[] = $req;
             }
-            if (!empty($folder->folders)) {
+            if (! empty($folder->folders)) {
                 $this->extractParsedFolderRequests($folder->folders, $all);
             }
         }

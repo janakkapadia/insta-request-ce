@@ -20,10 +20,10 @@ class TokenController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(fn ($t) => [
-                'id'         => $t->id,
-                'name'       => $t->name,
-                'abilities'  => $t->abilities,
-                'last_used'  => $t->last_used_at?->toIso8601String(),
+                'id' => $t->id,
+                'name' => $t->name,
+                'abilities' => $t->abilities,
+                'last_used' => $t->last_used_at?->toIso8601String(),
                 'created_at' => $t->created_at->toIso8601String(),
                 'expires_at' => $t->expires_at?->toIso8601String(),
             ]);
@@ -46,11 +46,11 @@ class TokenController extends Controller
         $token = $request->user()->createToken($request->input('name'));
 
         return response()->json([
-            'id'           => $token->accessToken->id,
-            'name'         => $token->accessToken->name,
+            'id' => $token->accessToken->id,
+            'name' => $token->accessToken->name,
             // Plain-text token — shown only once on creation
-            'token'        => $token->plainTextToken,
-            'created_at'   => $token->accessToken->created_at->toIso8601String(),
+            'token' => $token->plainTextToken,
+            'created_at' => $token->accessToken->created_at->toIso8601String(),
         ], 201);
     }
 

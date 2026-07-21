@@ -15,10 +15,10 @@ class RequestMatcher
         $normalizedUrl = self::normalizeUrl($url);
 
         if ($normalizedUrl !== '') {
-            return $method . '::' . $normalizedUrl;
+            return $method.'::'.$normalizedUrl;
         }
 
-        return strtolower(trim((string) $name)) . '::' . $method;
+        return strtolower(trim((string) $name)).'::'.$method;
     }
 
     /**

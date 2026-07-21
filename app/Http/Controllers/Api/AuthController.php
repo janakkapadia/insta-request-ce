@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Teams\CreateTeam;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -25,7 +27,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        app(\App\Actions\Teams\CreateTeam::class)->handle($user, explode(' ', $user->name, 2)[0]."'s Team", true);
+        app(CreateTeam::class)->handle($user, explode(' ', $user->name, 2)[0]."'s Team", true);
 
         event(new Registered($user));
 
@@ -65,7 +67,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Logged out successfully'
+            'message' => 'Logged out successfully',
         ]);
     }
 
@@ -92,16 +94,18 @@ class AuthController extends Controller
             if (auth()->check()) {
                 return redirect('/dashboard?verified=1');
             }
+
             return redirect('/login?verified=1');
         }
 
         if ($user->markEmailAsVerified()) {
-            event(new \Illuminate\Auth\Events\Verified($user));
+            event(new Verified($user));
         }
 
         if (auth()->check()) {
             return redirect('/dashboard?verified=1');
         }
+
         return redirect('/login?verified=1');
     }
 }

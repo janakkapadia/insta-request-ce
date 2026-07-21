@@ -3,14 +3,15 @@
 namespace App\Domains\Teams\Models;
 
 use App\Enums\TeamRole;
+use App\Models\User;
+use Database\Factories\InvitationFactory;
 use Database\Factories\TeamInvitationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Models\User;
 
 #[Fillable(['team_id', 'email', 'role', 'invited_by', 'expires_at', 'accepted_at'])]
 class Invitation extends Model
@@ -22,7 +23,7 @@ class Invitation extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\InvitationFactory::new();
+        return InvitationFactory::new();
     }
 
     /**

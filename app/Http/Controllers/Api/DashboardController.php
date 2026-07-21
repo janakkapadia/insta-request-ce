@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Collections\Models\Collection;
-use App\Domains\History\Models\RequestHistory;
 use App\Domains\Environments\Models\Environment;
+use App\Domains\History\Models\RequestHistory;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller

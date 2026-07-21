@@ -7,6 +7,7 @@ use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\DTOs\ParsedFolder;
 use App\Domains\ImportExport\DTOs\ParsedRequest;
 use App\Domains\ImportExport\DTOs\ValidationMessage;
+use Symfony\Component\Yaml\Yaml;
 
 class SwaggerParser implements ImportParserInterface
 {
@@ -28,7 +29,7 @@ class SwaggerParser implements ImportParserInterface
         }
 
         $swagger = $data['swagger'] ?? '';
-        if (!str_starts_with($swagger, '2')) {
+        if (! str_starts_with($swagger, '2')) {
             $messages[] = ValidationMessage::warning("Swagger version is \"{$swagger}\", expected 2.x.");
         }
 
@@ -47,20 +48,20 @@ class SwaggerParser implements ImportParserInterface
         $untaggedRequests = [];
 
         foreach ($paths as $path => $methods) {
-            if (!is_array($methods)) {
+            if (! is_array($methods)) {
                 continue;
             }
 
             foreach ($methods as $method => $operation) {
                 $httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head'];
-                if (!in_array(strtolower($method), $httpMethods) || !is_array($operation)) {
+                if (! in_array(strtolower($method), $httpMethods) || ! is_array($operation)) {
                     continue;
                 }
 
                 $request = $this->parseOperation($path, $method, $operation, $baseUrl, $messages);
 
                 $tags = $operation['tags'] ?? [];
-                if (!empty($tags)) {
+                if (! empty($tags)) {
                     $tag = $tags[0];
                     $taggedRequests[$tag][] = $request;
                 } else {
@@ -85,15 +86,15 @@ class SwaggerParser implements ImportParserInterface
 
     private function parseOperation(string $path, string $method, array $operation, string $baseUrl, array &$messages): ParsedRequest
     {
-        $name = $operation['summary'] ?? $operation['operationId'] ?? strtoupper($method) . ' ' . $path;
-        $url = $baseUrl . $path;
+        $name = $operation['summary'] ?? $operation['operationId'] ?? strtoupper($method).' '.$path;
+        $url = $baseUrl.$path;
 
         $headers = [];
         $queryParams = [];
         $body = [];
 
         foreach ($operation['parameters'] ?? [] as $param) {
-            if (!is_array($param)) {
+            if (! is_array($param)) {
                 continue;
             }
             $in = $param['in'] ?? '';
@@ -113,7 +114,7 @@ class SwaggerParser implements ImportParserInterface
                         break;
                     }
                 }
-                if (!$hasContentType) {
+                if (! $hasContentType) {
                     $consumes = $operation['consumes'] ?? ['application/json'];
                     $headers[] = ['key' => 'Content-Type', 'value' => $consumes[0], 'enabled' => true, 'description' => ''];
                 }
@@ -137,9 +138,9 @@ class SwaggerParser implements ImportParserInterface
             return $data;
         }
 
-        if (class_exists(\Symfony\Component\Yaml\Yaml::class)) {
+        if (class_exists(Yaml::class)) {
             try {
-                $data = \Symfony\Component\Yaml\Yaml::parse($content);
+                $data = Yaml::parse($content);
                 if (is_array($data)) {
                     return $data;
                 }

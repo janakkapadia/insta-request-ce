@@ -23,7 +23,7 @@ class HarParser implements ImportParserInterface
             return new ImportParseResult(
                 pathinfo($filename, PATHINFO_FILENAME),
                 null, [], [],
-                [ValidationMessage::error('Invalid JSON: ' . json_last_error_msg())],
+                [ValidationMessage::error('Invalid JSON: '.json_last_error_msg())],
             );
         }
 
@@ -39,7 +39,7 @@ class HarParser implements ImportParserInterface
 
         foreach ($entries as $entry) {
             $req = $entry['request'] ?? null;
-            if (!$req || !is_array($req)) {
+            if (! $req || ! is_array($req)) {
                 continue;
             }
 
@@ -52,15 +52,21 @@ class HarParser implements ImportParserInterface
 
             $headers = [];
             foreach ($req['headers'] ?? [] as $header) {
-                if (!is_array($header)) continue;
+                if (! is_array($header)) {
+                    continue;
+                }
                 $key = $header['name'] ?? '';
-                if (str_starts_with($key, ':') || strtolower($key) === 'cookie') continue;
+                if (str_starts_with($key, ':') || strtolower($key) === 'cookie') {
+                    continue;
+                }
                 $headers[] = ['key' => $key, 'value' => $header['value'] ?? ''];
             }
 
             $queryParams = [];
             foreach ($req['queryString'] ?? [] as $param) {
-                if (!is_array($param)) continue;
+                if (! is_array($param)) {
+                    continue;
+                }
                 $queryParams[] = ['key' => $param['name'] ?? '', 'value' => $param['value'] ?? ''];
             }
 
@@ -71,7 +77,7 @@ class HarParser implements ImportParserInterface
 
             $parsedUrl = parse_url($url);
             $path = $parsedUrl['path'] ?? '/';
-            $name = $method . ' ' . $path;
+            $name = $method.' '.$path;
 
             $requests[] = new ParsedRequest(
                 name: $name, method: $method, url: $url,
@@ -79,7 +85,7 @@ class HarParser implements ImportParserInterface
             );
         }
 
-        $messages[] = ValidationMessage::info(count($requests) . ' API requests extracted from ' . count($entries) . ' total HAR entries.');
+        $messages[] = ValidationMessage::info(count($requests).' API requests extracted from '.count($entries).' total HAR entries.');
 
         return new ImportParseResult(
             collectionName: $collectionName,
@@ -91,8 +97,9 @@ class HarParser implements ImportParserInterface
 
     private function isStaticResource(string $url): bool
     {
-        $exts = ['css','js','png','jpg','jpeg','gif','svg','ico','woff','woff2','ttf','eot','map'];
+        $exts = ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'map'];
         $path = parse_url($url, PHP_URL_PATH) ?? '';
+
         return in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), $exts);
     }
 }

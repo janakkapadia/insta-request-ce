@@ -12,6 +12,7 @@ use App\Domains\ImportExport\Exporters\PostmanV2Exporter;
 use App\Domains\ImportExport\Models\Export;
 use App\Enums\ExportFormat;
 use App\Enums\ExportStatus;
+use Illuminate\Support\Facades\Storage;
 
 class ExportService
 {
@@ -21,10 +22,10 @@ class ExportService
     public function __construct()
     {
         $this->generators = [
-            new PostmanV2Exporter(),
-            new CurlExporter(),
-            new OpenApiExporter(),
-            new HarExporter(),
+            new PostmanV2Exporter,
+            new CurlExporter,
+            new OpenApiExporter,
+            new HarExporter,
         ];
     }
 
@@ -48,7 +49,7 @@ class ExportService
 
             // Store the file
             $path = "exports/{$export->id}/{$result->filename}";
-            \Illuminate\Support\Facades\Storage::put($path, $result->content);
+            Storage::put($path, $result->content);
 
             $export->update([
                 'filename' => $result->filename,

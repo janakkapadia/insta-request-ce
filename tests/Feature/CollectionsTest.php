@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\User;
-use App\Enums\TeamRole;
-use App\Domains\Teams\Models\Team;
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Collections\Models\CollectionFolder;
 use App\Domains\Requests\Models\Request as ApiRequest;
+use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
+use App\Models\User;
 
 test('authenticated team member can delete a request in their collection', function () {
     $owner = User::factory()->create();
@@ -270,15 +270,15 @@ test('authenticated team member can update request headers, query params and aut
             'name' => 'Updated Name',
             'url' => 'https://httpbin.org/get?foo=bar',
             'headers' => [
-                ['key' => 'X-Test-Header', 'value' => 'HelloHeader', 'enabled' => true]
+                ['key' => 'X-Test-Header', 'value' => 'HelloHeader', 'enabled' => true],
             ],
             'query_params' => [
-                ['key' => 'foo', 'value' => 'bar', 'enabled' => true]
+                ['key' => 'foo', 'value' => 'bar', 'enabled' => true],
             ],
             'auth' => [
                 'type' => 'bearer',
-                'bearerToken' => 'my-secure-token'
-            ]
+                'bearerToken' => 'my-secure-token',
+            ],
         ]);
 
     $response->assertRedirect();
@@ -287,14 +287,14 @@ test('authenticated team member can update request headers, query params and aut
     expect($request->name)->toBe('Updated Name');
     expect($request->url)->toBe('https://httpbin.org/get?foo=bar');
     expect($request->headers)->toBe([
-        ['key' => 'X-Test-Header', 'value' => 'HelloHeader', 'enabled' => true]
+        ['key' => 'X-Test-Header', 'value' => 'HelloHeader', 'enabled' => true],
     ]);
     expect($request->query_params)->toBe([
-        ['key' => 'foo', 'value' => 'bar', 'enabled' => true]
+        ['key' => 'foo', 'value' => 'bar', 'enabled' => true],
     ]);
     expect($request->auth)->toBe([
         'type' => 'bearer',
-        'bearerToken' => 'my-secure-token'
+        'bearerToken' => 'my-secure-token',
     ]);
 });
 

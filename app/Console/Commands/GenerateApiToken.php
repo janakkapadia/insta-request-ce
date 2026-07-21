@@ -18,10 +18,11 @@ class GenerateApiToken extends Command
     public function handle(): int
     {
         $email = $this->argument('email');
-        $user  = User::where('email', $email)->first();
+        $user = User::where('email', $email)->first();
 
         if (! $user) {
             $this->error("No user found with email: {$email}");
+
             return self::FAILURE;
         }
 
@@ -34,11 +35,13 @@ class GenerateApiToken extends Command
 
             if (! $team) {
                 $this->error("Team not found: {$teamIdentifier}");
+
                 return self::FAILURE;
             }
 
             if (! $user->belongsToTeam($team)) {
                 $this->error("User {$email} is not a member of team: {$team->name}");
+
                 return self::FAILURE;
             }
 
@@ -46,7 +49,7 @@ class GenerateApiToken extends Command
         }
 
         $tokenName = $this->option('name');
-        $token     = $user->createToken($tokenName);
+        $token = $user->createToken($tokenName);
 
         $this->newLine();
         $this->info('✓ Token created successfully.');
@@ -60,7 +63,7 @@ class GenerateApiToken extends Command
         );
         $this->newLine();
         $this->line('Usage:');
-        $this->line('  <comment>Authorization: Bearer ' . $token->plainTextToken . '</comment>');
+        $this->line('  <comment>Authorization: Bearer '.$token->plainTextToken.'</comment>');
         $this->newLine();
 
         return self::SUCCESS;

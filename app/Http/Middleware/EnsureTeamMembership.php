@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\TeamRole;
 use App\Domains\Teams\Models\Team;
+use App\Enums\TeamRole;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;

@@ -2,6 +2,7 @@
 
 namespace App\Domains\Environments\Controllers;
 
+use App\Domains\Collections\Models\Collection;
 use App\Domains\Environments\Models\Environment;
 use App\Domains\Environments\Models\EnvironmentVariable;
 use App\Http\Controllers\Controller;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
 
 class EnvironmentsController extends Controller
 {
-    public function index(Environment $environment = null)
+    public function index(?Environment $environment = null)
     {
         $team = Auth::user()->currentTeam;
         if ($environment && $environment->team_id !== $team->id) {
@@ -35,7 +36,7 @@ class EnvironmentsController extends Controller
         $team = Auth::user()->currentTeam;
         $environment = Environment::where('team_id', $team->id)->where('id', $environmentId)->first();
 
-        if (!$environment) {
+        if (! $environment) {
             return redirect()->route('environments.index');
         }
 
@@ -71,7 +72,7 @@ class EnvironmentsController extends Controller
                 'name' => $validated['name'],
             ]);
 
-            if (!empty($validated['variables'])) {
+            if (! empty($validated['variables'])) {
                 foreach ($validated['variables'] as $var) {
                     $environment->variables()->create([
                         'key' => $var['key'],
@@ -113,9 +114,9 @@ class EnvironmentsController extends Controller
             ]);
 
             $existingIds = [];
-            if (!empty($validated['variables'])) {
+            if (! empty($validated['variables'])) {
                 foreach ($validated['variables'] as $var) {
-                    if (!empty($var['id'])) {
+                    if (! empty($var['id'])) {
                         $existingIds[] = $var['id'];
                         EnvironmentVariable::where('id', $var['id'])
                             ->where('environment_id', $environment->id)
@@ -185,7 +186,7 @@ class EnvironmentsController extends Controller
             '_postman_exported_using' => 'InstaRequest/1.0.0',
         ];
 
-        $filename = Str::slug($environment->name) . '.postman_environment.json';
+        $filename = Str::slug($environment->name).'.postman_environment.json';
 
         return response()->streamDownload(function () use ($exportData) {
             echo json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -197,10 +198,11 @@ class EnvironmentsController extends Controller
     public function import(Request $request)
     {
         $team = Auth::user()->currentTeam;
-        if (!$team) {
+        if (! $team) {
             if ($request->wantsJson()) {
                 return response()->json(['error' => 'No active team'], 403);
             }
+
             return back()->withErrors(['error' => 'No active team']);
         }
 
@@ -215,16 +217,17 @@ class EnvironmentsController extends Controller
 
         $data = json_decode($content, true);
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             $msg = 'Invalid JSON environment format.';
             if ($request->wantsJson()) {
                 return response()->json(['error' => $msg], 422);
             }
+
             return back()->withErrors(['error' => $msg]);
         }
 
         $name = $data['name'] ?? null;
-        if (!$name) {
+        if (! $name) {
             if ($request->hasFile('file')) {
                 $filename = $request->file('file')->getClientOriginalName();
                 $name = pathinfo($filename, PATHINFO_FILENAME);
@@ -245,7 +248,7 @@ class EnvironmentsController extends Controller
             $variablesList = $data;
         } else {
             foreach ($data as $k => $v) {
-                if (is_string($k) && !in_array($k, ['id', 'name', '_postman_variable_scope', '_postman_exported_at', '_postman_exported_using', '_type'])) {
+                if (is_string($k) && ! in_array($k, ['id', 'name', '_postman_variable_scope', '_postman_exported_at', '_postman_exported_using', '_type'])) {
                     $variablesList[] = [
                         'key' => $k,
                         'value' => is_scalar($v) ? (string) $v : json_encode($v),
@@ -262,15 +265,15 @@ class EnvironmentsController extends Controller
             ]);
 
             foreach ($variablesList as $var) {
-                if (!is_array($var)) {
+                if (! is_array($var)) {
                     continue;
                 }
                 $key = $var['key'] ?? $var['name'] ?? null;
-                if (!$key || !is_string($key) || trim($key) === '') {
+                if (! $key || ! is_string($key) || trim($key) === '') {
                     continue;
                 }
                 $value = $var['value'] ?? '';
-                if (!is_scalar($value)) {
+                if (! is_scalar($value)) {
                     $value = json_encode($value);
                 }
                 $enabled = isset($var['enabled']) ? (bool) $var['enabled'] : true;
@@ -312,18 +315,18 @@ class EnvironmentsController extends Controller
         $collectionId = $validated['collection_id'];
 
         $team = Auth::user()->currentTeam;
-        
-        $collection = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)
+
+        $collection = Collection::where('team_id', $team->id)
             ->findOrFail($collectionId);
 
-        $replacement = '{' . $key . '}';
+        $replacement = '{'.$key.'}';
 
         $requests = \App\Domains\Requests\Models\Request::where('collection_id', $collection->id)->get();
 
         foreach ($requests as $apiRequest) {
             $changed = false;
 
-            if (!empty($apiRequest->url) && str_contains($apiRequest->url, $value)) {
+            if (! empty($apiRequest->url) && str_contains($apiRequest->url, $value)) {
                 $apiRequest->url = str_replace($value, $replacement, $apiRequest->url);
                 $changed = true;
             }
@@ -376,8 +379,10 @@ class EnvironmentsController extends Controller
     private function replaceInArray(&$array, $searchValue, $replaceValue)
     {
         $changed = false;
-        if (!is_array($array)) return false;
-        
+        if (! is_array($array)) {
+            return false;
+        }
+
         foreach ($array as $key => &$val) {
             if (is_array($val)) {
                 if ($this->replaceInArray($val, $searchValue, $replaceValue)) {
@@ -390,6 +395,7 @@ class EnvironmentsController extends Controller
                 }
             }
         }
+
         return $changed;
     }
 }

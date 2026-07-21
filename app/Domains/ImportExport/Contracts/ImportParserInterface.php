@@ -16,7 +16,6 @@ interface ImportParserInterface
      *
      * @param  string  $content  Raw file content
      * @param  string  $filename  Original filename (used for naming and format hints)
-     * @return ImportParseResult
      */
     public function parse(string $content, string $filename): ImportParseResult;
 }

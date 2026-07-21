@@ -41,14 +41,14 @@ class CollectionController extends Controller
             ->orderBy('name')
             ->get()
             ->map(fn (Collection $c) => [
-                'id'          => $c->id,
-                'name'        => $c->name,
+                'id' => $c->id,
+                'name' => $c->name,
                 'description' => $c->description,
-                'team_id'     => $c->team_id,
-                'is_public'   => (bool) $c->documentation?->is_public,
+                'team_id' => $c->team_id,
+                'is_public' => (bool) $c->documentation?->is_public,
                 'public_slug' => $c->documentation?->public_slug,
-                'version'     => $c->documentation?->version,
-                'public_url'  => $c->documentation?->is_public
+                'version' => $c->documentation?->version,
+                'public_url' => $c->documentation?->is_public
                     ? url("/docs/{$c->id}/{$c->documentation->public_slug}")
                     : null,
             ]);

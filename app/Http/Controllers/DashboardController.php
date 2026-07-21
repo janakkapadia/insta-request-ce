@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Domains\Collections\Models\Collection;
-use App\Domains\History\Models\RequestHistory;
 use App\Domains\Environments\Models\Environment;
+use App\Domains\History\Models\RequestHistory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

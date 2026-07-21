@@ -30,7 +30,7 @@ class OpenApiExporter implements ExportGeneratorInterface
 
         // Root-level requests — no tag
         foreach ($collection->requests as $req) {
-            if (!$req->folder_id) {
+            if (! $req->folder_id) {
                 $this->addPath($paths, $req);
             }
         }
@@ -43,7 +43,7 @@ class OpenApiExporter implements ExportGeneratorInterface
                 'version' => '1.0.0',
             ],
             'tags' => $tags,
-            'paths' => $paths ?: new \stdClass(),
+            'paths' => $paths ?: new \stdClass,
         ];
 
         $json = json_encode($output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -60,10 +60,10 @@ class OpenApiExporter implements ExportGeneratorInterface
     {
         $url = $req->url ?? '';
         $parsed = parse_url($url);
-        $path = $parsed['path'] ?? '/' . preg_replace('/[^a-z0-9\/\-_{}]+/i', '', strtolower($req->name));
+        $path = $parsed['path'] ?? '/'.preg_replace('/[^a-z0-9\/\-_{}]+/i', '', strtolower($req->name));
 
-        if (!$path || $path === '/') {
-            $path = '/' . preg_replace('/[^a-z0-9\-]+/', '-', strtolower($req->name));
+        if (! $path || $path === '/') {
+            $path = '/'.preg_replace('/[^a-z0-9\-]+/', '-', strtolower($req->name));
         }
 
         $method = strtolower($req->method);
@@ -89,13 +89,13 @@ class OpenApiExporter implements ExportGeneratorInterface
                 'schema' => ['type' => 'string'],
             ];
         }
-        if (!empty($parameters)) {
+        if (! empty($parameters)) {
             $operation['parameters'] = $parameters;
         }
 
         // Request body
         $body = $req->body ?? [];
-        
+
         $bodyText = '';
         $contentType = 'application/json';
 
@@ -126,7 +126,7 @@ class OpenApiExporter implements ExportGeneratorInterface
             ];
         }
 
-        if (!isset($paths[$path])) {
+        if (! isset($paths[$path])) {
             $paths[$path] = [];
         }
         $paths[$path][$method] = $operation;

@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Domains\Collections\Models\Collection;
+use App\Domains\Collections\Models\CollectionFolder;
+use App\Domains\Environments\Models\Environment;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -50,15 +53,17 @@ class HandleInertiaRequests extends Middleware
             'currentTeam' => fn () => $user?->currentTeam ? $user->toUserTeam($user->currentTeam) : null,
             'teams' => fn () => $user?->toUserTeams(includeCurrent: true) ?? [],
             'environments' => function () use ($request, $user) {
-                if ($request->header('X-Inertia') && !$request->header('X-Inertia-Partial-Data')) {
+                if ($request->header('X-Inertia') && ! $request->header('X-Inertia-Partial-Data')) {
                     return null;
                 }
-                return $user?->currentTeam ? \App\Domains\Environments\Models\Environment::with('variables')->where('team_id', $user->currentTeam->id)->get() : [];
+
+                return $user?->currentTeam ? Environment::with('variables')->where('team_id', $user->currentTeam->id)->get() : [];
             },
             'collections' => function () use ($request, $user) {
-                if ($request->header('X-Inertia') && !$request->header('X-Inertia-Partial-Data')) {
+                if ($request->header('X-Inertia') && ! $request->header('X-Inertia-Partial-Data')) {
                     return null;
                 }
+
                 return $this->getCollections($request, $user);
             },
         ];
@@ -66,21 +71,21 @@ class HandleInertiaRequests extends Middleware
 
     private function getCollections(Request $request, $user)
     {
-        if (!$user || !$user->currentTeam) {
+        if (! $user || ! $user->currentTeam) {
             return [];
         }
 
         $team = $user->currentTeam;
-        $collections = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)->with('folders')->get();
+        $collections = Collection::where('team_id', $team->id)->with('folders')->get();
 
         if ($collections->isEmpty()) {
-            $defaultCollection = \App\Domains\Collections\Models\Collection::create([
+            $defaultCollection = Collection::create([
                 'team_id' => $team->id,
                 'name' => 'Echo API',
                 'description' => 'A sample collection to demonstrate real-time API collaboration.',
             ]);
 
-            $folder = \App\Domains\Collections\Models\CollectionFolder::create([
+            $folder = CollectionFolder::create([
                 'collection_id' => $defaultCollection->id,
                 'name' => 'Users',
             ]);
@@ -120,14 +125,14 @@ class HandleInertiaRequests extends Middleware
                 'auth' => [],
             ]);
 
-            $collections = \App\Domains\Collections\Models\Collection::where('team_id', $team->id)->with('folders')->get();
+            $collections = Collection::where('team_id', $team->id)->with('folders')->get();
         }
 
         // Determine active collection ID
         $activeCollectionId = null;
         if ($request->route('collection')) {
             $colParam = $request->route('collection');
-            $activeCollectionId = $colParam instanceof \App\Domains\Collections\Models\Collection ? $colParam->id : $colParam;
+            $activeCollectionId = $colParam instanceof Collection ? $colParam->id : $colParam;
         } elseif ($request->route('apiRequest')) {
             $reqParam = $request->route('apiRequest');
             if ($reqParam instanceof \App\Domains\Requests\Models\Request) {
@@ -142,7 +147,7 @@ class HandleInertiaRequests extends Middleware
 
         // Loaded IDs from query
         $loadedIds = $request->query('loaded_ids', []);
-        if (!is_array($loadedIds)) {
+        if (! is_array($loadedIds)) {
             $loadedIds = [$loadedIds];
         }
 

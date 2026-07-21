@@ -4,7 +4,6 @@ namespace App\Domains\ImportExport\Parsers;
 
 use App\Domains\ImportExport\Contracts\ImportParserInterface;
 use App\Domains\ImportExport\DTOs\ImportParseResult;
-use App\Domains\ImportExport\DTOs\ParsedFolder;
 use App\Domains\ImportExport\DTOs\ParsedRequest;
 use App\Domains\ImportExport\DTOs\ValidationMessage;
 
@@ -46,7 +45,7 @@ class CurlParser implements ImportParserInterface
             $start = $offsets[$i];
             $length = $offsets[$i + 1] - $start;
             $curlCommand = substr($normalized, $start, $length);
-            
+
             $parsed = $this->parseCurlCommand(trim($curlCommand), $index, $messages);
             if ($parsed) {
                 $requests[] = $parsed;
@@ -97,22 +96,22 @@ class CurlParser implements ImportParserInterface
 
         // Extract body via -d / --data / --data-raw
         if (preg_match('/(?:-d|--data|--data-raw)\s+(?:(["\'])(.*?)\1|([^\s]+))/s', $command, $m)) {
-            $bodyText = !empty($m[1]) ? $m[2] : ($m[3] ?? '');
-            
+            $bodyText = ! empty($m[1]) ? $m[2] : ($m[3] ?? '');
+
             // Try to format it as pretty JSON if it's valid JSON
             $decoded = json_decode($bodyText);
             if (json_last_error() === JSON_ERROR_NONE && (is_object($decoded) || is_array($decoded))) {
                 $bodyText = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
-            
+
             $body = ['text' => $bodyText];
             // If we have a body but no explicit method, it's POST
-            if (!preg_match('/(?:-X|--request)/', $command)) {
+            if (! preg_match('/(?:-X|--request)/', $command)) {
                 $method = 'POST';
             }
         }
 
-        if (!$url) {
+        if (! $url) {
             $messages[] = ValidationMessage::warning("Could not extract URL from cURL command #{$index}.");
 
             return null;
@@ -121,7 +120,7 @@ class CurlParser implements ImportParserInterface
         // Generate name from URL path
         $parsedUrl = parse_url($url);
         $path = $parsedUrl['path'] ?? '/';
-        $name = $method . ' ' . $path;
+        $name = $method.' '.$path;
 
         return new ParsedRequest(
             name: $name,

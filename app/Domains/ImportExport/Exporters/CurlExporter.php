@@ -18,23 +18,23 @@ class CurlExporter implements ExportGeneratorInterface
         $collection->load(['requests', 'folders.requests']);
         $lines = [];
         $lines[] = "# {$collection->name}";
-        $lines[] = "# Exported cURL commands";
-        $lines[] = "";
+        $lines[] = '# Exported cURL commands';
+        $lines[] = '';
 
         // Folders with requests
         foreach ($collection->folders as $folder) {
             $lines[] = "# --- {$folder->name} ---";
             foreach ($folder->requests as $req) {
                 $lines[] = $this->buildCurl($req);
-                $lines[] = "";
+                $lines[] = '';
             }
         }
 
         // Root-level requests
         foreach ($collection->requests as $req) {
-            if (!$req->folder_id) {
+            if (! $req->folder_id) {
                 $lines[] = $this->buildCurl($req);
-                $lines[] = "";
+                $lines[] = '';
             }
         }
 
@@ -52,33 +52,33 @@ class CurlExporter implements ExportGeneratorInterface
         $parts = ['curl'];
 
         if ($req->method !== 'GET') {
-            $parts[] = '-X ' . $req->method;
+            $parts[] = '-X '.$req->method;
         }
 
         $url = $req->url ?? '';
         // Append query params
-        if (!empty($req->query_params)) {
+        if (! empty($req->query_params)) {
             $separator = str_contains($url, '?') ? '&' : '?';
             $params = array_map(
-                fn ($p) => urlencode($p['key'] ?? '') . '=' . urlencode($p['value'] ?? ''),
+                fn ($p) => urlencode($p['key'] ?? '').'='.urlencode($p['value'] ?? ''),
                 $req->query_params,
             );
-            $url .= $separator . implode('&', $params);
+            $url .= $separator.implode('&', $params);
         }
-        $parts[] = "'" . addcslashes($url, "'") . "'";
+        $parts[] = "'".addcslashes($url, "'")."'";
 
         // Headers
         foreach ($req->headers ?? [] as $h) {
             $key = $h['key'] ?? '';
             $value = $h['value'] ?? '';
-            $parts[] = "-H '" . addcslashes("{$key}: {$value}", "'") . "'";
+            $parts[] = "-H '".addcslashes("{$key}: {$value}", "'")."'";
         }
 
         // Body
         $body = $req->body ?? [];
         $bodyText = $body['text'] ?? '';
         if ($bodyText) {
-            $parts[] = "-d '" . addcslashes($bodyText, "'") . "'";
+            $parts[] = "-d '".addcslashes($bodyText, "'")."'";
         }
 
         return implode(" \\\n  ", $parts);

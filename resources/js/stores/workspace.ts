@@ -567,6 +567,53 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         folderId: string | null = null,
         method = 'GET',
     ) => {
+        if (collectionId) {
+            try {
+                const response = await apiFetch(
+                    `/collections/${collectionId}/requests`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            name,
+                            folder_id: folderId,
+                            method,
+                            description: '',
+                            url: '',
+                            headers: [],
+                            query_params: [],
+                            path_variables: [],
+                            body: null,
+                            pre_request_script: '',
+                            test_script: '',
+                            auth: null,
+                        }),
+                    },
+                );
+
+                await refreshCollections();
+
+                const newReq = response.data?.request || response.data;
+                const forceNewTab = openRequests.value.length > 0;
+                selectRequest(newReq, forceNewTab);
+
+                router.visit(
+                    `/collections/${newReq.collection_id}/requests/${newReq.id}`,
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['activeCollectionId', 'activeRequestId'],
+                    },
+                );
+
+                return;
+            } catch (error) {
+                console.error('Failed to create request immediately:', error);
+                toast.error('Failed to create request');
+
+                return;
+            }
+        }
+
         const tempId = `new-${Date.now()}`;
         const req: RequestItem = {
             id: tempId,

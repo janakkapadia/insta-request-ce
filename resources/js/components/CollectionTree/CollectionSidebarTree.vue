@@ -160,14 +160,15 @@ const handleCreateFolder = async (
         return;
     }
 
-    await store.createFolder(
-        collectionId,
-        newFolderName.value.trim(),
-        parentId,
-    );
-
+    const name = newFolderName.value.trim();
     store.activeNewFolder = null;
     newFolderName.value = '';
+
+    await store.createFolder(
+        collectionId,
+        name,
+        parentId,
+    );
 };
 
 const handleCreateRequest = async (
@@ -181,14 +182,15 @@ const handleCreateRequest = async (
         return;
     }
 
-    await store.createRequest(
-        collectionId,
-        newRequestName.value.trim(),
-        folderId,
-    );
-
+    const name = newRequestName.value.trim();
     store.activeNewRequest = null;
     newRequestName.value = '';
+
+    await store.createRequest(
+        collectionId,
+        name,
+        folderId,
+    );
 };
 
 const handleDeleteRequest = (requestId: string) => {
@@ -374,7 +376,7 @@ const getRequestById = (id: string) => {
                     v-model="newFolderName"
                     placeholder="Folder name..."
                     class="h-7 text-xs"
-                    @keyup.enter="($event.target as HTMLInputElement).blur()"
+                    @keyup.enter="handleCreateFolder(props.collection.id)"
                     @blur="handleCreateFolder(props.collection.id)"
                     v-focus
                 />
@@ -388,7 +390,7 @@ const getRequestById = (id: string) => {
                     v-model="newRequestName"
                     placeholder="Request name..."
                     class="h-7 text-xs"
-                    @keyup.enter="($event.target as HTMLInputElement).blur()"
+                    @keyup.enter="handleCreateRequest(props.collection.id)"
                     @blur="handleCreateRequest(props.collection.id)"
                     v-focus
                 />

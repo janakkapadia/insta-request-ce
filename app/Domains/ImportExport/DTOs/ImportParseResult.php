@@ -5,8 +5,6 @@ namespace App\Domains\ImportExport\DTOs;
 class ImportParseResult
 {
     /**
-     * @param  string  $collectionName
-     * @param  string|null  $collectionDescription
      * @param  array<ParsedFolder>  $folders
      * @param  array<ParsedRequest>  $requests  Root-level requests (not in any folder)
      * @param  array<ValidationMessage>  $validationMessages

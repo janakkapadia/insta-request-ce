@@ -2,21 +2,21 @@
 
 namespace App\Domains\Collections\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Collections\Models\CollectionFolder;
 use App\Domains\Requests\Models\Request as ApiRequest;
 use App\Enums\TeamRole;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CollectionsController extends Controller
 {
-    public function index(Request $request, Collection $collection = null, ApiRequest $apiRequest = null)
+    public function index(Request $request, ?Collection $collection = null, ?ApiRequest $apiRequest = null)
     {
         $team = $request->user()->currentTeam;
 
-        if (!$team) {
+        if (! $team) {
             return Inertia::render('Dashboard');
         }
 
@@ -38,6 +38,7 @@ class CollectionsController extends Controller
     {
         $collection->load(['requests', 'folders.requests']);
         $collection->has_loaded_details = true;
+
         return response()->json($collection);
     }
 
@@ -80,7 +81,7 @@ class CollectionsController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $collection->update(array_filter($validated, fn($v) => !is_null($v)));
+        $collection->update(array_filter($validated, fn ($v) => ! is_null($v)));
 
         if ($request->wantsJson()) {
             return response()->json($collection);
@@ -180,8 +181,8 @@ class CollectionsController extends Controller
             }
         }
 
-        \Log::info("updateRequest payload:", $request->all());
-        $updateData = array_filter($validated, fn($value) => !is_null($value));
+        \Log::info('updateRequest payload:', $request->all());
+        $updateData = array_filter($validated, fn ($value) => ! is_null($value));
 
         // Allow setting folder_id to null when moving to root
         if ($request->has('folder_id') && is_null($request->input('folder_id'))) {
@@ -223,7 +224,7 @@ class CollectionsController extends Controller
             'collection_id' => 'sometimes|required|uuid|exists:collections,id',
         ]);
 
-        $updateData = array_filter($validated, fn($v) => !is_null($v));
+        $updateData = array_filter($validated, fn ($v) => ! is_null($v));
 
         // Allow setting parent_id to null when moving to root
         if ($request->has('parent_id') && is_null($request->input('parent_id'))) {
@@ -231,7 +232,7 @@ class CollectionsController extends Controller
         }
 
         // Prevent moving a folder into itself or one of its subfolders
-        if (isset($updateData['parent_id']) && !is_null($updateData['parent_id'])) {
+        if (isset($updateData['parent_id']) && ! is_null($updateData['parent_id'])) {
             $curr = CollectionFolder::find($updateData['parent_id']);
             while ($curr) {
                 if ($curr->id === $folder->id) {
@@ -416,7 +417,7 @@ class CollectionsController extends Controller
 
         $clonedRequest = $apiRequest->replicate();
         $clonedRequest->user_id = $request->user()?->id;
-        $clonedRequest->name = $apiRequest->name . ' (Copy)';
+        $clonedRequest->name = $apiRequest->name.' (Copy)';
         $clonedRequest->save();
 
         if ($request->wantsJson()) {

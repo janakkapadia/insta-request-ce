@@ -9,8 +9,8 @@ class OpenApiParserTest extends TestCase
 {
     public function test_parses_openapi_with_array_default_parameters()
     {
-        $parser = new OpenApiParser();
-        $openapi = <<<JSON
+        $parser = new OpenApiParser;
+        $openapi = <<<'JSON'
 {
   "openapi": "3.0.0",
   "info": {
@@ -54,10 +54,10 @@ class OpenApiParserTest extends TestCase
 JSON;
 
         $result = $parser->parse($openapi, 'openapi.json');
-        
+
         $this->assertCount(1, $result->requests);
         $request = $result->requests[0];
-        
+
         // Assert query params
         $this->assertCount(1, $request->queryParams);
         $this->assertEquals('roles', $request->queryParams[0]['key']);

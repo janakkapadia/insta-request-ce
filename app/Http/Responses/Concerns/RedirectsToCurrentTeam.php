@@ -2,8 +2,6 @@
 
 namespace App\Http\Responses\Concerns;
 
-use Illuminate\Support\Facades\URL;
-
 trait RedirectsToCurrentTeam
 {
     protected function redirectPathForCurrentTeam($request, string $redirect): string
@@ -18,7 +16,7 @@ trait RedirectsToCurrentTeam
         $user = $request->user();
         $team = $user?->currentTeam ?? $user?->personalTeam();
 
-        if (!$team) {
+        if (! $team) {
             abort(403);
         }
 

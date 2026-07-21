@@ -3,16 +3,16 @@
 namespace Tests\Feature;
 
 use App\Domains\Collections\Models\Collection;
-use App\Domains\Requests\Models\Request as ApiRequest;
 use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\DTOs\ParsedRequest;
 use App\Domains\ImportExport\Models\Import;
 use App\Domains\ImportExport\Services\ConflictResolver;
 use App\Domains\ImportExport\Services\ImportService;
+use App\Domains\Requests\Models\Request as ApiRequest;
 use App\Domains\Teams\Models\Team;
+use App\Enums\MergeStrategy;
 use App\Enums\TeamRole;
 use App\Models\User;
-use App\Enums\MergeStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,8 +21,11 @@ class ImportMergeTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Team $team;
+
     private ImportService $importService;
+
     private ConflictResolver $conflictResolver;
 
     protected function setUp(): void

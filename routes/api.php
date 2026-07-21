@@ -24,8 +24,8 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 
     // ── Auth & identity ───────────────────────────────────────────────────
     Route::get('user', fn (Request $r) => response()->json([
-        'id'    => $r->user()->id,
-        'name'  => $r->user()->name,
+        'id' => $r->user()->id,
+        'name' => $r->user()->name,
         'email' => $r->user()->email,
     ]));
 

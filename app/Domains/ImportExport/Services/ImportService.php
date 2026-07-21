@@ -28,12 +28,12 @@ class ImportService
     public function __construct()
     {
         $this->parsers = [
-            new PostmanV2Parser(),
-            new CurlParser(),
-            new OpenApiParser(),
-            new SwaggerParser(),
-            new HarParser(),
-            new InsomniaParser(),
+            new PostmanV2Parser,
+            new CurlParser,
+            new OpenApiParser,
+            new SwaggerParser,
+            new HarParser,
+            new InsomniaParser,
         ];
     }
 
@@ -165,7 +165,7 @@ class ImportService
                 );
             }
 
-            if ($strategy === MergeStrategy::CreateNew || !$targetCollectionId) {
+            if ($strategy === MergeStrategy::CreateNew || ! $targetCollectionId) {
                 $collection = $this->createNewCollection($parsed, $import->team_id);
             } else {
                 $collection = Collection::findOrFail($targetCollectionId);
@@ -191,17 +191,17 @@ class ImportService
         $filtered = [];
         foreach ($folders as $i => $folder) {
             $folderPrefix = "{$prefix}:{$i}";
-            
+
             $folderReqs = [];
             foreach ($folder->requests as $ri => $req) {
                 if (in_array("{$folderPrefix}:req:{$ri}", $selections)) {
                     $folderReqs[] = $req;
                 }
             }
-            
+
             $childFolders = $this->filterFolders($folder->folders, $selections, $folderPrefix);
-            
-            if (in_array($folderPrefix, $selections) || !empty($folderReqs) || !empty($childFolders)) {
+
+            if (in_array($folderPrefix, $selections) || ! empty($folderReqs) || ! empty($childFolders)) {
                 $filtered[] = new ParsedFolder(
                     name: $folder->name,
                     description: $folder->description,
@@ -210,6 +210,7 @@ class ImportService
                 );
             }
         }
+
         return $filtered;
     }
 
@@ -253,13 +254,13 @@ class ImportService
             $this->collectIncomingKeysFromFolders($parsed->folders, $incomingIndex);
 
             foreach ($collection->requests as $req) {
-                if (!isset($incomingIndex[$this->makeKey($req->name, $req->method, $req->url)])) {
+                if (! isset($incomingIndex[$this->makeKey($req->name, $req->method, $req->url)])) {
                     $req->delete();
                 }
             }
             foreach ($collection->folders as $folder) {
                 foreach ($folder->requests as $req) {
-                    if (!isset($incomingIndex[$this->makeKey($req->name, $req->method, $req->url)])) {
+                    if (! isset($incomingIndex[$this->makeKey($req->name, $req->method, $req->url)])) {
                         $req->delete();
                     }
                 }
@@ -269,14 +270,14 @@ class ImportService
         // Index existing requests
         $existingIndex = [];
         foreach ($collection->requests as $req) {
-            if (!$req->trashed()) {
+            if (! $req->trashed()) {
                 $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
             }
         }
         foreach ($collection->folders as $folder) {
-            if (!$folder->trashed()) {
+            if (! $folder->trashed()) {
                 foreach ($folder->requests as $req) {
-                    if (!$req->trashed()) {
+                    if (! $req->trashed()) {
                         $existingIndex[$this->makeKey($req->name, $req->method, $req->url)] = $req;
                     }
                 }
@@ -286,8 +287,8 @@ class ImportService
         // Index existing folders
         $existingFolders = [];
         foreach ($collection->folders as $folder) {
-            if (!$folder->trashed()) {
-                $key = strtolower(trim($folder->name)) . '::' . ($folder->parent_id ?? 'root');
+            if (! $folder->trashed()) {
+                $key = strtolower(trim($folder->name)).'::'.($folder->parent_id ?? 'root');
                 $existingFolders[$key] = $folder;
             }
         }
@@ -308,7 +309,7 @@ class ImportService
     private function mergeParsedFolders(array $folders, string $collectionId, ?string $parentId, array &$existingIndex, array &$existingFolders, MergeStrategy $strategy): void
     {
         foreach ($folders as $folder) {
-            $folderKey = strtolower(trim($folder->name)) . '::' . ($parentId ?? 'root');
+            $folderKey = strtolower(trim($folder->name)).'::'.($parentId ?? 'root');
             $existingFolder = $existingFolders[$folderKey] ?? null;
 
             if ($existingFolder) {
@@ -363,6 +364,7 @@ class ImportService
                 }
                 $existingIndex[$key]->update($updateData);
             }
+
             // MergeSkip: do nothing
             return;
         }
@@ -422,7 +424,7 @@ class ImportService
             foreach ($folders as $folder) {
                 $hasRequests = $folder->requests()->exists();
                 $hasChildren = $folder->children()->exists();
-                if (!$hasRequests && !$hasChildren) {
+                if (! $hasRequests && ! $hasChildren) {
                     $folder->delete();
                     $deletedCount++;
                 }
