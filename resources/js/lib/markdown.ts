@@ -280,7 +280,7 @@ export function parseMarkdown(markdown: string | null | undefined): string {
 
     // 9. Markdown Tables (GFM style)
     html = html.replace(
-        /^(([ \t]*\|?([^\n]+?)\|?[ \t]*\r?\n[ \t]*\|?([ \t]*:?[-=]+:?[ \t]*\|?)+[ \t]*\r?\n)([ \t]*\|?[^\n]+\|?[ \t]*(?:\r?\n|$))*)/gm,
+        /^(([ \t]*\|?([^\n]+?)\|?[ \t]*\r?\n[ \t]*\|?[ \t]*:?[-=]+:?[ \t]*(?:\|[ \t]*:?[-=]+:?[ \t]*)*\|?[ \t]*\r?\n)([ \t]*\|?[^\n]+\|?[ \t]*(?:\r?\n|$))*)/gm,
         (tableBlock) => {
             const lines = tableBlock.trim().split(/\r?\n/);
 
