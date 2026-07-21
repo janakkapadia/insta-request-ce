@@ -1912,7 +1912,7 @@ const executeRequest = async () => {
                                                 class="h-full overflow-y-auto bg-background/50 p-2"
                                             >
                                                 <div
-                                                    class="max-w-4xl divide-y overflow-hidden rounded-md border bg-background shadow-sm"
+                                                    class="w-full divide-y overflow-hidden rounded-md border bg-background shadow-sm"
                                                 >
                                                     <div
                                                         class="grid h-8 grid-cols-[40px_1.5fr_80px_100px_50px_1.5fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
@@ -2139,7 +2139,7 @@ const executeRequest = async () => {
                                                 class="h-full overflow-y-auto bg-background/50 p-2"
                                             >
                                                 <div
-                                                    class="max-w-4xl divide-y overflow-hidden rounded-md border bg-background shadow-sm"
+                                                    class="w-full divide-y overflow-hidden rounded-md border bg-background shadow-sm"
                                                 >
                                                     <div
                                                         class="grid h-8 grid-cols-[40px_1.5fr_100px_50px_1.5fr_2fr_50px] items-center bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
