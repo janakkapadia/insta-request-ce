@@ -273,6 +273,97 @@ const parsedQueryParams = computed(() => {
     return [];
 });
 
+const rawBodyContent = computed(() => {
+    const req = activeRequest.value;
+
+    if (!req || !req.body) {
+        return null;
+    }
+
+    let parsedBodyObj: any = null;
+
+    if (typeof req.body === 'string') {
+        try {
+            parsedBodyObj = JSON.parse(req.body);
+        } catch {
+            return null;
+        }
+    } else {
+        parsedBodyObj = req.body;
+    }
+
+    if (parsedBodyObj?.mode === 'raw' && parsedBodyObj?.raw?.content) {
+        return {
+            content: substituteEnvVariables(parsedBodyObj.raw.content),
+            language: parsedBodyObj.raw.language || 'text',
+        };
+    }
+
+    return null;
+});
+
+const parsedBodyItems = computed(() => {
+    const req = activeRequest.value;
+
+    if (!req || !req.body) {
+        return [];
+    }
+
+    let parsedBodyObj: any = null;
+
+    if (typeof req.body === 'string') {
+        try {
+            parsedBodyObj = JSON.parse(req.body);
+        } catch {
+            return [];
+        }
+    } else {
+        parsedBodyObj = req.body;
+    }
+
+    const mode = parsedBodyObj?.mode;
+
+    let items: any[] = [];
+
+    if (mode === 'formdata' || mode === 'form-data') {
+        items = Array.isArray(parsedBodyObj?.formdata)
+            ? parsedBodyObj.formdata
+            : [];
+    } else if (mode === 'urlencoded' || mode === 'x-www-form-urlencoded') {
+        items = Array.isArray(parsedBodyObj?.urlencoded)
+            ? parsedBodyObj.urlencoded
+            : [];
+    } else if (mode === 'raw' && !parsedBodyObj?.raw?.content) {
+        // Fallback checks
+        if (
+            Array.isArray(parsedBodyObj?.formdata) &&
+            parsedBodyObj.formdata.length > 0 &&
+            parsedBodyObj.formdata.some(
+                (i: any) => i && i.key && i.enabled !== false,
+            )
+        ) {
+            items = parsedBodyObj.formdata;
+        } else if (
+            Array.isArray(parsedBodyObj?.urlencoded) &&
+            parsedBodyObj.urlencoded.length > 0 &&
+            parsedBodyObj.urlencoded.some(
+                (i: any) => i && i.key && i.enabled !== false,
+            )
+        ) {
+            items = parsedBodyObj.urlencoded;
+        }
+    }
+
+    return items
+        .filter(
+            (i) => i && typeof i === 'object' && i.key && i.enabled !== false,
+        )
+        .map((i) => ({
+            ...i,
+            value: substituteEnvVariables(String(i.value || '')),
+        }));
+});
+
 // Helper for HTTP Method styling — uses shared utility for consistency
 
 // Pre-render content
@@ -327,6 +418,47 @@ const extractBodyContent = (body: any): string => {
             }
 
             if (mode === 'raw') {
+                if (!parsed.raw?.content) {
+                    if (
+                        Array.isArray(parsed.formdata) &&
+                        parsed.formdata.length > 0 &&
+                        parsed.formdata.some(
+                            (i: any) => i && i.key && i.enabled !== false,
+                        )
+                    ) {
+                        const list = parsed.formdata;
+                        const enabled = list.filter(
+                            (item: any) =>
+                                item && item.key && item.enabled !== false,
+                        );
+                        const obj: Record<string, string> = {};
+                        enabled.forEach((item: any) => {
+                            obj[item.key] = item.value || '';
+                        });
+
+                        return JSON.stringify(obj, null, 2);
+                    } else if (
+                        Array.isArray(parsed.urlencoded) &&
+                        parsed.urlencoded.length > 0 &&
+                        parsed.urlencoded.some(
+                            (i: any) => i && i.key && i.enabled !== false,
+                        )
+                    ) {
+                        const list = parsed.urlencoded;
+                        const enabled = list.filter(
+                            (item: any) =>
+                                item && item.key && item.enabled !== false,
+                        );
+
+                        return enabled
+                            .map(
+                                (item: any) =>
+                                    `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value || '')}`,
+                            )
+                            .join('&');
+                    }
+                }
+
                 return parsed.raw?.content || '';
             }
 
@@ -422,12 +554,41 @@ const generatedCode = computed(() => {
     }
 
     const mode = parsedBodyObj?.mode || 'raw';
-    const isUrlEncoded = mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
-    const isFormData = mode === 'formdata' || mode === 'form-data';
-    const formDataItems = isFormData && Array.isArray(parsedBodyObj?.formdata) 
-        ? parsedBodyObj.formdata.filter((i: any) => i && i.key && i.enabled !== false) 
-        : [];
-    
+    let isUrlEncoded =
+        mode === 'urlencoded' || mode === 'x-www-form-urlencoded';
+    let isFormData = mode === 'formdata' || mode === 'form-data';
+
+    if (mode === 'raw' && !parsedBodyObj?.raw?.content) {
+        if (
+            Array.isArray(parsedBodyObj?.formdata) &&
+            parsedBodyObj.formdata.length > 0 &&
+            parsedBodyObj.formdata.some(
+                (i: any) => i && i.key && i.enabled !== false,
+            )
+        ) {
+            isFormData = true;
+        } else if (
+            Array.isArray(parsedBodyObj?.urlencoded) &&
+            parsedBodyObj.urlencoded.length > 0 &&
+            parsedBodyObj.urlencoded.some(
+                (i: any) => i && i.key && i.enabled !== false,
+            )
+        ) {
+            isUrlEncoded = true;
+        }
+    }
+
+    const formDataItems =
+        isFormData && Array.isArray(parsedBodyObj?.formdata)
+            ? parsedBodyObj.formdata
+                  .filter((i: any) => i && i.key && i.enabled !== false)
+                  .map((i: any) => ({
+                      ...i,
+                      key: String(i.key),
+                      value: String(i.value || ''),
+                  }))
+            : [];
+
     // De-duplicate headers, adding Content-Type if missing and if a body is present
     const rawHeaders = parsedHeaders.value.map((h) => ({
         key: h.key.replace(/\\/g, '\\\\'),
@@ -439,7 +600,12 @@ const generatedCode = computed(() => {
     const headersList = [...rawHeaders];
 
     if (!hasContentType && bodyStr) {
-        headersList.unshift({ key: 'Content-Type', value: isUrlEncoded ? 'application/x-www-form-urlencoded' : 'application/json' });
+        headersList.unshift({
+            key: 'Content-Type',
+            value: isUrlEncoded
+                ? 'application/x-www-form-urlencoded'
+                : 'application/json',
+        });
     }
 
     switch (selectedLang.value) {
@@ -449,8 +615,10 @@ const generatedCode = computed(() => {
             let fetchHeaders = headersList;
 
             if (isFormData && formDataItems.length > 0) {
-                fetchHeaders = fetchHeaders.filter(h => h.key.toLowerCase() !== 'content-type');
-                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/"/g, '\\"')}", "${(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                fetchHeaders = fetchHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}", "${i.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
                 fetchBodyStr = `,\n  body: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
@@ -477,8 +645,10 @@ const generatedCode = computed(() => {
             let axiosHeaders = headersList;
 
             if (isFormData && formDataItems.length > 0) {
-                axiosHeaders = axiosHeaders.filter(h => h.key.toLowerCase() !== 'content-type');
-                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/"/g, '\\"')}", "${(i.value || '').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
+                axiosHeaders = axiosHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `const formdata = new FormData();\n${formDataItems.map((i: any) => `formdata.append("${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}", "${i.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");`).join('\n')}\n\n`;
                 axiosDataStr = `,\n  data: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
@@ -506,10 +676,12 @@ ${setupCode}axios({
             let pythonDataStr = '';
             let setupCode = '';
             let pythonHeaders = headersList;
-            
+
             if (isFormData && formDataItems.length > 0) {
-                pythonHeaders = pythonHeaders.filter(h => h.key.toLowerCase() !== 'content-type');
-                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${i.key.replace(/"/g, '\\"')}": "${(i.value || '').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
+                pythonHeaders = pythonHeaders.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                setupCode = `payload = {\n${formDataItems.map((i: any) => `    "${i.key.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}": "${i.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',\n')}\n}\n`;
                 pythonDataStr = `, data=payload`;
             } else if (bodyStr) {
                 setupCode = `payload = ${JSON.stringify(bodyStr)}\n`;
@@ -639,10 +811,17 @@ public class Main {
         default: {
             let curlHeadersList = headersList;
             let dataFlag = '';
-            
+
             if (isFormData && formDataItems.length > 0) {
-                curlHeadersList = curlHeadersList.filter(h => h.key.toLowerCase() !== 'content-type');
-                dataFlag = formDataItems.map((i: any) => ` \\\n  -F '${i.key.replace(/'/g, "'\\''")}=${(i.value || '').replace(/'/g, "'\\''")}'`).join('');
+                curlHeadersList = curlHeadersList.filter(
+                    (h) => h.key.toLowerCase() !== 'content-type',
+                );
+                dataFlag = formDataItems
+                    .map(
+                        (i: any) =>
+                            ` \\\n  -F '${i.key.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}=${i.value.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}'`,
+                    )
+                    .join('');
             } else if (bodyStr) {
                 dataFlag = ` \\\n  -d '${bodyStr.replace(/'/g, "'\\''")}'`;
             }
@@ -1366,6 +1545,91 @@ onMounted(() => {
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+
+                        <!-- Request Body (Form / URLEncoded) -->
+                        <div
+                            v-if="parsedBodyItems.length > 0"
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Request Body
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Key
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Type
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Description
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="item in parsedBodyItems"
+                                            :key="item.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ item.key }}
+                                                <span
+                                                    v-if="item.required"
+                                                    class="ml-1 text-[10px] text-red-500"
+                                                    >*</span
+                                                >
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                            >
+                                                {{ item.dataType || 'string' }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                            >
+                                                {{ item.description || '' }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div
+                            v-else-if="rawBodyContent"
+                            class="flex flex-col gap-3"
+                        >
+                            <h4
+                                class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                            >
+                                Request Body (Raw -
+                                {{ rawBodyContent.language }})
+                            </h4>
+                            <div
+                                class="overflow-hidden rounded-lg border bg-card"
+                            >
+                                <pre
+                                    class="p-4 font-mono text-xs break-all whitespace-pre-wrap text-foreground"
+                                    >{{ rawBodyContent.content }}</pre
+                                >
                             </div>
                         </div>
 

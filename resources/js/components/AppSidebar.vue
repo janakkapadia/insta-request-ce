@@ -206,8 +206,8 @@ const handleSelectCollection = (collection: any) => {
     if (collection.expanded && !collection.has_loaded_details) {
         store.fetchCollectionDetails(collection.id);
     }
-    
-    if (!page.url.startsWith('/collections')) {
+
+    if (!page.url.startsWith(`/collections/${collection.id}`)) {
         router.get(`/collections/${collection.id}`);
     }
 };
