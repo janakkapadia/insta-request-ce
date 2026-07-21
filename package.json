@@ -40,7 +40,7 @@
         "@laravel/passkeys": "^0.2.0",
         "@lucide/vue": "^1.21.0",
         "@vueuse/core": "^12.8.2",
-        "axios": "^1.16.1",
+        "axios": "^1.18.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "date-fns": "^4.4.0",
