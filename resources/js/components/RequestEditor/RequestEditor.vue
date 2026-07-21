@@ -118,11 +118,21 @@ onMounted(() => {
     });
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleKeyDown);
 });
 onUnmounted(() => {
     themeObserver?.disconnect();
     window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.removeEventListener('keydown', handleKeyDown);
 });
+
+const handleKeyDown = (e: KeyboardEvent) => {
+    // Save on Cmd+S, Ctrl+S, or Opt+S (Alt+S)
+    if ((e.metaKey || e.ctrlKey || e.altKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSave();
+    }
+};
 
 const method = ref('GET');
 const activeRequestTab = ref('params');
