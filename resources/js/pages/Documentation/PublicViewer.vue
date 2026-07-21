@@ -1557,6 +1557,61 @@ onMounted(() => {
                             v-html="requestDescHtml"
                         ></div>
 
+                        <!-- Path Variables -->
+                        <div
+                            v-if="parsedPathVariables.length > 0"
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Path Variables
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Variable
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Description
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="param in parsedPathVariables"
+                                            :key="param.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ param.key }}
+                                                <span
+                                                    class="ml-1 text-[10px] text-red-500"
+                                                    >*</span
+                                                >
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 text-muted-foreground/80"
+                                            >
+                                                {{ param.description }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Request Headers & Query Params Tables (if present) -->
                         <div v-if="parsedHeaders.length > 0" class="space-y-3">
                             <h4
@@ -1697,71 +1752,6 @@ onMounted(() => {
                                     class="p-4 font-mono text-xs break-all whitespace-pre-wrap text-foreground"
                                     >{{ rawBodyContent.content }}</pre
                                 >
-                            </div>
-                        </div>
-
-                        <!-- Path Variables -->
-                        <div
-                            v-if="parsedPathVariables.length > 0"
-                            class="space-y-3"
-                        >
-                            <h4
-                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
-                            >
-                                Path Variables
-                            </h4>
-                            <div class="overflow-hidden rounded-lg border">
-                                <table
-                                    class="min-w-full divide-y divide-border text-xs"
-                                >
-                                    <thead class="bg-muted/40">
-                                        <tr>
-                                            <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
-                                            >
-                                                Variable
-                                            </th>
-                                            <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
-                                            >
-                                                Type
-                                            </th>
-                                            <th
-                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
-                                            >
-                                                Description
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody
-                                        class="divide-y divide-border bg-card"
-                                    >
-                                        <tr
-                                            v-for="param in parsedPathVariables"
-                                            :key="param.key"
-                                        >
-                                            <td
-                                                class="px-4 py-2 font-mono font-semibold text-foreground"
-                                            >
-                                                {{ param.key }}
-                                                <span
-                                                    class="ml-1 text-[10px] text-red-500"
-                                                    >*</span
-                                                >
-                                            </td>
-                                            <td
-                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
-                                            >
-                                                string
-                                            </td>
-                                            <td
-                                                class="px-4 py-2 text-muted-foreground/80"
-                                            >
-                                                {{ param.description }}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
 
