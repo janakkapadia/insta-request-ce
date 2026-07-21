@@ -273,6 +273,68 @@ const parsedQueryParams = computed(() => {
     return [];
 });
 
+const parsedBodyItems = computed(() => {
+    const req = activeRequest.value;
+
+    if (!req || !req.body) {
+        return [];
+    }
+
+    let parsedBodyObj: any = null;
+
+    if (typeof req.body === 'string') {
+        try {
+            parsedBodyObj = JSON.parse(req.body);
+        } catch {
+            return [];
+        }
+    } else {
+        parsedBodyObj = req.body;
+    }
+
+    const mode = parsedBodyObj?.mode;
+
+    let items: any[] = [];
+
+    if (mode === 'formdata' || mode === 'form-data') {
+        items = Array.isArray(parsedBodyObj?.formdata)
+            ? parsedBodyObj.formdata
+            : [];
+    } else if (mode === 'urlencoded' || mode === 'x-www-form-urlencoded') {
+        items = Array.isArray(parsedBodyObj?.urlencoded)
+            ? parsedBodyObj.urlencoded
+            : [];
+    } else if (mode === 'raw' && !parsedBodyObj?.raw?.content) {
+        // Fallback checks
+        if (
+            Array.isArray(parsedBodyObj?.formdata) &&
+            parsedBodyObj.formdata.length > 0 &&
+            parsedBodyObj.formdata.some(
+                (i: any) => i && i.key && i.enabled !== false,
+            )
+        ) {
+            items = parsedBodyObj.formdata;
+        } else if (
+            Array.isArray(parsedBodyObj?.urlencoded) &&
+            parsedBodyObj.urlencoded.length > 0 &&
+            parsedBodyObj.urlencoded.some(
+                (i: any) => i && i.key && i.enabled !== false,
+            )
+        ) {
+            items = parsedBodyObj.urlencoded;
+        }
+    }
+
+    return items
+        .filter(
+            (i) => i && typeof i === 'object' && i.key && i.enabled !== false,
+        )
+        .map((i) => ({
+            ...i,
+            value: substituteEnvVariables(String(i.value || '')),
+        }));
+});
+
 // Helper for HTTP Method styling — uses shared utility for consistency
 
 // Pre-render content
@@ -1511,6 +1573,67 @@ onMounted(() => {
                                                 class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
                                             >
                                                 {{ param.value }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Request Body (Form / URLEncoded) -->
+                        <div
+                            v-if="parsedBodyItems.length > 0"
+                            class="space-y-3"
+                        >
+                            <h4
+                                class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                            >
+                                Request Body
+                            </h4>
+                            <div class="overflow-hidden rounded-lg border">
+                                <table
+                                    class="min-w-full divide-y divide-border text-xs"
+                                >
+                                    <thead class="bg-muted/40">
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Key
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Type
+                                            </th>
+                                            <th
+                                                class="px-4 py-2 text-left font-semibold text-muted-foreground"
+                                            >
+                                                Value
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        class="divide-y divide-border bg-card"
+                                    >
+                                        <tr
+                                            v-for="item in parsedBodyItems"
+                                            :key="item.key"
+                                        >
+                                            <td
+                                                class="px-4 py-2 font-mono font-semibold text-foreground"
+                                            >
+                                                {{ item.key }}
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-[10px] text-muted-foreground"
+                                            >
+                                                string
+                                            </td>
+                                            <td
+                                                class="px-4 py-2 font-mono text-muted-foreground/80 select-all"
+                                            >
+                                                {{ item.value }}
                                             </td>
                                         </tr>
                                     </tbody>
