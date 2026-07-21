@@ -127,8 +127,8 @@ onUnmounted(() => {
 });
 
 const handleKeyDown = (e: KeyboardEvent) => {
-    // Save on Cmd+S, Ctrl+S, or Opt+S (Alt+S)
-    if ((e.metaKey || e.ctrlKey || e.altKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
+    // Save on Cmd+S (Mac) or Ctrl+S (Windows)
+    if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
         e.preventDefault();
         handleSave();
     }
