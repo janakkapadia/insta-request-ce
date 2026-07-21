@@ -622,7 +622,7 @@ const generatedCode = computed(() => {
                 fetchBodyStr = `,\n  body: formdata`;
             } else if (bodyStr) {
                 if (isUrlEncoded) {
-                    fetchBodyStr = `,\n  body: "${bodyStr.replace(/"/g, '\\"')}"`;
+                    fetchBodyStr = `,\n  body: "${bodyStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
                 } else {
                     fetchBodyStr = `,\n  body: JSON.stringify(${bodyStr.split('\n').join('\n  ')})`;
                 }
