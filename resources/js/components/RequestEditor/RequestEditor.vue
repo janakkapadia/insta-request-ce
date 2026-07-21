@@ -2043,9 +2043,24 @@ const executeRequest = async () => {
                                                                         >Integer</SelectItem
                                                                     >
                                                                     <SelectItem
+                                                                        value="number"
+                                                                        class="text-xs"
+                                                                        >Number</SelectItem
+                                                                    >
+                                                                    <SelectItem
                                                                         value="boolean"
                                                                         class="text-xs"
                                                                         >Boolean</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="array"
+                                                                        class="text-xs"
+                                                                        >Array</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="object"
+                                                                        class="text-xs"
+                                                                        >Object</SelectItem
                                                                     >
                                                                     <SelectItem
                                                                         value="file"
@@ -2240,9 +2255,24 @@ const executeRequest = async () => {
                                                                         >Integer</SelectItem
                                                                     >
                                                                     <SelectItem
+                                                                        value="number"
+                                                                        class="text-xs"
+                                                                        >Number</SelectItem
+                                                                    >
+                                                                    <SelectItem
                                                                         value="boolean"
                                                                         class="text-xs"
                                                                         >Boolean</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="array"
+                                                                        class="text-xs"
+                                                                        >Array</SelectItem
+                                                                    >
+                                                                    <SelectItem
+                                                                        value="object"
+                                                                        class="text-xs"
+                                                                        >Object</SelectItem
                                                                     >
                                                                 </SelectContent>
                                                             </Select>
