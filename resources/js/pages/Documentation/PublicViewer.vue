@@ -273,6 +273,35 @@ const parsedQueryParams = computed(() => {
     return [];
 });
 
+const rawBodyContent = computed(() => {
+    const req = activeRequest.value;
+
+    if (!req || !req.body) {
+        return null;
+    }
+
+    let parsedBodyObj: any = null;
+
+    if (typeof req.body === 'string') {
+        try {
+            parsedBodyObj = JSON.parse(req.body);
+        } catch {
+            return null;
+        }
+    } else {
+        parsedBodyObj = req.body;
+    }
+
+    if (parsedBodyObj?.mode === 'raw' && parsedBodyObj?.raw?.content) {
+        return {
+            content: substituteEnvVariables(parsedBodyObj.raw.content),
+            language: parsedBodyObj.raw.language || 'text',
+        };
+    }
+
+    return null;
+});
+
 const parsedBodyItems = computed(() => {
     const req = activeRequest.value;
 
@@ -1643,6 +1672,25 @@ onMounted(() => {
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                        <div
+                            v-else-if="rawBodyContent"
+                            class="flex flex-col gap-3"
+                        >
+                            <h4
+                                class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                            >
+                                Request Body (Raw -
+                                {{ rawBodyContent.language }})
+                            </h4>
+                            <div
+                                class="overflow-hidden rounded-lg border bg-card"
+                            >
+                                <pre
+                                    class="p-4 font-mono text-xs break-all whitespace-pre-wrap text-foreground"
+                                    >{{ rawBodyContent.content }}</pre
+                                >
                             </div>
                         </div>
                     </div>
