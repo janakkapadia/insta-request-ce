@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import {
     ChevronDown,
     Folder,
@@ -41,6 +41,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useWorkspaceStore();
+const page = usePage();
 const currentDepth = props.depth || 0;
 
 const isSelectionMode = computed(
@@ -72,7 +73,10 @@ const setFolderExpanded = (expanded: boolean) => {
 
 const toggle = () => {
     setFolderExpanded(!props.folder.expanded);
-    router.get(`/collections/${props.collection.id}`);
+
+    if (!page.url.startsWith('/collections')) {
+        router.get(`/collections/${props.collection.id}`);
+    }
 };
 
 const startRenameFolder = (e?: Event) => {
