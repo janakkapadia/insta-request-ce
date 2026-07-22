@@ -102,13 +102,22 @@ class RequestExecutionService
                             $options['headers']['Content-Type'] = 'application/xml';
                         }
                     }
-                } elseif ($bodyMode === 'urlencoded') {
+                } elseif ($bodyMode === 'urlencoded' || $bodyMode === 'x-www-form-urlencoded') {
                     $formParams = [];
                     if (isset($decodedBody['urlencoded']) && is_array($decodedBody['urlencoded'])) {
                         foreach ($decodedBody['urlencoded'] as $item) {
                             if (! empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
                                 $k = $this->interpolate($item['key'], $variables);
                                 $v = $this->interpolate($item['value'] ?? '', $variables);
+                                $dataType = strtolower($item['dataType'] ?? '');
+                                if ($dataType === 'boolean' || strtolower((string) $v) === 'true' || strtolower((string) $v) === 'false') {
+                                    $lowerV = strtolower((string) $v);
+                                    if (in_array($lowerV, ['true', '1', 'yes', 'on'], true)) {
+                                        $v = '1';
+                                    } elseif (in_array($lowerV, ['false', '0', 'no', 'off', ''], true)) {
+                                        $v = '0';
+                                    }
+                                }
                                 $formParams[$k] = $v;
                             }
                         }
@@ -116,13 +125,22 @@ class RequestExecutionService
                     if (! empty($formParams)) {
                         $options['form_params'] = $formParams;
                     }
-                } elseif ($bodyMode === 'formdata') {
+                } elseif ($bodyMode === 'formdata' || $bodyMode === 'form-data') {
                     $multipart = [];
                     if (isset($decodedBody['formdata']) && is_array($decodedBody['formdata'])) {
                         foreach ($decodedBody['formdata'] as $item) {
                             if (! empty($item['key']) && isset($item['enabled']) && $item['enabled']) {
                                 $k = $this->interpolate($item['key'], $variables);
                                 $v = $this->interpolate($item['value'] ?? '', $variables);
+                                $dataType = strtolower($item['dataType'] ?? '');
+                                if ($dataType === 'boolean' || strtolower((string) $v) === 'true' || strtolower((string) $v) === 'false') {
+                                    $lowerV = strtolower((string) $v);
+                                    if (in_array($lowerV, ['true', '1', 'yes', 'on'], true)) {
+                                        $v = '1';
+                                    } elseif (in_array($lowerV, ['false', '0', 'no', 'off', ''], true)) {
+                                        $v = '0';
+                                    }
+                                }
                                 $multipart[] = [
                                     'name' => $k,
                                     'contents' => $v,

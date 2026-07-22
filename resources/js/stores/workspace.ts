@@ -126,6 +126,37 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         delete requestDrafts.value[requestId];
     };
 
+    const requestResponses = ref<
+        Record<
+            string,
+            {
+                body: string;
+                headers: Record<string, string[]>;
+                meta: {
+                    status?: number;
+                    statusText?: string;
+                    time?: number;
+                    size?: number;
+                };
+            }
+        >
+    >({});
+
+    const setRequestResponse = (
+        requestId: string,
+        responseData: {
+            body: string;
+            headers: Record<string, string[]>;
+            meta: any;
+        },
+    ) => {
+        requestResponses.value[requestId] = responseData;
+    };
+
+    const getRequestResponse = (requestId: string) => {
+        return requestResponses.value[requestId] || null;
+    };
+
     const getIsRequestDirty = (requestId: string) => {
         return requestDrafts.value[requestId]?.isDirty || false;
     };
@@ -1359,6 +1390,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         setRequestDraft,
         getRequestDraft,
         clearRequestDraft,
+        requestResponses,
+        setRequestResponse,
+        getRequestResponse,
         getIsRequestDirty,
         hasDirtyRequests,
         environments,

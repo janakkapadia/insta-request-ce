@@ -9,6 +9,9 @@ import {
     Loader2,
     Edit3,
     Eye,
+    HelpCircle,
+    FileText,
+    Plus,
 } from 'lucide-vue-next';
 import {
     ref,
@@ -22,6 +25,13 @@ import {
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     HoverCard,
     HoverCardContent,
@@ -56,8 +66,8 @@ const store = useWorkspaceStore();
 
 const isMac = computed(() => {
     if (typeof window === 'undefined') {
-return false;
-}
+        return false;
+    }
 
     return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 });
@@ -349,8 +359,6 @@ const handleAutoCurlImport = async (curlCmd: string) => {
     }
 };
 
-watch(url, (v, oldV) => console.log('URL CHANGED:', { from: oldV, to: v }));
-
 watch(url, (newVal) => {
     if (newVal && newVal.trim().toLowerCase().startsWith('curl ')) {
         const curlCmd = newVal.trim();
@@ -392,6 +400,83 @@ const syncPathVariablesFromUrl = (newVal: string) => {
 
 const description = ref('');
 const activeDocTab = ref<'write' | 'preview'>('write');
+const showMarkdownHelp = ref(false);
+
+const insertMarkdownSnippet = (snippet: string) => {
+    if (description.value) {
+        description.value += '\n\n' + snippet;
+    } else {
+        description.value = snippet;
+    }
+
+    toast.success('Snippet inserted into documentation');
+};
+
+const markdownGuideItems = [
+    {
+        category: 'Headers',
+        examples: [
+            { label: 'Heading 1', snippet: '# Heading 1' },
+            { label: 'Heading 2', snippet: '## Heading 2' },
+            { label: 'Heading 3', snippet: '### Heading 3' },
+        ],
+    },
+    {
+        category: 'Text Formatting',
+        examples: [
+            { label: 'Bold', snippet: '**Bold text**' },
+            { label: 'Italic', snippet: '*Italic text*' },
+            { label: 'Strikethrough', snippet: '~~Strikethrough~~' },
+            { label: 'Inline Code', snippet: '`inline_code()`' },
+        ],
+    },
+    {
+        category: 'Lists & Quotes',
+        examples: [
+            { label: 'Bullet List', snippet: '- Item 1\n- Item 2\n- Item 3' },
+            {
+                label: 'Numbered List',
+                snippet: '1. First item\n2. Second item',
+            },
+            {
+                label: 'Callout Quote',
+                snippet: '> **Note:** Important details here.',
+            },
+        ],
+    },
+    {
+        category: 'Code Blocks & Tables',
+        examples: [
+            {
+                label: 'JSON Code Block',
+                snippet:
+                    '```json\n{\n  "status": "success",\n  "code": 200\n}\n```',
+            },
+            {
+                label: 'Bash / cURL',
+                snippet: '```bash\ncurl -X POST "https://api.example.com"\n```',
+            },
+            {
+                label: 'Table',
+                snippet:
+                    '| Field | Type | Description |\n| :--- | :--- | :--- |\n| id | string | Unique ID |\n| active | boolean | Status flag |',
+            },
+        ],
+    },
+    {
+        category: 'Links & Media',
+        examples: [
+            {
+                label: 'Link',
+                snippet: '[API Reference](https://example.com/docs)',
+            },
+            {
+                label: 'Image',
+                snippet: '![Alt Text](https://example.com/image.png)',
+            },
+        ],
+    },
+];
 
 const queryParams = ref<
     Array<{ key: string; value: string; enabled: boolean; description: string }>
@@ -957,9 +1042,17 @@ watch(
                     };
                 }
 
-                responseBody.value = '';
-                responseHeaders.value = {};
-                responseMeta.value = {};
+                const lastResp = store.getRequestResponse(newReq.id);
+
+                if (lastResp) {
+                    responseBody.value = lastResp.body || '';
+                    responseHeaders.value = lastResp.headers || {};
+                    responseMeta.value = lastResp.meta || {};
+                } else {
+                    responseBody.value = '';
+                    responseHeaders.value = {};
+                    responseMeta.value = {};
+                }
                 // (Body variable parsing logic would go here if needed in the future)
 
                 cleanPayloadStr.value = getCurrentPayloadStr();
@@ -1079,9 +1172,6 @@ watch(
     },
     { deep: true },
 );
-
-// Sync url -> queryParams
-watch(url, (v, oldV) => console.log('URL CHANGED:', { from: oldV, to: v }));
 
 watch(url, (newVal) => {
     if (isSwitchingRequest) {
@@ -1330,11 +1420,27 @@ const executeRequest = async () => {
                     ? data.body
                     : JSON.stringify(data.body, null, 2);
         }
+
+        if (store.selectedRequest?.id) {
+            store.setRequestResponse(store.selectedRequest.id, {
+                body: responseBody.value,
+                headers: responseHeaders.value,
+                meta: responseMeta.value,
+            });
+        }
     } catch (error) {
         console.error('Execution failed', error);
         responseBody.value = String(error);
         responseHeaders.value = {};
         responseMeta.value = { status: 0, statusText: 'Error' };
+
+        if (store.selectedRequest?.id) {
+            store.setRequestResponse(store.selectedRequest.id, {
+                body: responseBody.value,
+                headers: responseHeaders.value,
+                meta: responseMeta.value,
+            });
+        }
     } finally {
         isExecuting.value = false;
         // Reset cache so the next hover will fetch the new history
@@ -2769,11 +2875,16 @@ const executeRequest = async () => {
                                                     Preview
                                                 </button>
                                             </div>
-                                            <span
-                                                class="font-mono text-xs text-muted-foreground"
+                                            <button
+                                                type="button"
+                                                @click="showMarkdownHelp = true"
+                                                class="flex cursor-pointer items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 font-mono text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                             >
-                                                Markdown Supported
-                                            </span>
+                                                <HelpCircle
+                                                    class="h-3.5 w-3.5 text-primary"
+                                                />
+                                                <span>Markdown Guide</span>
+                                            </button>
                                         </div>
 
                                         <div
@@ -3184,6 +3295,63 @@ const executeRequest = async () => {
             </button>
         </div>
     </Teleport>
+
+    <!-- Markdown Help Dialog Modal -->
+    <Dialog v-model:open="showMarkdownHelp">
+        <DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-5xl">
+            <DialogHeader>
+                <DialogTitle class="flex items-center gap-2 text-lg">
+                    <FileText class="h-5 w-5 text-primary" />
+                    Markdown Documentation Guide
+                </DialogTitle>
+                <DialogDescription>
+                    Use standard Markdown syntax to format your request
+                    documentation. Click any snippet to insert it into your
+                    editor.
+                </DialogDescription>
+            </DialogHeader>
+
+            <div class="mt-4 grid gap-6 md:grid-cols-2">
+                <div
+                    v-for="group in markdownGuideItems"
+                    :key="group.category"
+                    class="space-y-3 rounded-lg border bg-card p-3.5 text-card-foreground shadow-sm"
+                >
+                    <h4
+                        class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
+                    >
+                        {{ group.category }}
+                    </h4>
+                    <div class="space-y-2">
+                        <div
+                            v-for="item in group.examples"
+                            :key="item.label"
+                            class="group relative flex flex-col gap-1 rounded border bg-muted/30 p-2 transition-colors hover:bg-muted/60"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span
+                                    class="text-xs font-semibold text-foreground"
+                                    >{{ item.label }}</span
+                                >
+                                <button
+                                    type="button"
+                                    @click="insertMarkdownSnippet(item.snippet)"
+                                    class="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                                >
+                                    <Plus class="h-3 w-3" />
+                                    Insert
+                                </button>
+                            </div>
+                            <pre
+                                class="overflow-x-auto rounded border border-border/50 bg-background p-1.5 font-mono text-[11px] whitespace-pre-wrap text-muted-foreground"
+                                >{{ item.snippet }}</pre
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
 
     <!-- Shadcn Confirm Dialog -->
 </template>
