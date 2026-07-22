@@ -307,10 +307,19 @@ const parsedPathVariables = computed(() => {
             }));
     }
 
+    const envVarKeys = new Set(activeEnvVariables.value.map((v) => v.key));
+
     if (req.url) {
         let urlStr = String(req.url);
-        // Remove env variables like {{api_url}} before extracting
+        // Remove env variables like {{api_url}} and {api_url} before extracting path variables
         urlStr = urlStr.replace(/\{\{[^}]+\}\}/g, '');
+        urlStr = urlStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, p1) => {
+            if (envVarKeys.has(p1)) {
+                return '';
+            }
+
+            return match;
+        });
 
         const extractedKeys = new Set<string>();
 
@@ -318,14 +327,18 @@ const parsedPathVariables = computed(() => {
         const colonMatches = urlStr.matchAll(/:([a-zA-Z0-9_]+)/g);
 
         for (const match of colonMatches) {
-            extractedKeys.add(match[1]);
+            if (!envVarKeys.has(match[1])) {
+                extractedKeys.add(match[1]);
+            }
         }
 
-        // Extract {param}
+        // Extract {param} (only if not an environment variable)
         const bracketMatches = urlStr.matchAll(/\{([a-zA-Z0-9_]+)\}/g);
 
         for (const match of bracketMatches) {
-            extractedKeys.add(match[1]);
+            if (!envVarKeys.has(match[1])) {
+                extractedKeys.add(match[1]);
+            }
         }
 
         extractedKeys.forEach((key) => {
@@ -339,7 +352,7 @@ const parsedPathVariables = computed(() => {
         });
     }
 
-    return vars;
+    return vars.filter((v) => v && v.key && !envVarKeys.has(v.key));
 });
 
 const rawBodyContent = computed(() => {
@@ -423,7 +436,7 @@ const parsedBodyItems = computed(() => {
         }
     }
 
-    return items
+    const filtered = items
         .filter(
             (i) => i && typeof i === 'object' && i.key && i.enabled !== false,
         )
@@ -431,6 +444,60 @@ const parsedBodyItems = computed(() => {
             ...i,
             value: substituteEnvVariables(String(i.value || '')),
         }));
+
+    const result: any[] = [];
+    const groupMap = new Map<string, any>();
+
+    for (const item of filtered) {
+        const match = item.key
+            ? String(item.key).match(/^([a-zA-Z0-9_-]+)\[(\d+|\w+)\](.*)$/)
+            : null;
+
+        if (match) {
+            const parentKey = match[1];
+            const childIndex = match[2];
+            const subPath = match[3] || '';
+            const childDisplayKey = childIndex + subPath;
+
+            if (!groupMap.has(parentKey)) {
+                const parentItem = {
+                    key: `parent_${parentKey}`,
+                    displayKey: parentKey,
+                    dataType: 'array',
+                    description: '',
+                    required: false,
+                    isParent: true,
+                    depth: 0,
+                };
+                groupMap.set(parentKey, parentItem);
+                result.push(parentItem);
+            }
+
+            const parent = groupMap.get(parentKey);
+
+            if (item.required) {
+                parent.required = true;
+            }
+
+            result.push({
+                ...item,
+                displayKey: childDisplayKey,
+                parentKey: parentKey,
+                isChild: true,
+                depth: 1,
+            });
+        } else {
+            result.push({
+                ...item,
+                displayKey: item.key,
+                isChild: false,
+                isParent: false,
+                depth: 0,
+            });
+        }
+    }
+
+    return result;
 });
 
 // Helper for HTTP Method styling — uses shared utility for consistency
@@ -809,7 +876,7 @@ use GuzzleHttp\\Client;
 
 $client = new Client();
 $response = $client->request('${method}', '${url}', [
-    ${headersList.length ? `'headers' => [\n        ` + headersObjStr + `\n    ]` : ''}${bodyStr ? `${headersList.length ? ',\n    ' : ''}'body' => '${bodyStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'` : ''}
+    ${headersList.length ? `'headers' => [\n        ` + headersObjStr + `\n    ]` : ''}${bodyStr ? `${headersList.length ? ',\n    ' : ''}'body' => '${bodyStr.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'` : ''}
 ]);
 
 echo $response->getBody();`;
@@ -836,7 +903,7 @@ curl_setopt_array($curl, [
     CURLOPT_TIMEOUT => 0,
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => '${method}',${bodyStr ? `\n    CURLOPT_POSTFIELDS => '${bodyStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}',` : ''}
+    CURLOPT_CUSTOMREQUEST => '${method}',${bodyStr ? `\n    CURLOPT_POSTFIELDS => '${bodyStr.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}',` : ''}
     CURLOPT_HTTPHEADER => ${headersArrStr},
 ]);
 
@@ -1715,12 +1782,37 @@ onMounted(() => {
                                             <td
                                                 class="px-4 py-2 font-mono font-semibold text-foreground"
                                             >
-                                                {{ item.key }}
-                                                <span
-                                                    v-if="item.required"
-                                                    class="ml-1 text-[10px] text-red-500"
-                                                    >*</span
+                                                <div
+                                                    v-if="item.isChild"
+                                                    class="flex items-center gap-1.5 pl-4"
                                                 >
+                                                    <span
+                                                        class="text-[11px] font-normal text-muted-foreground/70"
+                                                        >↳</span
+                                                    >
+                                                    <span>{{
+                                                        item.displayKey
+                                                    }}</span>
+                                                    <span
+                                                        v-if="item.required"
+                                                        class="text-[10px] text-red-500"
+                                                        >*</span
+                                                    >
+                                                </div>
+                                                <div
+                                                    v-else
+                                                    class="flex items-center gap-1.5"
+                                                >
+                                                    <span>{{
+                                                        item.displayKey ||
+                                                        item.key
+                                                    }}</span>
+                                                    <span
+                                                        v-if="item.required"
+                                                        class="text-[10px] text-red-500"
+                                                        >*</span
+                                                    >
+                                                </div>
                                             </td>
                                             <td
                                                 class="px-4 py-2 font-mono text-[10px] text-foreground"
