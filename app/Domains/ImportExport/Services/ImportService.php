@@ -4,6 +4,7 @@ namespace App\Domains\ImportExport\Services;
 
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Collections\Models\CollectionFolder;
+use App\Domains\Documentation\Models\RequestResponseExample;
 use App\Domains\ImportExport\Contracts\ImportParserInterface;
 use App\Domains\ImportExport\DTOs\ImportParseResult;
 use App\Domains\ImportExport\DTOs\ParsedFolder;
@@ -316,7 +317,7 @@ class ImportService
                 $folderId = $existingFolder->id;
                 if ($strategy === MergeStrategy::MergeReplace || $strategy === MergeStrategy::Mirror) {
                     $existingFolder->update([
-                        'description' => $folder->description,
+                        'description' => $folder->description ?? $existingFolder->description,
                     ]);
                 }
             } else {
@@ -353,7 +354,7 @@ class ImportService
                 $updateData = [
                     'name' => $parsed->name,
                     'url' => $parsed->url,
-                    'description' => $parsed->description,
+                    'description' => $parsed->description ?? $existingIndex[$key]->description,
                     'headers' => $parsed->headers,
                     'query_params' => $parsed->queryParams,
                     'body' => $parsed->body,
@@ -363,6 +364,20 @@ class ImportService
                     $updateData['folder_id'] = $folderId;
                 }
                 $existingIndex[$key]->update($updateData);
+
+                // Sync response examples if the parser provided them
+                if (! empty($parsed->examples)) {
+                    RequestResponseExample::where('request_id', $existingIndex[$key]->id)->delete();
+                    foreach ($parsed->examples as $example) {
+                        RequestResponseExample::create([
+                            'request_id' => $existingIndex[$key]->id,
+                            'name' => $example['name'],
+                            'status_code' => $example['status_code'],
+                            'headers' => $example['headers'] ?? [],
+                            'body' => $example['body'] ?? null,
+                        ]);
+                    }
+                }
             }
 
             // MergeSkip: do nothing
@@ -374,7 +389,7 @@ class ImportService
 
     private function createRequest(ParsedRequest $parsed, string $collectionId, ?string $folderId = null): void
     {
-        ApiRequest::create([
+        $request = ApiRequest::create([
             'collection_id' => $collectionId,
             'folder_id' => $folderId,
             'name' => $parsed->name,
@@ -386,6 +401,16 @@ class ImportService
             'body' => $parsed->body ?: ['text' => ''],
             'auth' => $parsed->auth,
         ]);
+
+        foreach ($parsed->examples as $example) {
+            RequestResponseExample::create([
+                'request_id' => $request->id,
+                'name' => $example['name'],
+                'status_code' => $example['status_code'],
+                'headers' => $example['headers'] ?? [],
+                'body' => $example['body'] ?? null,
+            ]);
+        }
     }
 
     private function createFolderWithRequests(ParsedFolder $folder, string $collectionId, ?string $parentId = null): void

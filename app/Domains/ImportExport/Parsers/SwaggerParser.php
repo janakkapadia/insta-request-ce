@@ -70,9 +70,16 @@ class SwaggerParser implements ImportParserInterface
             }
         }
 
+        $tagDescriptions = [];
+        foreach ($data['tags'] ?? [] as $tagDef) {
+            if (isset($tagDef['name'])) {
+                $tagDescriptions[$tagDef['name']] = $tagDef['description'] ?? null;
+            }
+        }
+
         $folders = [];
         foreach ($taggedRequests as $tag => $reqs) {
-            $folders[] = new ParsedFolder(name: $tag, requests: $reqs);
+            $folders[] = new ParsedFolder(name: $tag, description: $tagDescriptions[$tag] ?? null, requests: $reqs);
         }
 
         return new ImportParseResult(
@@ -128,6 +135,7 @@ class SwaggerParser implements ImportParserInterface
             headers: $headers,
             queryParams: $queryParams,
             body: $body,
+            description: $operation['description'] ?? $operation['summary'] ?? null,
         );
     }
 
