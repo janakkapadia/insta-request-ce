@@ -68,4 +68,122 @@ JSON;
         $this->assertEquals('X-Custom-Header', $request->headers[0]['key']);
         $this->assertEquals('{"foo":"bar"}', $request->headers[0]['value']);
     }
+
+    public function test_parses_operation_description()
+    {
+        $parser = new OpenApiParser;
+        $openapi = <<<'JSON'
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Test", "version": "1.0" },
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "List users",
+        "description": "Returns a paginated list of all active users.",
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  }
+}
+JSON;
+
+        $result = $parser->parse($openapi, 'test.json');
+
+        $this->assertCount(1, $result->requests);
+        $this->assertEquals('Returns a paginated list of all active users.', $result->requests[0]->description);
+    }
+
+    public function test_falls_back_to_summary_when_no_description()
+    {
+        $parser = new OpenApiParser;
+        $openapi = <<<'JSON'
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Test", "version": "1.0" },
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "List users",
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  }
+}
+JSON;
+
+        $result = $parser->parse($openapi, 'test.json');
+
+        $this->assertCount(1, $result->requests);
+        $this->assertEquals('List users', $result->requests[0]->description);
+    }
+
+    public function test_parses_tag_descriptions()
+    {
+        $parser = new OpenApiParser;
+        $openapi = <<<'JSON'
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Test", "version": "1.0" },
+  "tags": [
+    { "name": "Users", "description": "User management endpoints" }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List users",
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  }
+}
+JSON;
+
+        $result = $parser->parse($openapi, 'test.json');
+
+        $this->assertCount(1, $result->folders);
+        $this->assertEquals('Users', $result->folders[0]->name);
+        $this->assertEquals('User management endpoints', $result->folders[0]->description);
+    }
+
+    public function test_parses_response_examples()
+    {
+        $parser = new OpenApiParser;
+        $openapi = <<<'JSON'
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Test", "version": "1.0" },
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "List users",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": { "id": 1, "name": "Alice" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+JSON;
+
+        $result = $parser->parse($openapi, 'test.json');
+
+        $this->assertCount(1, $result->requests);
+        $this->assertCount(1, $result->requests[0]->examples);
+
+        $example = $result->requests[0]->examples[0];
+        $this->assertEquals('Success (200)', $example['name']);
+        $this->assertEquals(200, $example['status_code']);
+        $this->assertEquals(['Content-Type' => 'application/json'], $example['headers']);
+        $this->assertStringContainsString('"id": 1', $example['body']);
+        $this->assertStringContainsString('"name": "Alice"', $example['body']);
+    }
 }

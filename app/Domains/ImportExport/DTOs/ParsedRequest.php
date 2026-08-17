@@ -13,6 +13,7 @@ class ParsedRequest
         public readonly array $body = [],
         public readonly array $auth = [],
         public readonly ?string $description = null,
+        public readonly array $examples = [],
     ) {}
 
     public function toArray(): array
@@ -26,6 +27,7 @@ class ParsedRequest
             'body' => $this->body,
             'auth' => $this->auth,
             'description' => $this->description,
+            'examples' => $this->examples,
         ];
     }
 
@@ -40,6 +42,7 @@ class ParsedRequest
             body: $data['body'] ?? [],
             auth: $data['auth'] ?? [],
             description: $data['description'] ?? null,
+            examples: $data['examples'] ?? [],
         );
     }
 }

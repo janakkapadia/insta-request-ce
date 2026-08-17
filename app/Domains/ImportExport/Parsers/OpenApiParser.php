@@ -71,11 +71,18 @@ class OpenApiParser implements ImportParserInterface
             }
         }
 
+        $tagDescriptions = [];
+        foreach ($data['tags'] ?? [] as $tagDef) {
+            if (isset($tagDef['name'])) {
+                $tagDescriptions[$tagDef['name']] = $tagDef['description'] ?? null;
+            }
+        }
+
         $folders = [];
         foreach ($taggedRequests as $tag => $reqs) {
             $folders[] = new ParsedFolder(
                 name: $tag,
-                description: null,
+                description: $tagDescriptions[$tag] ?? null,
                 requests: $reqs,
             );
         }
@@ -146,6 +153,44 @@ class OpenApiParser implements ImportParserInterface
             }
         }
 
+        // Parse response examples
+        $examples = [];
+        foreach ($operation['responses'] ?? [] as $statusCode => $response) {
+            if (! is_array($response) || $statusCode === 'default') {
+                continue;
+            }
+            $code = (int) $statusCode;
+            foreach ($response['content'] ?? [] as $mediaType => $mediaContent) {
+                // Single example
+                if (isset($mediaContent['example'])) {
+                    $exampleBody = is_string($mediaContent['example'])
+                        ? $mediaContent['example']
+                        : json_encode($mediaContent['example'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                    $examples[] = [
+                        'name' => ($response['description'] ?? 'Response').' ('.$code.')',
+                        'status_code' => $code,
+                        'headers' => ['Content-Type' => $mediaType],
+                        'body' => $exampleBody,
+                    ];
+                }
+                // Named examples (OpenAPI 3 `examples` map)
+                foreach ($mediaContent['examples'] ?? [] as $exName => $exDef) {
+                    $value = $exDef['value'] ?? null;
+                    if ($value === null) {
+                        continue;
+                    }
+                    $exampleBody = is_string($value) ? $value
+                        : json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                    $examples[] = [
+                        'name' => $exName,
+                        'status_code' => $code,
+                        'headers' => ['Content-Type' => $mediaType],
+                        'body' => $exampleBody,
+                    ];
+                }
+            }
+        }
+
         return new ParsedRequest(
             name: $name,
             method: strtoupper($method),
@@ -153,6 +198,8 @@ class OpenApiParser implements ImportParserInterface
             headers: $headers,
             queryParams: $queryParams,
             body: $body,
+            description: $operation['description'] ?? $operation['summary'] ?? null,
+            examples: $examples,
         );
     }
 
