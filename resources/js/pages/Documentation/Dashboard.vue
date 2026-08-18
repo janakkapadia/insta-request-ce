@@ -310,9 +310,32 @@ const authPreview = computed(() => {
 
 // Response Mock Example Creator State
 const showAddExample = ref<boolean>(false);
-const newExampleName = ref<string>('200 OK Success');
-const newExampleStatus = ref<number>(200);
-const newExampleBody = ref<string>('{\n  "status": "success"\n}');
+
+const responseTemplates = [
+    { name: '200 OK Success', status: 200, body: '{\n  "status": "success"\n}' },
+    { name: '201 Created', status: 201, body: '{\n  "status": "success",\n  "message": "Resource created successfully"\n}' },
+    { name: '400 Bad Request', status: 400, body: '{\n  "status": "error",\n  "message": "Invalid input provided"\n}' },
+    { name: '401 Unauthorized', status: 401, body: '{\n  "status": "error",\n  "message": "Authentication required"\n}' },
+    { name: '403 Forbidden', status: 403, body: '{\n  "status": "error",\n  "message": "You do not have permission to access this resource"\n}' },
+    { name: '404 Not Found', status: 404, body: '{\n  "status": "error",\n  "message": "Resource not found"\n}' },
+    { name: '422 Unprocessable Entity', status: 422, body: '{\n  "status": "error",\n  "message": "Validation failed",\n  "errors": {}\n}' },
+    { name: '500 Internal Error', status: 500, body: '{\n  "status": "error",\n  "message": "Internal server error occurred"\n}' },
+];
+
+const selectedTemplateIndex = ref<number>(0);
+const newExampleName = ref<string>(responseTemplates[0].name);
+const newExampleStatus = ref<number>(responseTemplates[0].status);
+const newExampleBody = ref<string>(responseTemplates[0].body);
+
+const applyTemplate = () => {
+    const template = responseTemplates[selectedTemplateIndex.value];
+
+    if (template) {
+        newExampleName.value = template.name;
+        newExampleStatus.value = template.status;
+        newExampleBody.value = template.body;
+    }
+};
 
 // Keep track of edited descriptions
 const editedRequestDescriptions = ref<Record<string, string>>({});
@@ -484,9 +507,7 @@ const handleAddExample = () => {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success('Response example added!');
-                newExampleName.value = '200 OK Success';
-                newExampleStatus.value = 200;
-                newExampleBody.value = '{\n  "status": "success"\n}';
+                applyTemplate(); // Reset form to selected template
                 showAddExample.value = false;
             },
             onError: () => toast.error('Failed to add example'),
@@ -1632,6 +1653,23 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                                         >
                                             New Response Example
                                         </h5>
+
+                                        <div class="mb-4 space-y-1">
+                                            <Label class="text-xs">Select Template</Label>
+                                            <select
+                                                v-model="selectedTemplateIndex"
+                                                @change="applyTemplate"
+                                                class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:ring-2 focus:ring-primary focus:outline-hidden"
+                                            >
+                                                <option
+                                                    v-for="(template, index) in responseTemplates"
+                                                    :key="index"
+                                                    :value="index"
+                                                >
+                                                    {{ template.name }}
+                                                </option>
+                                            </select>
+                                        </div>
 
                                         <div class="grid grid-cols-2 gap-4">
                                             <div class="space-y-1">
