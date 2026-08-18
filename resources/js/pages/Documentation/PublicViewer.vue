@@ -167,8 +167,7 @@ const selectedLang = ref<
 const copiedState = ref(false);
 const pathCopied = ref(false);
 
-// Active response example per request (keyed by request ID)
-const activeExampleIndex = ref<Record<string, number>>({});
+// Unused states removed
 
 // Filtered Requests
 const filteredRequests = computed(() => {
@@ -2044,81 +2043,52 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Mock response Examples Tab Selector -->
+                        <!-- Mock Response Examples -->
                         <div
                             v-if="
                                 activeRequest.examples &&
                                 activeRequest.examples.length > 0
                             "
-                            class="space-y-3"
+                            class="space-y-4"
                         >
                             <h4
                                 class="text-xs font-bold tracking-wider text-muted-foreground uppercase"
                             >
-                                Mock response Example
+                                Response Examples
                             </h4>
 
                             <div
+                                v-for="example in activeRequest.examples"
+                                :key="example.id"
                                 class="overflow-hidden rounded-xl border border-border bg-zinc-50 shadow-md dark:bg-zinc-950"
                             >
-                                <!-- Example Header Tab Selection -->
+                                <!-- Example Header -->
                                 <div
-                                    class="flex items-center justify-between border-b border-border bg-zinc-100 px-3 py-1.5 select-none dark:border-zinc-800 dark:bg-zinc-900"
+                                    class="flex items-center justify-between border-b border-border bg-zinc-100 px-3 py-2 select-none dark:border-zinc-800 dark:bg-zinc-900"
                                 >
-                                    <div class="flex items-center gap-1.5">
+                                    <div class="flex items-center gap-2">
                                         <span
                                             class="h-2 w-2 rounded-full"
                                             :class="
-                                                activeRequest.examples[
-                                                    activeExampleIndex[
-                                                        activeRequest.id
-                                                    ] || 0
-                                                ]?.status_code >= 200 &&
-                                                activeRequest.examples[
-                                                    activeExampleIndex[
-                                                        activeRequest.id
-                                                    ] || 0
-                                                ]?.status_code < 300
+                                                example.status_code >= 200 &&
+                                                example.status_code < 300
                                                     ? 'bg-emerald-500'
                                                     : 'bg-rose-500'
                                             "
                                         ></span>
-                                        <select
-                                            :value="
-                                                activeExampleIndex[
-                                                    activeRequest.id
-                                                ] || 0
-                                            "
-                                            @change="
-                                                activeExampleIndex[
-                                                    activeRequest.id
-                                                ] = parseInt(
-                                                    (
-                                                        $event.target as HTMLSelectElement
-                                                    ).value,
-                                                )
-                                            "
-                                            class="h-7 cursor-pointer border-0 bg-transparent text-[11px] font-bold text-zinc-700 focus:outline-hidden dark:text-zinc-300"
+                                        <span
+                                            class="text-[11px] font-bold text-zinc-700 dark:text-zinc-300"
                                         >
-                                            <option
-                                                v-for="(
-                                                    example, idx
-                                                ) in activeRequest.examples"
-                                                :key="example.id"
-                                                :value="idx"
-                                                class="bg-white text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-                                            >
-                                                {{ example.status_code }} -
-                                                {{ example.name }}
-                                            </option>
-                                        </select>
+                                            {{ example.status_code }} -
+                                            {{ example.name }}
+                                        </span>
                                     </div>
                                 </div>
 
                                 <!-- Example Body -->
                                 <pre
-                                    class="max-h-[350px] overflow-x-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-zinc-800 select-all dark:text-zinc-300"
-                                ><code>{{ activeRequest.examples[activeExampleIndex[activeRequest.id] || 0]?.body || '{\n  "status": "empty"\n}' }}</code></pre>
+                                    class="max-h-[350px] overflow-x-auto p-4 font-mono text-[11px] leading-relaxed whitespace-pre text-zinc-800 select-all dark:text-zinc-300"
+                                ><code>{{ example.body || '{\n  "status": "empty"\n}' }}</code></pre>
                             </div>
                         </div>
                     </template>
