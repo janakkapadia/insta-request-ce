@@ -166,8 +166,15 @@ class OpenApiParser implements ImportParserInterface
                     $exampleBody = is_string($mediaContent['example'])
                         ? $mediaContent['example']
                         : json_encode($mediaContent['example'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+                    $exName = $response['description'] ?? 'Response';
+                    if (mb_strlen($exName) > 255) {
+                        $messages[] = ValidationMessage::warning("Response example name for '{$name}' was truncated to 255 characters.");
+                        $exName = mb_substr($exName, 0, 255);
+                    }
+
                     $examples[] = [
-                        'name' => ($response['description'] ?? 'Response').' ('.$code.')',
+                        'name' => $exName,
                         'status_code' => $code,
                         'headers' => ['Content-Type' => $mediaType],
                         'body' => $exampleBody,
@@ -181,8 +188,15 @@ class OpenApiParser implements ImportParserInterface
                     }
                     $exampleBody = is_string($value) ? $value
                         : json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+                    $finalExName = (string) $exName;
+                    if (mb_strlen($finalExName) > 255) {
+                        $messages[] = ValidationMessage::warning("Named example name for '{$name}' was truncated to 255 characters.");
+                        $finalExName = mb_substr($finalExName, 0, 255);
+                    }
+
                     $examples[] = [
-                        'name' => $exName,
+                        'name' => $finalExName,
                         'status_code' => $code,
                         'headers' => ['Content-Type' => $mediaType],
                         'body' => $exampleBody,

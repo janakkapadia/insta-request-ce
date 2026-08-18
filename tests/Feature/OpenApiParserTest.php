@@ -180,7 +180,7 @@ JSON;
         $this->assertCount(1, $result->requests[0]->examples);
 
         $example = $result->requests[0]->examples[0];
-        $this->assertEquals('Success (200)', $example['name']);
+        $this->assertEquals('Success', $example['name']);
         $this->assertEquals(200, $example['status_code']);
         $this->assertEquals(['Content-Type' => 'application/json'], $example['headers']);
         $this->assertStringContainsString('"id": 1', $example['body']);
