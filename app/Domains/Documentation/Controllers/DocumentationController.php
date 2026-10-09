@@ -6,9 +6,12 @@ use App\Domains\Collections\Models\Collection;
 use App\Domains\Documentation\Models\CollectionDocumentation;
 use App\Domains\Documentation\Models\RequestResponseExample;
 use App\Domains\Environments\Models\Environment;
+use App\Domains\ImportExport\Services\ExportService;
 use App\Domains\Requests\Models\Request as ApiRequest;
+use App\Enums\ExportFormat;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -215,14 +218,57 @@ class DocumentationController extends Controller
         return $this->renderDoc($doc, $publicDocsList);
     }
 
-    public function viewPublic(string $collectionId, string $slug)
+    public function viewPublic(HttpRequest $request, string $collectionId, string $slug)
     {
         $doc = CollectionDocumentation::where('collection_id', $collectionId)
-            ->where('public_slug', $slug)
+            ->where(function ($q) use ($slug) {
+                $q->where('public_slug', $slug)
+                    ->orWhere('public_slug', $slug.'.json');
+            })
             ->where('is_public', true)
             ->firstOrFail();
 
+        if (
+            $request->query('format') === 'openapi' ||
+            $request->query('format') === 'json' ||
+            ($request->wantsJson() && ! $request->header('X-Inertia'))
+        ) {
+            return $this->openApiJson($collectionId, $slug);
+        }
+
         return $this->renderDoc($doc, $this->getPublicDocsList());
+    }
+
+    public function openApiJson(string $collectionId, string $slug): Response
+    {
+        $doc = CollectionDocumentation::where('collection_id', $collectionId)
+            ->where(function ($q) use ($slug) {
+                $q->where('public_slug', $slug)
+                    ->orWhere('public_slug', $slug.'.json');
+            })
+            ->where('is_public', true)
+            ->firstOrFail();
+
+        $collection = Collection::where('id', $doc->collection_id)->firstOrFail();
+
+        $exportResult = app(ExportService::class)->generateExport($collection, ExportFormat::OpenApi3);
+
+        return response($exportResult->content, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'inline; filename="'.$exportResult->filename.'"',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => '*',
+        ]);
+    }
+
+    public function corsOptions(): Response
+    {
+        return response('', 204, [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => '*',
+        ]);
     }
 
     private function renderDoc(CollectionDocumentation $doc, $publicDocsList)

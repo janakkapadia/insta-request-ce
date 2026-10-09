@@ -61,6 +61,9 @@ class DocumentationController extends Controller
             'public_url' => $doc->is_public
                 ? url("/docs/{$collection->id}/{$doc->public_slug}")
                 : null,
+            'openapi_url' => $doc->is_public
+                ? url("/docs/{$collection->id}/{$doc->public_slug}/openapi.json")
+                : null,
         ]);
     }
 

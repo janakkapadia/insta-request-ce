@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domains\Collections\Models\Collection;
+use App\Domains\ImportExport\Services\ExportService;
 use App\Domains\Teams\Models\Team;
+use App\Enums\ExportFormat;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class CollectionController extends Controller
 {
@@ -51,8 +54,32 @@ class CollectionController extends Controller
                 'public_url' => $c->documentation?->is_public
                     ? url("/docs/{$c->id}/{$c->documentation->public_slug}")
                     : null,
+                'openapi_url' => $c->documentation?->is_public
+                    ? url("/docs/{$c->id}/{$c->documentation->public_slug}/openapi.json")
+                    : null,
             ]);
 
         return response()->json($collections);
+    }
+
+    /**
+     * Export collection as OpenAPI 3 JSON.
+     *
+     * GET /api/v1/collections/{collection}/openapi
+     */
+    public function openapi(Request $request, Collection $collection): Response|JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->belongsToTeam($collection->team)) {
+            return response()->json(['message' => 'This collection does not belong to one of your teams.'], 403);
+        }
+
+        $exportResult = app(ExportService::class)->generateExport($collection, ExportFormat::OpenApi3);
+
+        return response($exportResult->content, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'inline; filename="'.$exportResult->filename.'"',
+        ]);
     }
 }

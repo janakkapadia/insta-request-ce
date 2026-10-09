@@ -2,10 +2,15 @@
 
 use App\Domains\Collections\Models\Collection;
 use App\Domains\Collections\Models\CollectionFolder;
+use App\Domains\Documentation\Models\CollectionDocumentation;
+use App\Domains\Documentation\Models\RequestResponseExample;
+use App\Domains\Environments\Models\Environment;
+use App\Domains\Environments\Models\EnvironmentVariable;
 use App\Domains\Requests\Models\Request as ApiRequest;
 use App\Domains\Teams\Models\Team;
 use App\Enums\TeamRole;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 
 test('authenticated team member can delete a request in their collection', function () {
     $owner = User::factory()->create();
@@ -364,4 +369,227 @@ test('member can delete their own collection, folder, and request but not anothe
         ->delete(route('collections.destroy', $collection1->id))
         ->assertRedirect();
     expect(Collection::find($collection1->id))->toBeNull();
+});
+
+test('public documentation serves openapi json via /openapi.json endpoint', function () {
+    $team = Team::factory()->create();
+    $collection = Collection::create([
+        'team_id' => $team->id,
+        'name' => 'Public API',
+        'description' => 'A public API collection',
+    ]);
+
+    $doc = CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'is_public' => true,
+        'public_slug' => 'public-api-docs',
+        'version' => '2.1.0',
+    ]);
+
+    $request = ApiRequest::create([
+        'collection_id' => $collection->id,
+        'name' => 'Get Users',
+        'description' => 'Fetch all registered users',
+        'method' => 'GET',
+        'url' => 'https://api.example.com/users',
+        'headers' => [['key' => 'X-Custom-Header', 'enabled' => true]],
+        'query_params' => [['key' => 'limit', 'value' => '25', 'enabled' => true]],
+        'body' => [],
+    ]);
+
+    RequestResponseExample::create([
+        'request_id' => $request->id,
+        'name' => 'Success 200',
+        'status_code' => 200,
+        'headers' => [],
+        'body' => json_encode(['users' => []]),
+    ]);
+
+    $response = $this->get("/docs/{$collection->id}/public-api-docs/openapi.json");
+
+    $response->assertStatus(200);
+    $response->assertHeader('Content-Type', 'application/json');
+    $response->assertHeader('Access-Control-Allow-Origin', '*');
+
+    $json = $response->json();
+    expect($json)->toHaveKey('openapi');
+    expect($json['openapi'])->toStartWith('3.');
+    expect($json['info']['title'])->toBe('Public API');
+    expect($json['info']['version'])->toBe('2.1.0');
+    expect($json['paths'])->toHaveKey('/users');
+    expect($json['paths']['/users'])->toHaveKey('get');
+    expect($json['paths']['/users']['get']['summary'])->toBe('Get Users');
+    expect($json['paths']['/users']['get']['description'])->toBe('Fetch all registered users');
+    expect($json['paths']['/users']['get']['responses'])->toHaveKey('200');
+});
+
+test('public documentation serves openapi json via .json and /openapi endpoints', function () {
+    $team = Team::factory()->create();
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'Endpoints API']);
+    CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'is_public' => true,
+        'public_slug' => 'endpoints-docs',
+        'version' => '1.0.0',
+    ]);
+    ApiRequest::create([
+        'collection_id' => $collection->id,
+        'name' => 'Ping',
+        'method' => 'GET',
+        'url' => '/ping',
+    ]);
+
+    $dotJsonResponse = $this->get("/docs/{$collection->id}/endpoints-docs.json");
+    $dotJsonResponse->assertStatus(200);
+    $dotJsonResponse->assertHeader('Content-Type', 'application/json');
+    expect($dotJsonResponse->json('info.title'))->toBe('Endpoints API');
+
+    $openapiResponse = $this->get("/docs/{$collection->id}/endpoints-docs/openapi");
+    $openapiResponse->assertStatus(200);
+    $openapiResponse->assertHeader('Content-Type', 'application/json');
+    expect($openapiResponse->json('info.title'))->toBe('Endpoints API');
+});
+
+test('public documentation serves openapi json when Accept header or format query is specified', function () {
+    $team = Team::factory()->create();
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'Negotiated API']);
+    CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'is_public' => true,
+        'public_slug' => 'negotiated-docs',
+        'version' => '1.0.0',
+    ]);
+    ApiRequest::create([
+        'collection_id' => $collection->id,
+        'name' => 'Status',
+        'method' => 'GET',
+        'url' => '/status',
+    ]);
+
+    // Accept: application/json
+    $acceptResponse = $this->getJson("/docs/{$collection->id}/negotiated-docs");
+    $acceptResponse->assertStatus(200);
+    $acceptResponse->assertHeader('Content-Type', 'application/json');
+    expect($acceptResponse->json('info.title'))->toBe('Negotiated API');
+
+    // Query parameter: format=openapi
+    $formatOpenApiResponse = $this->get("/docs/{$collection->id}/negotiated-docs?format=openapi");
+    $formatOpenApiResponse->assertStatus(200);
+    $formatOpenApiResponse->assertHeader('Content-Type', 'application/json');
+    expect($formatOpenApiResponse->json('info.title'))->toBe('Negotiated API');
+
+    // Query parameter: format=json
+    $formatJsonResponse = $this->get("/docs/{$collection->id}/negotiated-docs?format=json");
+    $formatJsonResponse->assertStatus(200);
+    $formatJsonResponse->assertHeader('Content-Type', 'application/json');
+    expect($formatJsonResponse->json('info.title'))->toBe('Negotiated API');
+});
+
+test('public documentation openapi endpoint supports CORS preflight options request', function () {
+    $team = Team::factory()->create();
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'CORS API']);
+    CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'is_public' => true,
+        'public_slug' => 'cors-docs',
+    ]);
+
+    $response = $this->call('OPTIONS', "/docs/{$collection->id}/cors-docs/openapi.json");
+    $response->assertStatus(204);
+    $response->assertHeader('Access-Control-Allow-Origin', '*');
+    $response->assertHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+});
+
+test('public documentation openapi endpoints return 404 when documentation is private or not found', function () {
+    $team = Team::factory()->create();
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'Private API']);
+    CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'is_public' => false,
+        'public_slug' => 'private-docs',
+    ]);
+
+    $this->get("/docs/{$collection->id}/private-docs/openapi.json")->assertStatus(404);
+    $this->get("/docs/{$collection->id}/private-docs.json")->assertStatus(404);
+    $this->get("/docs/{$collection->id}/non-existent/openapi.json")->assertStatus(404);
+});
+
+test('public documentation generates openapi spec with servers from environment variables', function () {
+    $team = Team::factory()->create();
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'Env API']);
+    $environment = Environment::create(['team_id' => $team->id, 'name' => 'Production']);
+    EnvironmentVariable::create([
+        'environment_id' => $environment->id,
+        'key' => 'baseUrl',
+        'value' => 'https://api.production.com',
+        'enabled' => true,
+    ]);
+
+    CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'environment_id' => $environment->id,
+        'is_public' => true,
+        'public_slug' => 'env-docs',
+        'version' => '3.0.0',
+    ]);
+
+    ApiRequest::create([
+        'collection_id' => $collection->id,
+        'name' => 'Get Profile',
+        'method' => 'GET',
+        'url' => '{{baseUrl}}/profile/:userId',
+        'path_variables' => [['key' => 'userId', 'value' => '123', 'enabled' => true]],
+    ]);
+
+    $response = $this->get("/docs/{$collection->id}/env-docs/openapi.json");
+    $response->assertStatus(200);
+
+    $json = $response->json();
+    expect($json['servers'])->toHaveCount(1);
+    expect($json['servers'][0]['url'])->toBe('https://api.production.com');
+    expect($json['paths'])->toHaveKey('/profile/{userId}');
+    expect($json['paths']['/profile/{userId}']['get']['parameters'][0]['name'])->toBe('userId');
+    expect($json['paths']['/profile/{userId}']['get']['parameters'][0]['in'])->toBe('path');
+});
+
+test('importing from a public documentation url fetches openapi json and creates import record', function () {
+    $team = Team::factory()->create();
+    $owner = User::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $owner->switchTeam($team);
+
+    $sourceCollection = Collection::create(['team_id' => $team->id, 'name' => 'Source API']);
+    CollectionDocumentation::create([
+        'collection_id' => $sourceCollection->id,
+        'team_id' => $team->id,
+        'is_public' => true,
+        'public_slug' => 'source-api-docs',
+    ]);
+    ApiRequest::create([
+        'collection_id' => $sourceCollection->id,
+        'name' => 'List Orders',
+        'method' => 'GET',
+        'url' => 'https://api.orders.com/orders',
+    ]);
+
+    // Fetch the actual openapi json from our public endpoint
+    $openApiResponse = $this->get("/docs/{$sourceCollection->id}/source-api-docs/openapi.json");
+    $specJson = $openApiResponse->getContent();
+
+    Http::fake([
+        'https://example.com/docs/*' => Http::response($specJson, 200, ['Content-Type' => 'application/json']),
+    ]);
+
+    $response = $this->actingAs($owner)->post(route('import.upload'), [
+        'url' => "https://example.com/docs/{$sourceCollection->id}/source-api-docs",
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    $response->assertRedirect();
 });
