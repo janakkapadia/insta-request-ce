@@ -29,16 +29,16 @@ Route::get('/', function () {
 })->name('home');
 
 // Redirect front pages to login
-Route::redirect('postman-alternative', '/login')->name('postman-alternative');
-Route::redirect('api-monitoring', '/login')->name('api-monitoring');
-Route::redirect('api-collaboration', '/login')->name('api-collaboration');
+Route::get('postman-alternative', fn () => redirect('/login'))->name('postman-alternative');
+Route::get('api-monitoring', fn () => redirect('/login'))->name('api-monitoring');
+Route::get('api-collaboration', fn () => redirect('/login'))->name('api-collaboration');
 
 Route::get('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed'])
     ->name('verification.verify');
 
-Route::redirect('request-builder', '/login')->name('request-builder');
-Route::redirect('realtime-api-workspace', '/login')->name('realtime-api-workspace');
+Route::get('request-builder', fn () => redirect('/login'))->name('request-builder');
+Route::get('realtime-api-workspace', fn () => redirect('/login'))->name('realtime-api-workspace');
 
 // Legal Pages
 Route::inertia('terms-of-service', 'TermsOfService')->name('terms');
