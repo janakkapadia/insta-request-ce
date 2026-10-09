@@ -312,14 +312,46 @@ const authPreview = computed(() => {
 const showAddExample = ref<boolean>(false);
 
 const responseTemplates = [
-    { name: '200 OK Success', status: 200, body: '{\n  "status": "success"\n}' },
-    { name: '201 Created', status: 201, body: '{\n  "status": "success",\n  "message": "Resource created successfully"\n}' },
-    { name: '400 Bad Request', status: 400, body: '{\n  "status": "error",\n  "message": "Invalid input provided"\n}' },
-    { name: '401 Unauthorized', status: 401, body: '{\n  "status": "error",\n  "message": "Authentication required"\n}' },
-    { name: '403 Forbidden', status: 403, body: '{\n  "status": "error",\n  "message": "You do not have permission to access this resource"\n}' },
-    { name: '404 Not Found', status: 404, body: '{\n  "status": "error",\n  "message": "Resource not found"\n}' },
-    { name: '422 Unprocessable Entity', status: 422, body: '{\n  "status": "error",\n  "message": "Validation failed",\n  "errors": {}\n}' },
-    { name: '500 Internal Error', status: 500, body: '{\n  "status": "error",\n  "message": "Internal server error occurred"\n}' },
+    {
+        name: '200 OK Success',
+        status: 200,
+        body: '{\n  "status": "success"\n}',
+    },
+    {
+        name: '201 Created',
+        status: 201,
+        body: '{\n  "status": "success",\n  "message": "Resource created successfully"\n}',
+    },
+    {
+        name: '400 Bad Request',
+        status: 400,
+        body: '{\n  "status": "error",\n  "message": "Invalid input provided"\n}',
+    },
+    {
+        name: '401 Unauthorized',
+        status: 401,
+        body: '{\n  "status": "error",\n  "message": "Authentication required"\n}',
+    },
+    {
+        name: '403 Forbidden',
+        status: 403,
+        body: '{\n  "status": "error",\n  "message": "You do not have permission to access this resource"\n}',
+    },
+    {
+        name: '404 Not Found',
+        status: 404,
+        body: '{\n  "status": "error",\n  "message": "Resource not found"\n}',
+    },
+    {
+        name: '422 Unprocessable Entity',
+        status: 422,
+        body: '{\n  "status": "error",\n  "message": "Validation failed",\n  "errors": {}\n}',
+    },
+    {
+        name: '500 Internal Error',
+        status: 500,
+        body: '{\n  "status": "error",\n  "message": "Internal server error occurred"\n}',
+    },
 ];
 
 const selectedTemplateIndex = ref<number>(0);
@@ -1655,14 +1687,18 @@ import { getMethodBadgeColors as getMethodColor } from '@/lib/method-colors';
                                         </h5>
 
                                         <div class="mb-4 space-y-1">
-                                            <Label class="text-xs">Select Template</Label>
+                                            <Label class="text-xs"
+                                                >Select Template</Label
+                                            >
                                             <select
                                                 v-model="selectedTemplateIndex"
                                                 @change="applyTemplate"
                                                 class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:ring-2 focus:ring-primary focus:outline-hidden"
                                             >
                                                 <option
-                                                    v-for="(template, index) in responseTemplates"
+                                                    v-for="(
+                                                        template, index
+                                                    ) in responseTemplates"
                                                     :key="index"
                                                     :value="index"
                                                 >

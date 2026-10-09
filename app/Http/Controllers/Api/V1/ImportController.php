@@ -159,7 +159,9 @@ class ImportController extends Controller
         if ($request->filled('url')) {
             $url = $request->input('url');
             try {
-                $response = Http::timeout(15)->get($url);
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json, text/plain, */*',
+                ])->timeout(15)->get($url);
                 if (! $response->successful()) {
                     return [null, ''];
                 }

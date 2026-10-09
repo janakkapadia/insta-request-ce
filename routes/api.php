@@ -38,6 +38,9 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     // List accessible collections (resolve collection_id from name in CI)
     Route::get('collections', [CollectionController::class, 'index']);
 
+    // Export collection as OpenAPI spec
+    Route::get('collections/{collection}/openapi', [CollectionController::class, 'openapi']);
+
     // Update documentation visibility / publish settings
     Route::put('collections/{collection}/documentation', [DocumentationController::class, 'update']);
 

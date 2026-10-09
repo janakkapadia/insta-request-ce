@@ -106,6 +106,13 @@ Route::middleware(['auth', 'verified', EnsureTeamMembership::class])
 
 // Public Documentation Portal
 Route::get('docs', [DocumentationController::class, 'publicIndex'])->name('documentation.public.index');
+Route::get('docs/{collection}/{slug}/openapi.json', [DocumentationController::class, 'openApiJson'])->name('documentation.public.openapi');
+Route::get('docs/{collection}/{slug}.json', [DocumentationController::class, 'openApiJson'])->name('documentation.public.json');
+Route::get('docs/{collection}/{slug}/openapi', [DocumentationController::class, 'openApiJson']);
+Route::options('docs/{collection}/{slug}/openapi.json', [DocumentationController::class, 'corsOptions']);
+Route::options('docs/{collection}/{slug}.json', [DocumentationController::class, 'corsOptions']);
+Route::options('docs/{collection}/{slug}/openapi', [DocumentationController::class, 'corsOptions']);
+Route::options('docs/{collection}/{slug}', [DocumentationController::class, 'corsOptions']);
 Route::get('docs/{collection}/{slug}', [DocumentationController::class, 'viewPublic'])->name('documentation.public');
 
 Route::middleware(['auth'])->group(function () {

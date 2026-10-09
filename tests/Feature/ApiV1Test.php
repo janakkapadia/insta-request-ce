@@ -537,3 +537,64 @@ test('api:token command succeeds when user belongs to the specified team', funct
 
     expect($user->fresh()->tokens()->where('name', 'Deploy')->exists())->toBeTrue();
 });
+
+test('api v1 collection endpoints include openapi_url for public documentation', function () {
+    [$user, $team] = makeUserWithTeam();
+    $token = bearerToken($user);
+
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'Published API']);
+    CollectionDocumentation::create([
+        'collection_id' => $collection->id,
+        'team_id' => $team->id,
+        'is_public' => true,
+        'public_slug' => 'published-api',
+        'version' => '1.0.0',
+    ]);
+
+    $response = $this->withToken($token)->getJson('/api/v1/collections')->assertOk();
+    expect($response->json('0.public_url'))->toContain('/docs/'.$collection->id.'/published-api');
+    expect($response->json('0.openapi_url'))->toContain('/docs/'.$collection->id.'/published-api/openapi.json');
+
+    $updateResponse = $this->withToken($token)
+        ->putJson("/api/v1/collections/{$collection->id}/documentation", [
+            'is_public' => true,
+            'public_slug' => 'updated-api',
+            'version' => '2.0.0',
+        ])
+        ->assertOk();
+
+    expect($updateResponse->json('openapi_url'))->toContain('/docs/'.$collection->id.'/updated-api/openapi.json');
+});
+
+test('authenticated team member can fetch collection openapi json via api v1', function () {
+    [$user, $team] = makeUserWithTeam();
+    $token = bearerToken($user);
+
+    $collection = Collection::create(['team_id' => $team->id, 'name' => 'Exportable API']);
+    ApiRequest::create([
+        'collection_id' => $collection->id,
+        'name' => 'Get Items',
+        'method' => 'GET',
+        'url' => 'https://api.example.com/items',
+    ]);
+
+    $response = $this->withToken($token)
+        ->getJson("/api/v1/collections/{$collection->id}/openapi")
+        ->assertOk();
+
+    expect($response->json('openapi'))->toBe('3.0.3');
+    expect($response->json('info.title'))->toBe('Exportable API');
+    expect($response->json('paths'))->toHaveKey('/items');
+});
+
+test('user cannot fetch openapi json of collection from another team via api v1', function () {
+    [$user, $team] = makeUserWithTeam();
+    [$otherUser, $otherTeam] = makeUserWithTeam();
+    $token = bearerToken($user);
+
+    $otherCollection = Collection::create(['team_id' => $otherTeam->id, 'name' => 'Secret Collection']);
+
+    $this->withToken($token)
+        ->getJson("/api/v1/collections/{$otherCollection->id}/openapi")
+        ->assertForbidden();
+});

@@ -46,7 +46,9 @@ class ImportController extends Controller
         } elseif ($request->input('url')) {
             $url = $request->input('url');
             try {
-                $response = Http::timeout(15)->get($url);
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json, text/plain, */*',
+                ])->timeout(15)->get($url);
                 if (! $response->successful()) {
                     return back()->withErrors([
                         'error' => 'Failed to fetch URL: HTTP '.$response->status(),
